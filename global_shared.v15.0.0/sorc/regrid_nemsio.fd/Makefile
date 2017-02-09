@@ -130,8 +130,7 @@ clean:
        netcdfio_interface.f90                        \
        interpolation_interface.f90                   \
        gfs_nems_interface.f90                        \
-       fv3_interface.f90                             \
-       regrid_nemsio_interface.f90
+       fv3_interface.f90                             
 
   SRCS =  $(SRCSF77) $(SRCSF90)
 
