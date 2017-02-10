@@ -13,19 +13,15 @@
 
 set -x
 
-# 16 compute nodes + 3 i/o nodes - alters forecast results
-##export NODES=19
-##export ntasks=114
-##export ptile=6
-##export threads=4
+# 20 nodes = 18 compute nodes + 2 i/o nodes
+#   set WRT_GROUP=2 for 2 i/o nodes (see ../parm/gdas_enkf_fcst.parm)
+#   set WRTPE_PER_GROUP=4 to match ptile
+export NODES=20
+export ntasks=80
+export ptile=4
+export threads=6
 
-export NODES=12
-export ntasks=144
-export ptile=12
-export threads=2
-
-export CDATE=2016122206
-
+export CDATE=2017011900
 export ENSGRP=1
 
 export grp=$ENSGRP

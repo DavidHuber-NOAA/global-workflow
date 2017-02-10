@@ -106,9 +106,10 @@ export MP_PGMMODEL=mpmd
 export MP_CMDFILE=$DATA/poescript
 
 # Execute the script.
+# mpirun.lsf
 
-mpirun.lsf
-
+export NODES=2
+aprun -n 34 -N 17 cfp $DATA/poescript
 export err=$?; err_chk
 ########################################################
 
