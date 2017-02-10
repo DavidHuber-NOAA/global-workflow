@@ -42,7 +42,7 @@ OBJS=   BLOCKDATA001.o VALKEY.o XTRACT.o la2la.o readgrib.o \
 # CMD		Name of the executable
 # PROFLIB	Library needed for profiling
 #
-FC =	        ifort
+FC =	        ftn
 LDFLAGS =	
 LIBS= ${W3NCO_LIB8} ${W3EMC_LIB8} ${BACIO_LIB8}
 
@@ -53,7 +53,7 @@ PROFLIB =	-lprof
 # To compile with flowtracing turned on, use the second line
 # To compile giving profile additonal information, use the third line
 # WARNING:  SIMULTANEOUSLY PROFILING AND FLOWTRACING IS NOT RECOMMENDED 
-FFLAGS =        -O3  -g -assume byterecl -assume noold_ldout_format -convert big_endian -r8 -i8 
+FFLAGS =        -O3  -g -assume byterecl -assume noold_ldout_format -convert big_endian -r8 -i8 -axCORE-AVX2
 #FFLAGS =	 -F
 #FFLAGS =	 -Wf"-ez"
 
@@ -64,12 +64,15 @@ all:		$(CMD)
 
 $(CMD):		$(OBJS)
 	$(FC) $(LDFLAGS) -o $(@) $(OBJS) $(LIBS)
-	rm -f $(OBJS)
 
 # Make the profiled version of the command and call it a.out.prof
 #
 $(CMD).prof:	$(OBJS)
 	$(FC) $(LDFLAGS) -o $(@) $(OBJS) $(PROFLIB) $(LIBS)
+
+install:
+	mkdir -p ../../exec
+	cp -p $(CMD) ../../exec
 
 clean:
 	-rm -f $(OBJS)
