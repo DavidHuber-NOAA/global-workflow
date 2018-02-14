@@ -27,8 +27,8 @@ export STMP_USER=${STMP_USER:-/scratch4/NCEPDEV/stmp3/$LOGNAME}
 #############################################################
 # Specify versions
 #############################################################
-export gdas_ver=v14.1.0
-export global_shared_ver=v14.1.0
+export gfs_ver=v15.0.0
+
 
 #############################################################
 # Add nwpara tools to path
@@ -43,10 +43,10 @@ export PATH=${PATH}:${NWPRODush}:${NWPRODexec}
 # Set user specific variables
 #############################################################
 export MINMON_SUFFIX=${MINMON_SUFFIX:-testminmon}
-export NWTEST=${NWTEST:-/scratch4/NCEPDEV/da/noscrub/${LOGNAME}/gfs_q3fy17}
-export HOMEgdas=${HOMEgdas:-${NWTEST}/gdas.${gdas_ver}}
-export JOBGLOBAL=${HOMEgdas}/jobs
-export HOMEminmon=${HOMEminmon:-${NWTEST}/global_shared.${global_shared_ver}}
+export NWTEST=${NWTEST:-/scratch4/NCEPDEV/da/noscrub/${LOGNAME}/gfs.${gfs_ver}}
+export HOMEgfs=${HOMEgfs:-${NWTEST}}
+export JOBGLOBAL=${HOMEgfs}/jobs
+export HOMEminmon=${HOMEminmon:-${NWTEST}}
 export COM_IN=${COM_IN:-${DATAROOT}}
 export M_TANKverf=${M_TANKverf:-${COMROOT}/${MINMON_SUFFIX}}
 
@@ -54,8 +54,11 @@ export M_TANKverf=${M_TANKverf:-${COMROOT}/${MINMON_SUFFIX}}
 #  theia specific hacks for no prod_utils module & no setpdy.sh script
 #######################################################################
 export MY_MACHINE=theia
+
+export NDATE=/scratch4/NCEPDEV/global/save/glopara/nwpara/util/exec/ndate
 prevday=`$NDATE -24 $PDATE`
 export PDYm1=`echo $prevday | cut -c1-8`
+
 ln -s ${NWPRODush}/startmsg.sh ${STMP_USER}/startmsg
 ln -s ${NWPRODush}/postmsg.sh ${STMP_USER}/postmsg
 ln -s ${NWPRODush}/prep_step.sh ${STMP_USER}/prep_step
