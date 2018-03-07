@@ -52,6 +52,12 @@ setpdy.sh
 . ./PDY
 
 
+####################################
+# Specify NET and RUN Name and model
+####################################
+export NET=${NET:-gfs}
+export RUN=${RUN:-gfs}
+
 ##############################################
 # Define the Log File directory
 ##############################################
@@ -75,14 +81,42 @@ if [ $RUN_ENVIR = "nco" ]; then
 fi
 
 
-##############################################
-# Define COM directories
-##############################################
-export ATCFdir=${COMROOTp1}/nhc/${envir}/atcf
-export COMIN=${ROTDIR}/${RUN}.${PDY}/${cyc}
-export COMOUT=${ROTDIR}/${RUN}.${PDY}/${cyc}
-if [ ! -d ${COMOUT} ]; then mkdir -p $COMOUT; fi
+####################################
+# SENDCOM  - Copy Files From TMPDIR to $COMOUT
+# SENDDBN  - Issue DBNet Client Calls
+####################################
+export SENDCOM=YES
+export SENDDBN=${SENDDBN:-NO}
+export SENDECF=${SENDECF:-NO}
 
+####################################
+# Specify Execution Areas
+####################################
+export HOMEens_tracker=${HOMEens_tracker:-${NWROOT:?}/ens_tracker.${ens_tracker_ver}}
+export EXECens_tracker=${EXECens_tracker:-$HOMEens_tracker/exec}
+export FIXens_tracker=${FIXens_tracker:-$HOMEens_tracker/fix}
+export USHens_tracker=${USHens_tracker:-$HOMEens_tracker/ush}
+
+
+##############################################
+# Define COM and Data directories
+##############################################
+export COMIN=${ROTDIR}/${RUN}.${PDY}/${cyc}
+export COMINgfs=${COMIN}
+export gfsdir=${COMINgfs}
+export COMINgdas=${COMIN}
+export gdasdir=${COMINgdas}
+export COMOUT=${ROTDIR}/${RUN}.${PDY}/${cyc}
+export COMINsyn=${COMINsyn:-$(compath.py arch/prod/syndat)}
+
+if [ $RUN_ENVIR = "nco" ]; then
+    export COMOUThur=${COMROOTp1:?}/hur/${envir}/global
+    export COMOUTatcf=${COMROOTp1:?}/nhc/${envir}/atcf
+    mkdir -m 775 -p $COMOUThur $COMOUTatcf
+else
+    export COMOUThur=$COMOUT         
+    export COMOUTatcf=$COMOUT
+fi
 
 ##############################################
 # Run relevant script
@@ -92,25 +126,40 @@ msg="HAS BEGUN on `hostname`"
 postmsg "$jlogfile" "$msg"
 $LOGSCRIPT
 
-export cmodel=gfs
-export FHMAX2=252
-gfstrackhour1=180; gfstrackhour2=252
-if [ $gfstrackhour1 -gt $FHMAX2 ]; then gfstrackhour1=$FHMAX2 ; fi
-if [ $gfstrackhour2 -gt $FHMAX2 ]; then gfstrackhour2=$FHMAX2 ; fi
+#############################################################
+# Execute the script
+export pert="p01"
+export cmodel=$CDUMP
+export loopnum=1
 
-${PARATRKR:-$USHRELO/global_extrkr.sh}
-status=$?
-[[ $status -ne 0 ]] && exit $status
+#-----------input data checking -----------------
+${USHens_tracker}/data_check.sh
+# exit code 6 = missing data of opportunity
+if [ $? -eq 6 ]; then exit; fi
+#------------------------------------------------
 
-#    ${APRUNTRACK} ${PARATRKR:-$USHRELO/global_extrkr.sh} --gfs-last-hour $gfstrackhour1 --wait-for-data 900
-#    cp $DATA/trak.gfso.atcfunix.$CDATE $COMOUT/gfso.$cycle.cyclone.trackatcfunix
-# Run a second tracker for 252 hours for experimental ten day forecasts:
-#    if [ $gfstrackhour2 -gt $gfstrackhour1 ]; then
-#     export SENDNHC=NO
-#     ${APRUNTRACK} ${PARATRKR:-$USHRELO/global_extrkr.sh} --gfs-last-hour $gfstrackhour2 --wait-for-data 900
-#     cp $DATA/trak.gfso.atcfunix.$CDATE $COMOUT/gfso.$cycle.252hr.trackatcfunix
-#    fi
+mac=`echo ${SITE}`
+if [ $mac = TIDE -o $mac = GYRE ] ; then # For WCOSS
+  machine=wcoss
+  ${USHens_tracker}/extrkr_gfs.sh ${loopnum} ${cmodel} ${CDATE} ${pert} ${DATA} 
+elif [ $mac = LUNA -o $mac = SURGE ] ; then # For CRAY
+  machine=cray
+  ${APRUNTRACK} ${USHens_tracker}/extrkr_gfs.sh ${loopnum} ${cmodel} ${CDATE} ${pert} ${DATA} 
+fi
+export err=$?; err_chk
 
+
+if [ "$SENDCOM" = 'YES' ]; then
+
+  cat ${DATA}/trak.avnx.atcfunix.${PDY}${cyc} | \
+      sed s:AVNX:GFSO:g \
+    > ${COMOUT}/gfso.t${cyc}z.cyclone.trackatcfunix
+
+  cat ${DATA}/trak.avnx.atcfunix.${PDY}${cyc} | \
+      sed s:AVNX:AVNO:g \
+    > ${COMOUT}/avn.t${cyc}z.cyclone.trackatcfunix
+
+fi
 
 ##############################################
 # Final processing
