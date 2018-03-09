@@ -3,8 +3,8 @@
 #############################################################
 
 module load ics/12.1
-setenv FCOMP ifort
-setenv FFLAGS "-O0 -r8 -i4 -FR -openmp -convert big_endian -assume byterecl"
+export FCOMP=ifort
+export FFLAGS="-O0 -r8 -i4 -FR -openmp -convert big_endian -assume byterecl"
 
 module load ip/v2.0.0
 module load sp/v2.0.2
