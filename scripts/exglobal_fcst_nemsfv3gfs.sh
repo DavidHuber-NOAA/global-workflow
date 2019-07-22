@@ -527,7 +527,6 @@ cat $DIAG_TABLE >> diag_table
 
 $NCP $DATA_TABLE  data_table
 $NCP $FIELD_TABLE field_table
-$NCP $CCPP_SUITE  ccpp_suite.xml
 
 #------------------------------------------------------------------
 rm -f nems.configure
@@ -562,6 +561,7 @@ atmos_nthreads:          $NTHREADS_FV3
 use_hyper_thread:        ${hyperthread:-".false."}
 ncores_per_node:         $cores_per_node
 restart_interval:        $restart_interval
+output_1st_tstep_rst:    ${output_1st_tstep_rst:-".false."}
 
 quilting:                $QUILTING
 write_groups:            ${WRITE_GROUP:-1}
@@ -612,7 +612,7 @@ cat > input.nml <<EOF
   blocksize = $blocksize
   chksum_debug = $chksum_debug
   dycore_only = $dycore_only
-  ccpp_suite = 'ccpp_suite.xml'
+  ccpp_suite = $CCPP_SUITE
   fdiag = $FDIAG
   fhmax = $FHMAX
   fhout = $FHOUT
@@ -758,6 +758,8 @@ cat > input.nml <<EOF
   ivegsrc      = ${ivegsrc:-"1"}
   isot         = ${isot:-"1"}
   debug        = ${gfs_phys_debug:-".false."}
+  oz_phys      = ${oz_phys:-".false."}
+  oz_phys_2015 = ${oz_phys_2015:-".true."}
   nstf_name    = $nstf_name
   nst_anl      = $nst_anl
   psautco      = ${psautco:-"0.0008,0.0005"}
@@ -968,6 +970,9 @@ else
     eval $NLN atmos_4xdaily.tile${n}.nc $memdir/atmos_4xdaily.tile${n}.nc
   done
 fi
+
+# Copy namelist file
+$NCP input.nml $memdir
 
 #------------------------------------------------------------------
 # run the executable
