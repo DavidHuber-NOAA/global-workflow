@@ -15,10 +15,10 @@ if [ $DONST = "YES" ]; then
     . $EXPDIR/config.nsst
 fi
 
-export FORECASTSH="$HOMEgfs/scripts/exglobal_fcst_nemsfv3gfs.sh"
+export FORECASTSH="$HOMEgfs/scripts/exglobal_fcst_nemsfv3gfs_v15.sh"
 #export FCSTEXECDIR="$HOMEfv3gfs/NEMS/exe"
 export FCSTEXECDIR="$HOMEgfs/exec"
-export FCSTEXEC="global_fv3gfs.x"
+export FCSTEXEC="global_fv3gfs_ccpp.x"
 export npe_fv3=$npe_fcst # This is model resolution dependent, see note above
 
 if [[ "$CDUMP" == "gfs" ]] ; then
@@ -45,6 +45,10 @@ export h2o_phys=".true."
 # Options of stratosphere O3 physics reaction coefficients
 export new_o3forc="YES"
 
+# CCPP configuration
+export output_1st_tstep_rst=".false."                                        #JKH
+export CCPP_SUITE=FV3_GFS_v15
+
 # Microphysics configuration
 export dnats=0
 export cal_pre=".true."
@@ -63,9 +67,36 @@ elif [ $imp_physics -eq 6 ]; then # WSM6
     export nwat=6
 
 elif [ $imp_physics -eq 8 ]; then # Thompson
-    export ncld=2
-    export FIELD_TABLE="$HOMEgfs/parm/parm_fv3diag/field_table_thompson"
+    export ncld=5
+    export FIELD_TABLE="$HOMEgfs/parm/parm_fv3diag/field_table_thompson_suite"
     export nwat=6
+    export ltaerosol=.true.                  
+    export lradar=.true.         ## JKH:  for physics test, this is set to false since that variable not used in test
+
+    ## MYNN options
+    export shal_cnv=".true."       
+    export hybedmf=".false."     
+    export satmedmf=".false."    
+    export do_mynnedmf=".true."     
+    export do_mynnsfclay=".false."
+    export icloud_bl=1        
+    export bl_mynn_tkeadvect=.true. 
+    export bl_mynn_edmf=1        
+    export bl_mynn_edmf_mom=1
+
+    ## for RUC LSM
+    export lsm=2
+    export lsoil_lsm=9
+
+    ## GSD namelist changes
+    export cal_pre=".false."
+    export random_clds=".false."
+
+    export ttendlim=0.005
+    export vtdm4_nh_nonmono=0.02
+    export nord=2
+    export dddmp=0.1
+    export d4_bg=0.12
 
 elif [ $imp_physics -eq 11 ]; then # GFDL
     export ncld=5
@@ -117,7 +148,12 @@ elif [[ "$CDUMP" == "gfs" ]] ; then # GFS cycle specific parameters
 
     # Write more variables to output
     if [ $QUILTING = ".true." -a $OUTPUT_GRID = "gaussian_grid" ]; then
-        export DIAG_TABLE="$HOMEgfs/parm/parm_fv3diag/diag_table"
+        if [ $imp_physics -eq 8 ]; then # Thompson
+            export DIAG_TABLE="$HOMEgfs/parm/parm_fv3diag/diag_table"
+            #export DIAG_TABLE="$HOMEgfs/parm/parm_fv3diag/diag_table_thompson_suite"
+        else
+            export DIAG_TABLE="$HOMEgfs/parm/parm_fv3diag/diag_table"
+        fi
     else
         export DIAG_TABLE="$HOMEgfs/parm/parm_fv3diag/diag_table_orig"
     fi
