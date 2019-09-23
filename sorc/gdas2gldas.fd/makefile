@@ -2,7 +2,7 @@ SHELL=	/bin/sh
 
 include $(ESMFMKFILE)
 
-CMD= test.exe
+CMD= gdas2gldas.exe
 
 OBJS = driver.o \
        utils.o \
