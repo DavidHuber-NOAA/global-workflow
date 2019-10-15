@@ -26,10 +26,15 @@
  integer, intent(in)  :: npets
 
  character(len=200) :: mosaic_file_input_grid, orog_dir_input_grid
+ character(len=200) :: sfc_files_input_grid(6), data_dir_input_grid
+ character(len=200) :: orog_files_input_grid(6)
 
  integer :: error, extra, num_tiles_input_grid, tile
 
  integer, allocatable         :: decomptile(:,:)
+
+ namelist /config/ data_dir_input_grid, sfc_files_input_grid, &
+                   orog_dir_input_grid, orog_files_input_grid
 
 !-----------------------------------------------------------------------
 ! Create ESMF grid object for the model grid.
@@ -45,8 +50,13 @@
    decomptile(:,tile)=(/1,extra/)
  enddo
 
- mosaic_file_input_grid="/gpfs/dell2/emc/modeling/noscrub/George.Gayno/fv3gfs.git/global-workflow/fix/fix_fv3_gmted2010/C768/C768_mosaic.nc"
- orog_dir_input_grid="/gpfs/dell2/emc/modeling/noscrub/George.Gayno/fv3gfs.git/global-workflow/fix/fix_fv3_gmted2010/C768/"
+ open(41, file="./fort.41", iostat=error)
+ if (error /= 0) call error_handler("OPENING SETUP NAMELIST.", error)
+ read(41, nml=config, iostat=error)
+ if (error /= 0) call error_handler("READING SETUP NAMELIST.", error)
+ close (41)
+
+ mosaic_file_input_grid=trim(orog_dir_input_grid) // "/C768_mosaic.nc"
 
  print*,"- CALL GridCreateMosaic FOR INPUT GRID"
  input_grid = ESMF_GridCreateMosaic(filename=trim(mosaic_file_input_grid), &
@@ -127,7 +137,7 @@
  call splat(4, j_target, slat, wlat)
 
  do i = 1, j_target
-   latitude(:,j_target-i+1) = 90.0_esmf_kind_r8 - (acos(slat(i))* 180.0_esmf_kind_r8 / &
+   latitude(:,i) = 90.0_esmf_kind_r8 - (acos(slat(i))* 180.0_esmf_kind_r8 / &
                   (4.0_esmf_kind_r8*atan(1.0_esmf_kind_r8)))
  enddo
 
@@ -211,11 +221,11 @@
      lon_src_ptr(i,j) = longitude(i,1) - (0.5_esmf_kind_r8*deltalon)
      if (lon_src_ptr(i,j) > 360.0_esmf_kind_r8) lon_src_ptr(i,j) = lon_src_ptr(i,j) - 360.0_esmf_kind_r8
      if (j == 1) then
-       lat_src_ptr(i,j) = -90.0_esmf_kind_r8
+       lat_src_ptr(i,j) = 90.0_esmf_kind_r8
        cycle
      endif
      if (j == jp1_target) then
-       lat_src_ptr(i,j) = 90.0_esmf_kind_r8
+       lat_src_ptr(i,j) = -90.0_esmf_kind_r8
        cycle
      endif
      lat_src_ptr(i,j) = 0.5_esmf_kind_r8 * (latitude(i,j-1)+ latitude(i,j))
