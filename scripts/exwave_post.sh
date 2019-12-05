@@ -740,7 +740,7 @@
   if [ "$specOK" = 'yes' ]
   then
     export dtspec=10800.   # time step for spectra
-    ymdh=`$NDATE -9 $YMDH` # start time for spectra output
+    ymdh=`$NDATE -${HINDH} $YMDH` # start time for spectra output
 
     ifile=1
     ilayer=1
@@ -757,7 +757,7 @@
   if [ "$bullOK" = 'yes' ]
   then
     export dtbull=3600.    # time step for bulletins
-    ymdh=`$NDATE -9 $YMDH` # start time for bulletin output
+    ymdh=`$NDATE -${HINDH} $YMDH` # start time for bulletin output
    
     for buoy in $buoys
     do
