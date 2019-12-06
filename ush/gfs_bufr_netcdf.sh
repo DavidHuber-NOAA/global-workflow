@@ -48,7 +48,7 @@ else
    bufrflag=".false."
 fi
 
-##fformat="nc"
+fformat="nc"
 
  SFCF="sfc"
  CLASS="class1fv3"
@@ -82,7 +82,7 @@ do
    ic=0
    while [ $ic -lt 1000 ]
    do
-      if [ ! -f $COMIN/${RUN}.${cycle}.logf${hh2}.txt ]
+      if [ ! -f $COMIN/${RUN}.${cycle}.logf${hh2}.${fformat} ]
       then
           sleep 10
           ic=`expr $ic + 1`
