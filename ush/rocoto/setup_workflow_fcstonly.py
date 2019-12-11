@@ -313,6 +313,8 @@ def get_workflow(dict_configs, cdump='gdas'):
     data = '&ICSDIR;/@Y@m@d@H/&CDUMP;/&CASE;/INPUT/sfc_data.tile6.nc'
     dep_dict = {'type':'data', 'data':data}
     deps.append(rocoto.add_dependency(dep_dict))
+    dep_dict = {'type':'task', 'name':'%saeroic' % cdump}
+    deps.append(rocoto.add_dependency(dep_dict))
     dependencies = rocoto.create_dependency(dep_condition='and', dep=deps)
     task = wfu.create_wf_task('fcst', cdump=cdump, envar=envars, dependency=dependencies)
     tasks.append(task)
