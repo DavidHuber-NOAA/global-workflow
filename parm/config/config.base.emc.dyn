@@ -17,7 +17,7 @@ export QUEUE="@QUEUE@"
 export QUEUE_ARCH="@QUEUE_ARCH@"
 
 # Project to use in mass store:
-HPSS_PROJECT=emc-global
+HPSS_PROJECT=@HPSS_PROJECT@               ## JKH
 
 # Directories relative to installation areas:
 export HOMEgfs=@HOMEgfs@
@@ -44,9 +44,9 @@ export NOSCRUB="@NOSCRUB@"
 # Base directories for various builds
 export BASE_GIT="@BASE_GIT@"
 export BASE_SVN="@BASE_SVN@"
+
 #### CCPP Suite
-export CCPP_SUITE="FV3_GSD_v0"              # testgsdsuite
-#### export CCPP_SUITE="FV3_GFS_v15"        # testemc
+export CCPP_SUITE="@CCPP_SUITE@"            ## JKH
 
 # Toggle to turn on/off GFS downstream processing.
 export DO_BUFRSND="YES"
@@ -99,7 +99,7 @@ export RUNDIR="$STMP/RUNDIRS/$PSLOT"
 export DATAROOT="$RUNDIR/$CDATE/$CDUMP"
 export ARCDIR="$NOSCRUB/archive/$PSLOT"
 export ICSDIR="@ICSDIR@"
-export ATARDIR="/NCEPDEV/$HPSS_PROJECT/1year/$USER/$machine/scratch/$PSLOT"
+export ATARDIR="@ATARDIR@"                   ## JKH
 
 # Commonly defined parameters in JJOBS
 export envir=${envir:-"prod"}
@@ -149,10 +149,10 @@ export gfs_cyc=@gfs_cyc@ # 0: no GFS cycle, 1: 00Z only, 2: 00Z and 12Z only, 4:
 # GFS output and frequency
 export FHMIN_GFS=0
 
-export FHMAX_GFS_00=384
-export FHMAX_GFS_06=384
-export FHMAX_GFS_12=384
-export FHMAX_GFS_18=384
+export FHMAX_GFS_00=384          
+export FHMAX_GFS_06=384          
+export FHMAX_GFS_12=384          
+export FHMAX_GFS_18=384          
 export FHMAX_GFS=$(eval echo \${FHMAX_GFS_$cyc})
 
 export FHOUT_GFS=3
@@ -197,15 +197,15 @@ fi
 export lobsdiag_forenkf=".true."
 
 # run GLDAS to spin up land ICs
-export DO_GLDAS=YES
+export DO_GLDAS=YES 
 export gldas_cyc=00
 
 # run wave component
-export DO_WAVE=YES
+export DO_WAVE=NO                   ## JKH
 export WAVE_CDUMP="gdas"
 
 # Microphysics Options: 99-ZhaoCarr, 8-Thompson; 6-WSM6, 10-MG, 11-GFDL
-if [[ "$CCPP_SUITE" == "FV3_GSD_v0" ]] ; then
+if [[ "$CCPP_SUITE" == "FV3_GSD_v0" || "$CCPP_SUITE" == "FV3_GSD_noah" ]] ; then
        export imp_physics=8
 else
        export imp_physics=11
