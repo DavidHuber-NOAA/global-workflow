@@ -1,6 +1,6 @@
 #!/bin/ksh
 ##############################################################################
-#  UTILITY SCRIPT NAME :  exgfs_awips_20km_1p0deg.sh.ecf
+#  UTILITY SCRIPT NAME :  exgfs_awips_20km_1p0deg.sh
 #         DATE WRITTEN :  11/01/2017
 #
 #  Abstract:  This utility script produces the GFS AWIPS 20km and 1.0 deg
@@ -100,7 +100,7 @@ cat tmpfile2${fcsthrs}   tmpfile2b${fcsthrs}  >  tmpfile${fcsthrs}
 $WGRIB2 tmpfile${fcsthrs} | grep  -F -f $PARMproduct/gfs_awips_parmlist_g2 | $WGRIB2 -i -grib masterfile  tmpfile${fcsthrs}
 export err=$?
 if [[ $err -ne 0 ]] ; then
-   echo " File: masterfile does not exist."
+   echo " FATAL ERROR: masterfile does not exist."
    exit $err
 fi
 
