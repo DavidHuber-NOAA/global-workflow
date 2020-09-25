@@ -59,7 +59,7 @@ fi
 
 ####################################################################################
 echo "-----------------------------------------------------------------------------"
-echo "GFS MAG postprocessing script exmag_sigman_skew_k_gfs_gif_ncdc_skew_t.sh.ecf "
+echo "GFS MAG postprocessing script exmag_sigman_skew_k_gfs_gif_ncdc_skew_t.sh "
 echo "-----------------------------------------------------------------------------"
 echo "History: Mar 2012 added to processing for enhanced MAG skew_t"
 echo "2012-03-11 Mabe -- reworked script to add significant level "
@@ -114,7 +114,7 @@ fi
 ############################################################
 # GOOD RUN
 set +x
-echo "********** JGFS_GEMPAK_NCDC_UPAPGIF COMPLETED"
+echo "********** JGFS_ATMOS_GEMPAK_NCDC_UPAPGIF COMPLETED"
 set -x
 ############################################################
 if [ -e "$pgmout" ] ; then
