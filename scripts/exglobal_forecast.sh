@@ -1,7 +1,7 @@
 #!/bin/ksh
 ################################################################################
 # UNIX Script Documentation Block
-# Script name:         exglobal_fcst_nemsfv3gfs.sh
+# Script name:         exglobal_forecast.sh
 # Script description:  Runs a global FV3GFS model forecast
 #
 # Author:   Fanglin Yang       Org: NCEP/EMC       Date: 2016-11-15
@@ -434,8 +434,14 @@ if [ $cplwav = ".true." ]; then
 
   for wavGRD in $waveGRD ; do
     if [ $RERUN = "NO" ]; then
+      if [ ! -f ${WRDIR}/${sPDY}.${scyc}0000.restart.${wavGRD} ]; then 
+        echo "WARNING: NON-FATAL ERROR wave IC is missing, will start from rest"
+      fi
       $NLN ${WRDIR}/${sPDY}.${scyc}0000.restart.${wavGRD} $DATA/restart.${wavGRD}
     else
+      if [ ! -f ${RSTDIR_WAVE}/${PDYT}.${cyct}0000.restart.${wavGRD} ]; then
+        echo "WARNING: NON-FATAL ERROR wave IC is missing, will start from rest"
+      fi
       $NLN ${RSTDIR_WAVE}/${PDYT}.${cyct}0000.restart.${wavGRD} $DATA/restart.${wavGRD}
     fi
     eval $NLN $datwave/${wavprfx}.log.${wavGRD}.${PDY}${cyc} log.${wavGRD}
