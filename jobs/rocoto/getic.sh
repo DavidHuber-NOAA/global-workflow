@@ -36,166 +36,68 @@ status=$?
 ###############################################################
 # Set script and dependency variables
 
-yyyy=$(echo $CDATE | cut -c1-4)
+yy=$(echo $CDATE | cut -c1-4)
 mm=$(echo $CDATE | cut -c5-6)
 dd=$(echo $CDATE | cut -c7-8)
-cyc=${cyc:-$(echo $CDATE | cut -c9-10)}
+hh=${cyc:-$(echo $CDATE | cut -c9-10)}
 
-export COMPONENT=${COMPONENT:-atmos}
+EXTRACT_DIR=${PTMP}/gdas.init_${CDATE}/input
+OUTDIR=${PTMP}/gdas.init_${CDATE}/output
+PRODHPSSDIR=/NCEPPROD/hpssprod/runhistory/rh${yy}/${yy}${mm}/${yy}${mm}${dd}
 
-###############################################################
+COMPONENT="atmos"
 
-target_dir=$ICSDIR/$CDATE/$CDUMP
-mkdir -p $target_dir
-cd $target_dir
+gfs_ver=v16
+GETICSH=${GDASINIT_DIR}/get_v16.data.sh
 
-# Initialize return code to 0
-rc=1
-
-if [ $ics_from = "opsgfs" ]; then
-
-    # Location of production tarballs on HPSS
-    hpssdir="/NCEPPROD/hpssprod/runhistory/rh$yyyy/$yyyy$mm/$PDY"
-
-    # Handle nemsio and pre-nemsio GFS filenames
-    if [ $CDATE -le "2019061118" ]; then #GFSv14
-        # Add CDUMP.PDY/CYC to target_dir
-        target_dir=$ICSDIR/$CDATE/$CDUMP/${CDUMP}.$yyyy$mm$dd/$cyc
-        mkdir -p $target_dir
-        cd $target_dir
-
-        nfanal=4
-        fanal[1]="./${CDUMP}.t${cyc}z.atmanl.nemsio"
-        fanal[2]="./${CDUMP}.t${cyc}z.sfcanl.nemsio"
-        fanal[3]="./${CDUMP}.t${cyc}z.nstanl.nemsio"
-        fanal[4]="./${CDUMP}.t${cyc}z.pgrbanl"
-        flanal="${fanal[1]} ${fanal[2]} ${fanal[3]} ${fanal[4]}"
-        tarpref="gpfs_hps_nco_ops_com"
-        if [ $CDUMP = "gdas" ]; then
-            tarball="$hpssdir/${tarpref}_gfs_prod_${CDUMP}.${CDATE}.tar"
-        elif [ $CDUMP = "gfs" ]; then
-            tarball="$hpssdir/${tarpref}_gfs_prod_${CDUMP}.${CDATE}.anl.tar"
-        fi
-    else #GFSv15
-        nfanal=2
-        fanal[1]="./${CDUMP}.$yyyy$mm$dd/$cyc/${CDUMP}.t${cyc}z.atmanl.nemsio"
-        fanal[2]="./${CDUMP}.$yyyy$mm$dd/$cyc/${CDUMP}.t${cyc}z.sfcanl.nemsio"
-        flanal="${fanal[1]} ${fanal[2]}"
-        if [ $CDATE -ge "2020022600" ]; then 
-          tarpref="com"
-        else 
-          tarpref="gpfs_dell1_nco_ops_com"
-        fi
-        if [ $CDUMP = "gdas" ]; then
-            tarball="$hpssdir/${tarpref}_gfs_prod_${CDUMP}.${yyyy}${mm}${dd}_${cyc}.${CDUMP}_nemsio.tar"
-        elif [ $CDUMP = "gfs" ]; then
-            tarball="$hpssdir/${tarpref}_gfs_prod_${CDUMP}.${yyyy}${mm}${dd}_${cyc}.${CDUMP}_nemsioa.tar"
-        fi
-    fi
-
-    # First check the COMROOT for files, if present copy over
-    if [ $machine = "WCOSS_C" ]; then
-
-        # Need COMROOT
-        module load prod_envir/1.1.0 >> /dev/null 2>&1
-
-        comdir="$COMROOT/$CDUMP/prod/$CDUMP.$PDY"
-        rc=0
-        for i in `seq 1 $nfanal`; do
-            if [ -f $comdir/${fanal[i]} ]; then
-                $NCP $comdir/${fanal[i]} ${fanal[i]}
-            else
-                rb=1 ; ((rc+=rb))
-            fi
-        done
-
-    fi
-
-    # Get initial conditions from HPSS
-    if [ $rc -ne 0 ]; then
-
-        # check if the tarball exists
-        hsi ls -l $tarball
-        rc=$?
-        if [ $rc -ne 0 ]; then
-            echo "$tarball does not exist and should, ABORT!"
-            exit $rc
-        fi
-        # get the tarball
-        htar -xvf $tarball $flanal
-        rc=$?
-        if [ $rc -ne 0 ]; then
-            echo "untarring $tarball failed, ABORT!"
-            exit $rc
-        fi
-
-        # Move the files to legacy EMC filenames
-        if [ $CDATE -le "2019061118" ]; then #GFSv14
-           for i in `seq 1 $nfanal`; do
-             $NMV ${fanal[i]} ${flanal[i]}
-           done
-        fi
-
-    fi
-
-    # If found, exit out
-    if [ $rc -ne 0 ]; then
-        echo "Unable to obtain operational GFS initial conditions, ABORT!"
-        exit 1
-    fi
-
-elif [ $ics_from = "pargfs" ]; then
-
-    # Add CDUMP.PDY/CYC to target_dir
-    target_dir=$ICSDIR/$CDATE/$CDUMP/${CDUMP}.$yyyy$mm$dd/$cyc
-    mkdir -p $target_dir
-    cd $target_dir
-
-    # Filenames in parallel
-    nfanal=4
-    fanal[1]="gfnanl.${CDUMP}.$CDATE"
-    fanal[2]="sfnanl.${CDUMP}.$CDATE"
-    fanal[3]="nsnanl.${CDUMP}.$CDATE"
-    fanal[4]="pgbanl.${CDUMP}.$CDATE"
-    flanal="${fanal[1]} ${fanal[2]} ${fanal[3]} ${fanal[4]}"
-
-    # Get initial conditions from HPSS from retrospective parallel
-    tarball="$HPSS_PAR_PATH/${CDATE}${CDUMP}.tar"
-
-    # check if the tarball exists
-    hsi ls -l $tarball
-    rc=$?
-    if [ $rc -ne 0 ]; then
-        echo "$tarball does not exist and should, ABORT!"
-        exit $rc
-    fi
-    # get the tarball
-    htar -xvf $tarball $flanal
-    rc=$?
-    if [ $rc -ne 0 ]; then
-        echo "untarring $tarball failed, ABORT!"
-        exit $rc
-    fi
-
-    # If found, exit out
-    if [ $rc -ne 0 ]; then
-        echo "Unable to obtain parallel GFS initial conditions, ABORT!"
-        exit 1
-    fi
-
-else
-
-    echo "ics_from = $ics_from is not supported, ABORT!"
-    exit 1
-
+# No ENKF data prior to 2012/05/21/00z
+if [ $yy$mm$dd$hh -lt 2012052100 ]; then
+  set +x
+  echo FATAL ERROR: SCRIPTS DO NOT SUPPORT OLD GFS DATA
+  exit 2
+elif [ $yy$mm$dd$hh -lt 2016051000 ]; then
+  gfs_ver=v12
+  GETICSH=${GDASINIT_DIR}/get_pre-v14.data.sh
+elif [ $yy$mm$dd$hh -lt 2017072000 ]; then
+  gfs_ver=v13
+  GETICSH=${GDASINIT_DIR}/get_pre-v14.data.sh
+elif [ $yy$mm$dd$hh -lt 2019061200 ]; then
+  gfs_ver=v14
+  GETICSH=${GDASINIT_DIR}/get_${gfs_ver}.data.sh
+elif [ $yy$mm$dd$hh -lt 2021020300 ]; then
+  gfs_ver=v15
+  GETICSH=${GDASINIT_DIR}/get_${gfs_ver}.data.sh
 fi
-###############################################################
 
-# Copy pgbanl file to COMROT for verification - GFSv14 only
-if [ $CDATE -le "2019061118" ]; then #GFSv14
-  COMROT=$ROTDIR/${CDUMP}.$PDY/$cyc/$COMPONENT
-  [[ ! -d $COMROT ]] && mkdir -p $COMROT
-  $NCP ${fanal[4]} $COMROT/${CDUMP}.t${cyc}z.pgrbanl
+export EXTRACT_DIR yy mm dd hh UFS_DIR OUTDIR CRES_HIRES CRES_ENKF
+export LEVS gfs_ver
+
+# Run get data script
+if [ ! -d $EXTRACT_DIR ]; then mkdir -p $EXTRACT_DIR ; fi
+sh ${GETICSH} ${CDUMP}
+status=$?
+[[ $status -ne 0 ]] && exit $status
+
+# Copy pgbanl file to ROTDIR for verification/archival - v14+
+cd $EXTRACT_DIR
+OUTDIR2=${ROTDIR}/gfs.${yy}${mm}${dd}/${hh}/${COMPONENT}
+if [ ! -d ${OUTDIR2} ]; then mkdir -p ${OUTDIR2} ; fi
+if [ $gfs_ver = v14 ]; then
+  for grid in 0p25 0p50 1p00
+  do
+    tarball=gpfs_hps_nco_ops_com_gfs_prod_gfs.${yy}${mm}${dd}_${hh}.pgrb2_${grid}.tar
+    file=gfs.t${hh}z.pgrb2.${grid}.anl
+    htar -xvf ${PRODHPSSDIR}/${tarball} ./gfs.${yy}${mm}${dd}/${hh}/${file}
+    mv ${EXTRACT_DIR}/gfs.${yy}${mm}${dd}/${hh}/${file} ${OUTDIR2}/${file}
+  done
+elif [ $gfs_ver = v15 ]; then
+  tarball=com_gfs_prod_gfs.${yy}${mm}${dd}_${hh}.gfs_pgrb2.tar  
+  for grid in 0p25 0p50 1p00
+  do
+    file=gfs.t${hh}z.pgrb2.${grid}.anl
+    htar -xvf ${PRODHPSSDIR}/${tarball} ./gfs.${yy}${mm}${dd}/${hh}/${file}
+    mv ${EXTRACT_DIR}/gfs.${yy}${mm}${dd}/${hh}/${file} ${OUTDIR2}/${file}
+  done
 fi
 
 ###############################################################
