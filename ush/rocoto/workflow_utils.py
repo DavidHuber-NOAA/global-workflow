@@ -248,7 +248,10 @@ def create_firstcyc_task(cdump='gdas'):
                  'dependency': dependencies}
 
     if get_scheduler(detectMachine()) in ['slurm']:
-        task_dict['queue'] = '&QUEUE;'
+        if detectMachine() in ['S4']:
+            task_dict['queue'] = '&QUEUE_SERVICE;'
+        else
+            task_dict['queue'] = '&QUEUE;'
         task_dict['partition'] = '&PARTITION_SERVICE;'
 
     task = rocoto.create_task(task_dict)

@@ -247,7 +247,11 @@ link initial condition files from $ICSDIR to $COMROT'''
       noscrub = '$HOMEDIR'
       account = 'star'
       queue_service = 'serial'
-      partition_batch = partition   # Can be s4 or ivy (s4 by default)
+      # Set partition_batch; can be s4 or ivy (s4 by default)
+      if partition is not None:
+         partition_batch = partition
+      else:
+         partition_batch = 's4'
       if partition == "ivy":
          queue = 'ivy'
       else:
