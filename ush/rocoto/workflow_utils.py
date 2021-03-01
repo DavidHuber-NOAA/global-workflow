@@ -250,7 +250,7 @@ def create_firstcyc_task(cdump='gdas'):
     if get_scheduler(detectMachine()) in ['slurm']:
         if detectMachine() in ['S4']:
             task_dict['queue'] = '&QUEUE_SERVICE;'
-        else
+        else:
             task_dict['queue'] = '&QUEUE;'
         task_dict['partition'] = '&PARTITION_SERVICE;'
 
