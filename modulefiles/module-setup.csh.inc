@@ -22,8 +22,9 @@ else if ( { test -d /work } ) then
 else if ( { test -d /data/prod } ) then
     # We are on SSEC S4
     if ( ! { module help >& /dev/null } ) then
-        source /opt/apps/lmod/init/$__ms_shell
+        source /opt/apps/lmod/lmod/init/$__ms_shell
     endif
+    source /etc/profile
     module purge
 else if ( { test -d /gpfs/hps -a -e /etc/SuSE-release } ) then
     # We are on NOAA Luna or Surge
