@@ -78,6 +78,11 @@ case $case_in in
         export npe_wav=140
         export npe_wav_gfs=140
         export nth_fv3=4
+        if [[ "$CASE_ENKF" == "C192" && "$machine" == "S4" ]]; then
+           export layout_x=4
+           export layout_y=4
+           export nth_fv3=1
+        fi
         export cdmbgwd="0.23,1.5,1.0,1.0"  # mountain blocking, ogwd, cgwd, cgwd src scaling
         export WRITE_GROUP=1
         export WRTTASK_PER_GROUP=$npe_node_max
