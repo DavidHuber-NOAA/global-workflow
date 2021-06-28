@@ -8,9 +8,10 @@ if [ $# -ne 1 ]; then
 
     echo "Must specify an input task argument to set resource variables!"
     echo "argument can be any one of the following:"
+    echo "getic init"
     echo "anal analcalc analdiag gldas fcst post vrfy metp arch echgres"
     echo "eobs ediag eomg eupd ecen esfc efcs epos earc"
-    echo "waveinit waveprep wavepostsbs wavepostbndpnt wavepostpnt"
+    echo "waveinit waveprep wavepostsbs wavepostbndpnt wavepostbndpntbll wavepostpnt"
     echo "wavegempak waveawipsbulls waveawipsgridded"
     echo "postsnd awips gempak"
     echo "wafs wafsgrib2 wafsblending wafsgrib20p25 wafsblending0p25 wafsgcip"
@@ -75,6 +76,14 @@ elif [ $step = "wavepostbndpnt" ]; then
     export nth_wavepostbndpnt=1
     export npe_node_wavepostbndpnt=$(echo "$npe_node_max / $nth_wavepostbndpnt" | bc)
     export NTASKS=${npe_wavepostbndpnt}
+
+elif [ $step = "wavepostbndpntbll" ]; then
+
+    export wtime_wavepostbndpntbll="01:00:00"
+    export npe_wavepostbndpntbll=280
+    export nth_wavepostbndpntbll=1
+    export npe_node_wavepostbndpntbll=$(echo "$npe_node_max / $nth_wavepostbndpntbll" | bc)
+    export NTASKS=${npe_wavepostbndpntbll}
 
 elif [ $step = "wavepostpnt" ]; then
 
@@ -176,11 +185,11 @@ elif [ $step = "post" ]; then
 
     export wtime_post="02:00:00"
     export wtime_post_gfs="06:00:00"
-    export npe_post=96
+    export npe_post=112
     export nth_post=1
     export npe_node_post=12
     export npe_node_dwn=$npe_node_max
-    if [[ "$machine" = "WCOSS_DELL_P3" ]]; then export npe_node_post=14 ; fi
+    if [[ "$machine" = "WCOSS_DELL_P3" ]]; then export npe_node_post=28 ; fi
     if [[ "$machine" == "WCOSS_C" ]]; then export memory_post="3072M"; fi
 
 elif [ $step = "wafs" ]; then
@@ -262,6 +271,13 @@ elif [ $step = "echgres" ]; then
     export nth_echgres=$npe_node_max
     export npe_node_echgres=1
 
+elif [ $step = "init" ]; then
+
+    export wtime_init="00:30:00"
+    export npe_init=24
+    export nth_init=1
+    export npe_node_init=6
+
 elif [ $step = "arch" -o $step = "earc" -o $step = "getic" ]; then
 
     eval "export wtime_$step='06:00:00'"
@@ -301,7 +317,7 @@ elif [ $step = "eupd" ]; then
 
     export wtime_eupd="00:30:00"
     if [ $CASE = "C768" ]; then
-      export npe_eupd=960
+      export npe_eupd=480
       export nth_eupd=6
       if [[ "$machine" = "WCOSS_DELL_P3" ]]; then
         export nth_eupd=7
@@ -355,7 +371,11 @@ elif [ $step = "esfc" ]; then
 
 elif [ $step = "efcs" ]; then
 
-    export wtime_efcs="00:40:00"
+    if [ $CASE = "C768" ]; then
+      export wtime_efcs="01:00:00"
+    else
+      export wtime_efcs="00:40:00"
+    fi
     export npe_efcs=$(echo "$layout_x * $layout_y * 6" | bc)
     export nth_efcs=${nth_fv3:-2}
     export npe_node_efcs=$(echo "$npe_node_max / $nth_efcs" | bc)

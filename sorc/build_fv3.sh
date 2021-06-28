@@ -22,5 +22,7 @@ if [ $target = orion ]; then target=orion.intel ; fi
 cd fv3gfs.fd/
 FV3=$( pwd -P )/FV3
 cd tests/
-./compile.sh "$FV3" "$target" "WW3=Y 32BIT=Y" 1
-mv -f fv3_1.exe ../NEMS/exe/global_fv3gfs.x
+if [ ! -d ../NEMS/exe ]; then mkdir ../NEMS/exe ; fi
+
+./compile.sh "$target" "APP=ATM CCPP=Y 32BIT=Y SUITES=FV3_GFS_v16,FV3_GFS_v16_RRTMGP" 2 YES NO
+mv -f fv3_2.exe ../NEMS/exe/global_fv3gfs.x

@@ -105,6 +105,7 @@ def edit_baseconfig():
                     .replace('@QUEUE_SERVICE@', queue_service) \
                     .replace('@PARTITION_BATCH@', partition_batch) \
                     .replace('@EXP_WARM_START@', exp_warm_start) \
+                    .replace('@MODE@', 'cycled') \
                     .replace('@CHGRP_RSTPROD@', chgrp_rstprod) \
                     .replace('@CHGRP_CMD@', chgrp_cmd) \
                     .replace('@HPSSARCH@', hpssarch) \
@@ -223,7 +224,7 @@ link initial condition files from $ICSDIR to $COMROT'''
       base_svn = '/scratch1/NCEPDEV/global/glopara/svn'
       dmpdir = '/scratch1/NCEPDEV/global/glopara/dump'
       nwprod = '/scratch1/NCEPDEV/global/glopara/nwpara'
-      comroot = '/scratch1/NCEPDEV/rstprod/com'
+      comroot = '/scratch1/NCEPDEV/global/glopara/com'
       homedir = '/scratch1/NCEPDEV/global/$USER'
       stmp = '/scratch1/NCEPDEV/stmp2/$USER'
       ptmp = '/scratch1/NCEPDEV/stmp4/$USER'
@@ -240,6 +241,7 @@ link initial condition files from $ICSDIR to $COMROT'''
       base_svn = '/work/noaa/global/glopara/svn'
       dmpdir = '/work/noaa/global/glopara/dump'
       nwprod = '/work/noaa/global/glopara/nwpara'
+      comroot = '/work/noaa/global/glopara/com'
       homedir = '/work/noaa/global/$USER'
       stmp = '/work/noaa/stmp/$USER'
       ptmp = '/work/noaa/stmp/$USER'

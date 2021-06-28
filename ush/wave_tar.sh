@@ -36,6 +36,7 @@
   cd $DATA
   postmsg "$jlogfile" "Making TAR FILE"
 
+  alertName=`echo $RUN|tr [a-z] [A-Z]`
 
   set +x
   echo ' '
@@ -69,6 +70,9 @@
 
   filext=$type
   if [ "$type" = "ibp" ]; then filext='spec'; fi
+  if [ "$type" = "ibpbull" ]; then filext='bull'; fi
+  if [ "$type" = "ibpcbull" ]; then filext='cbull'; fi
+
 
   rm -rf TAR_${filext}_$ID 
   mkdir  TAR_${filext}_$ID
@@ -91,7 +95,7 @@
     exit 2
   fi
 
-  cd ${STA_DIR}/${type}
+  cd ${STA_DIR}/${filext}
 
 # --------------------------------------------------------------------------- #
 # 2.  Generate tar file (spectral files are compressed)
@@ -205,6 +209,7 @@
     exit 4
   fi
 
+  # if [ "$SENDDBN" = 'YES' -a  $type != "ibp" ]
   if [ "$SENDDBN" = 'YES' ]
   then
     set +x
@@ -212,7 +217,7 @@
     echo "   Alerting TAR file as $COMOUT/station/${file_name}"
     echo ' '
     [[ "$LOUD" = YES ]] && set -x
-    $DBNROOT/bin/dbn_alert MODEL OMBWAVE $job $COMOUT/station/${file_name}
+    $DBNROOT/bin/dbn_alert MODEL ${alertName}_WAVE_TAR $job $COMOUT/station/${file_name}
   fi
 
 # --------------------------------------------------------------------------- #

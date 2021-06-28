@@ -31,16 +31,17 @@ pwd=$(pwd -P)
 #--model fix fields
 #------------------------------
 if [ $machine == "cray" ]; then
-    FIX_DIR="/gpfs/hps3/emc/global/noscrub/emc.glopara/git/fv3gfs/fix_nco_gfsv16"
+    FIX_DIR="/gpfs/hps3/emc/global/noscrub/emc.glopara/git/fv3gfs/fix"
 elif [ $machine = "dell" ]; then
-    FIX_DIR="/gpfs/dell2/emc/modeling/noscrub/emc.glopara/git/fv3gfs/fix_nco_gfsv16"
+    FIX_DIR="/gpfs/dell2/emc/modeling/noscrub/emc.glopara/git/fv3gfs/fix"
 elif [ $machine = "hera" ]; then
-    FIX_DIR="/scratch1/NCEPDEV/global/glopara/fix_nco_gfsv16"
+    FIX_DIR="/scratch1/NCEPDEV/global/glopara/fix"
 elif [ $machine = "orion" ]; then
-    FIX_DIR="/work/noaa/global/glopara/fix_nco_gfsv16"
+    FIX_DIR="/work/noaa/global/glopara/fix"
 fi
 cd ${pwd}/../fix                ||exit 8
-for dir in fix_am fix_fv3_gmted2010 fix_gldas fix_orog fix_verif fix_wave_gfs ; do
+dirs=`ls $FIX_DIR`
+for dir in $dirs ; do
     if [ -d $dir ]; then
       [[ $RUN_ENVIR = nco ]] && chmod -R 755 $dir
       rm -rf $dir
@@ -49,7 +50,7 @@ for dir in fix_am fix_fv3_gmted2010 fix_gldas fix_orog fix_verif fix_wave_gfs ; 
 done
 
 if [ -d ${pwd}/ufs_utils.fd ]; then
-  cd ${pwd}/ufs_utils.fd/sorc
+  cd ${pwd}/ufs_utils.fd/fix
   ./link_fixdirs.sh $RUN_ENVIR $machine
 fi
 
@@ -59,7 +60,7 @@ fi
 cd ${pwd}/../jobs               ||exit 8
     $LINK ../sorc/gfs_post.fd/jobs/JGLOBAL_ATMOS_POST_MANAGER      .
     $LINK ../sorc/gfs_post.fd/jobs/JGLOBAL_ATMOS_NCEPPOST          .
-    $LINK ../sorc/gldas.fd/jobs/JGDAS_ATMOS_GLDAS            .             
+    $LINK ../sorc/gldas.fd/jobs/JGDAS_ATMOS_GLDAS            .
 cd ${pwd}/../parm               ||exit 8
     [[ -d post ]] && rm -rf post
     $LINK ../sorc/gfs_post.fd/parm                           post
@@ -77,8 +78,8 @@ cd ${pwd}/../ush                ||exit 8
         $LINK ../sorc/gfs_post.fd/ush/$file                  .
     done
     for file in emcsfc_ice_blend.sh  fv3gfs_driver_grid.sh  fv3gfs_make_orog.sh  global_cycle_driver.sh \
-        emcsfc_snow.sh  fv3gfs_filter_topo.sh  global_chgres_driver.sh  global_cycle.sh \
-        fv3gfs_chgres.sh  fv3gfs_make_grid.sh  global_chgres.sh  ; do
+        emcsfc_snow.sh  fv3gfs_filter_topo.sh  global_cycle.sh \
+        chgres_cube.sh  fv3gfs_make_grid.sh ; do
         $LINK ../sorc/ufs_utils.fd/ush/$file                  .
     done
     for file in gldas_archive.sh  gldas_forcing.sh gldas_get_data.sh  gldas_process_data.sh gldas_liscrd.sh  gldas_post.sh ; do
@@ -120,7 +121,7 @@ cd ${pwd}/../jobs               ||exit 8
     $LINK ../sorc/gsi.fd/jobs/JGDAS_ENKF_DIAG               .
     $LINK ../sorc/gsi.fd/jobs/JGDAS_ENKF_UPDATE             .
     $LINK ../sorc/gsi.fd/jobs/JGDAS_ENKF_ECEN               .
-    $LINK ../sorc/gsi.fd/jobs/JGDAS_ENKF_SFC                .    
+    $LINK ../sorc/gsi.fd/jobs/JGDAS_ENKF_SFC                .
     $LINK ../sorc/gsi.fd/jobs/JGDAS_ENKF_FCST               .
     $LINK ../sorc/gsi.fd/jobs/JGDAS_ENKF_POST               .
     $LINK ../sorc/gsi.fd/jobs/JGDAS_ATMOS_CHGRES_FORENKF    .
@@ -195,31 +196,40 @@ cd ${pwd}/../ush                ||exit 8
 #--link executables 
 #------------------------------
 
+if [ ! -d $pwd/../exec ]; then mkdir $pwd/../exec ; fi
 cd $pwd/../exec
+
+[[ -s gaussian_sfcanl.exe ]] && rm -f gaussian_sfcanl.exe
+$LINK ../sorc/install/bin/gaussian_sfcanl.x gaussian_sfcanl.exe
+for workflowexec in fbwndgfs gfs_bufr regrid_nemsio supvit syndat_getjtbul \
+    syndat_maksynrc syndat_qctropcy tocsbufr ; do
+  [[ -s $workflowexec ]] && rm -f $workflowexec
+  $LINK ../sorc/install/bin/${workflowexec}.x $workflowexec
+done
+for workflowexec in enkf_chgres_recenter.x enkf_chgres_recenter_nc.x fv3nc2nemsio.x \
+    tave.x vint.x ; do
+  [[ -s $workflowexec ]] && rm -f $workflowexec
+  $LINK ../sorc/install/bin/$workflowexec .
+done
+
 [[ -s global_fv3gfs.x ]] && rm -f global_fv3gfs.x
 $LINK ../sorc/fv3gfs.fd/NEMS/exe/global_fv3gfs.x .
-if [ -d ../sorc/fv3gfs.fd/WW3/exec ]; then # Wave execs
-  for waveexe in ww3_gint ww3_grib ww3_grid ww3_multi ww3_ounf ww3_ounp ww3_outf ww3_outp ww3_prep ww3_prnc; do
-    [[ -s $waveexe ]] && rm -f $waveexe
-    $LINK ../sorc/fv3gfs.fd/WW3/exec/$waveexe .
-  done
-fi
 
 [[ -s gfs_ncep_post ]] && rm -f gfs_ncep_post
-$LINK ../sorc/gfs_post.fd/exec/ncep_post gfs_ncep_post
+$LINK ../sorc/gfs_post.fd/exec/upp.x gfs_ncep_post
 
 if [ -d ${pwd}/gfs_wafs.fd ]; then 
     for wafsexe in \
-          wafs_awc_wafavn  wafs_blending  wafs_blending_0p25 \
-          wafs_cnvgrib2  wafs_gcip  wafs_grib2_0p25 \
-          wafs_makewafs  wafs_setmissing; do
+          wafs_awc_wafavn.x  wafs_blending.x  wafs_blending_0p25.x \
+          wafs_cnvgrib2.x  wafs_gcip.x  wafs_grib2_0p25.x \
+          wafs_makewafs.x  wafs_setmissing.x ; do
         [[ -s $wafsexe ]] && rm -f $wafsexe
         $LINK ../sorc/gfs_wafs.fd/exec/$wafsexe .
     done
 fi
 
 for ufs_utilsexe in \
-     emcsfc_ice_blend  emcsfc_snow2mdl  global_chgres  global_cycle ; do
+     emcsfc_ice_blend  emcsfc_snow2mdl  global_cycle ; do
     [[ -s $ufs_utilsexe ]] && rm -f $ufs_utilsexe
     $LINK ../sorc/ufs_utils.fd/exec/$ufs_utilsexe .
 done
@@ -295,13 +305,10 @@ cd ${pwd}/../sorc   ||   exit 8
 
     $SLINK gfs_post.fd/sorc/ncep_post.fd                                                   gfs_ncep_post.fd
 
-    $SLINK ufs_utils.fd/sorc/fre-nctools.fd/tools/shave.fd                                 shave.fd
-    for prog in filter_topo fregrid make_hgrid make_solo_mosaic ; do
+    for prog in fregrid make_hgrid make_solo_mosaic ; do
         $SLINK ufs_utils.fd/sorc/fre-nctools.fd/tools/$prog                                ${prog}.fd                                
     done
-    for prog in  global_cycle.fd   nemsio_read.fd  nemsio_chgdate.fd \
-        emcsfc_ice_blend.fd  nst_tf_chg.fd \
-        emcsfc_snow2mdl.fd   global_chgres.fd  nemsio_get.fd    orog.fd ;do
+    for prog in global_cycle.fd emcsfc_ice_blend.fd emcsfc_snow2mdl.fd ; do
         $SLINK ufs_utils.fd/sorc/$prog                                                     $prog
     done
 
@@ -309,8 +316,10 @@ cd ${pwd}/../sorc   ||   exit 8
     if [ -d ${pwd}/gfs_wafs.fd ]; then 
         $SLINK gfs_wafs.fd/sorc/wafs_awc_wafavn.fd                                              wafs_awc_wafavn.fd
         $SLINK gfs_wafs.fd/sorc/wafs_blending.fd                                                wafs_blending.fd
+        $SLINK gfs_wafs.fd/sorc/wafs_blending_0p25.fd                                           wafs_blending_0p25.fd
         $SLINK gfs_wafs.fd/sorc/wafs_cnvgrib2.fd                                                wafs_cnvgrib2.fd
         $SLINK gfs_wafs.fd/sorc/wafs_gcip.fd                                                    wafs_gcip.fd
+        $SLINK gfs_wafs.fd/sorc/wafs_grib2_0p25.fd                                              wafs_grib2_0p25.fd
         $SLINK gfs_wafs.fd/sorc/wafs_makewafs.fd                                                wafs_makewafs.fd
         $SLINK gfs_wafs.fd/sorc/wafs_setmissing.fd                                              wafs_setmissing.fd
     fi

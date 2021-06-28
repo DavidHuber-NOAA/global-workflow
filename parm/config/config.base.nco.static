@@ -64,8 +64,8 @@ export REALTIME="YES"
 export FIXgsi="$HOMEgfs/fix/fix_gsi"
 export HOMEfv3gfs="$HOMEgfs/sorc/fv3gfs.fd"
 export HOMEpost="$HOMEgfs"
-export HOMEobsproc_prep="$BASE_GIT/obsproc/gfsv16b/obsproc_prep.iss70457.netcdfhistory"
-export HOMEobsproc_network="$BASE_GIT/obsproc/gfsv16b/obsproc_global.iss71402.supportGFSv16"
+export HOMEobsproc_prep="$NWPROD/obsproc_prep.v5.4.0"
+export HOMEobsproc_network="$NWPROD/obsproc_global.v3.4.1"
 export HOMEobsproc_global=$HOMEobsproc_network
 export BASE_VERIF="$BASE_GIT/verif/global/tags/vsdb"
 
@@ -74,7 +74,6 @@ export NCP="/bin/cp -p"
 export NMV="/bin/mv"
 export NLN="/bin/ln -sf"
 export VERBOSE="YES"
-export KEEPDATA="NO"
 export CHGRP_CMD="chgrp rstprod"
 export NEMSIOGET="$HOMEgfs/exec/nemsio_get"
 export NCDUMP="$NETCDF/bin/ncdump"
@@ -106,7 +105,6 @@ export COMOUTatmos=${ROTDIR}/${CDUMP}.${PDY}/${cyc}/atmos
 export COMINwave=${ROTDIR}/${CDUMP}.${PDY}/${cyc}/wave
 export COMOUTwave=${ROTDIR}/${CDUMP}.${PDY}/${cyc}/wave
 
-export jlogfile="${EXPDIR}/logs/jlogfile"
 export ERRSCRIPT=${ERRSCRIPT:-'eval [[ $err = 0 ]]'}
 export LOGSCRIPT=${LOGSCRIPT:-""}
 #export ERRSCRIPT=${ERRSCRIPT:-"err_chk"}
@@ -125,6 +123,10 @@ export DBNROOT=${DBNROOT:-${UTILROOT}/fakedbn}
 export LEVS=128
 export CASE="C768"
 export CASE_ENKF="C384"
+
+# Run with CCPP physics
+export RUN_CCPP="YES"
+export CCPP_SUITE="FV3_GFS_v16"
 
 # Surface cycle update frequency
 if [[ "$CDUMP" == "gdas" ]] ; then
