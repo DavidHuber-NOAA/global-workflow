@@ -364,7 +364,7 @@ done # loop over analysis times in window
 ################################################################################
 # Postprocessing
 cd $pwd
-[[ $mkdata = "YES" ]] && rm -rf $DATA
+#[[ $mkdata = "YES" ]] && rm -rf $DATA
 
 
 exit $err

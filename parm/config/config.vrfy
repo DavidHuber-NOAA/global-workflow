@@ -45,6 +45,8 @@ if [ $VRFYFITS = "YES" ]; then
         export PREPQFITSH="$fitdir/subfits_hera_slurm"
     elif [ $machine = "S4" ]; then
         export PREPQFITSH="$fitdir/subfits_s4_slurm"
+    elif [ $machine = "GCP" ]; then
+        export PREPQFITSH="$fitdir/subfits_gcp_slurm"
     elif [ $machine = "ORION" ]; then
         export PREPQFITSH="$fitdir/subfits_orion_netcdf"
     else

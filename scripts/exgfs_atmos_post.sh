@@ -237,6 +237,8 @@ else   ## not_anl if_stime
 
   for fhr in ${post_times}; do
     echo "Start processing fhr=${post_times}"
+
+    d_fhr=$((10#$fhr))
     ###############################
     # Start Looping for the 
     # existence of the restart files
@@ -274,7 +276,7 @@ else   ## not_anl if_stime
       export FLXINP=flxfile
     fi
 
-    if (( fhr > 0 )); then
+    if (( d_fhr > 0 )); then
       export IGEN=${IGEN_FCST}
     else
       export IGEN=${IGEN_ANL}
@@ -294,20 +296,20 @@ else   ## not_anl if_stime
 
       if [ "${RUN}" = "gfs" ]; then
         export IGEN=${IGEN_GFS}
-        if (( fhr > 0 )); then export IGEN=${IGEN_FCST} ; fi
+        if (( d_fhr > 0 )); then export IGEN=${IGEN_FCST} ; fi
       else
         export IGEN=${IGEN_GDAS_ANL}
-        if (( fhr > 0 )); then export IGEN=${IGEN_FCST} ; fi
+        if (( d_fhr > 0 )); then export IGEN=${IGEN_FCST} ; fi
       fi
       if [[ "${RUN}" = "gfs" ]]; then
-        if (( fhr == 0 )); then
+        if (( d_fhr == 0 )); then
           export PostFlatFile="${PARMpost}/postxconfig-NT-GFS-F00.txt"
           export CTLFILE="${PARMpost}/postcntrl_gfs_f00.xml"
         else
           export CTLFILE="${CTLFILEGFS:-${PARMpost}/postcntrl_gfs.xml}"
         fi
       else
-        if (( fhr == 0 )); then
+        if (( d_fhr == 0 )); then
           export PostFlatFile="${PARMpost}/postxconfig-NT-GFS-F00.txt"
           export CTLFILE="${CTLFILEGFS:-${PARMpost}/postcntrl_gfs_f00.xml}"
         else
@@ -388,7 +390,7 @@ else   ## not_anl if_stime
     # use post to generate GFS Grib2 Flux file as model generated Flux file
     # will be in nemsio format after FY17 upgrade.
     if (( OUTTYP == 4 )) && [[ "${FLXF}" == "YES" ]]; then
-      if (( fhr == 0 )); then
+      if (( d_fhr == 0 )); then
         export PostFlatFile="${PARMpost}/postxconfig-NT-GFS-FLUX-F00.txt"
         export CTLFILE="${PARMpost}/postcntrl_gfs_flux_f00.xml"
       else
@@ -495,9 +497,9 @@ else   ## not_anl if_stime
         #   hourly if fhr<=24
         #   every 3 forecast hour if 24<fhr<=48
         #   every 6 forecast hour if 48<fhr<=120
-        if (( fhr <= 24 )); then
+        if (( d_fhr <= 24 )); then
           ${POSTGPSH}
-        elif (( fhr <= 48 )); then
+        elif (( d_fhr <= 48 )); then
           if (( 10#${fhr}%3 == 0 )); then
             ${POSTGPSH}
           fi

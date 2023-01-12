@@ -1,0 +1,23 @@
+base_git: '/scratch/save/glopara/git'
+dmpdir: '/scratch/save/glopara/dump'
+packageroot: '/scratch/save/glopara/nwpara'
+comroot: '/scratch/save/glopara/com'
+cominsyn: '${COMROOT}/gfs/prod/syndat'
+homedir: '/scratch/work/home'
+stmp: '/scratch/work/stmp'
+ptmp: '/scratch/work/ptmp'
+noscrub: $HOMEDIR
+account: root
+scheduler: slurm
+queue: normal
+queue_service: normal
+partition_batch: c2
+partition_service: c22
+chgrp_rstprod: 'NO'
+chgrp_cmd: 'ls'
+hpssarch: 'NO'
+localarch: 'NO'
+atardir: '/scratch/work/archive_rotdir/$USER/$PSLOT'
+make_nsstbufr: 'YES'
+make_acftbufr: 'YES'
+supported_resolutions: ['C768', 'C384', 'C192', 'C96', 'C48']

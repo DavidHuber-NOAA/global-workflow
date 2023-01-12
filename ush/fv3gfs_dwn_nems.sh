@@ -33,9 +33,9 @@ export opt25=":(APCP|ACPCP|PRATE|CPRAT):"
 export opt26=' -set_grib_max_bits 25 -fi -if '
 export opt27=":(APCP|ACPCP|PRATE|CPRAT|DZDT):"
 export opt28=' -new_grid_interpolation budget -fi '
-if [ $machine = "S4" ]; then
+#if [ $machine = "S4" ]; then
   export optncpu=' -ncpu 1 '
-fi
+#fi
 export grid0p25="latlon 0:1440:0.25 90:721:-0.25"
 export grid0p5="latlon 0:720:0.5 90:361:-0.5"
 export grid1p0="latlon 0:360:1.0 90:181:-1.0"

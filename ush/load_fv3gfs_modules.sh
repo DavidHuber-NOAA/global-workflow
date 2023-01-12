@@ -3,7 +3,6 @@
 ###############################################################
 if [[ "${DEBUG_WORKFLOW:-NO}" == "NO" ]]; then
     echo "Loading modules quietly..."
-    set +x
 fi
 
 # Setup runtime environment by loading modules
@@ -24,6 +23,9 @@ elif [[ -d /lfs3 ]] ; then
 elif [[ -d /scratch1 ]] ; then
   # We are on NOAA Hera
   module load module_base.hera
+elif [[ -d /apps/hpc-stack ]] ; then
+  # We are on GCP
+  module load module_base.gcp
 elif [[ -d /work ]] ; then
   # We are on MSU Orion
   module load module_base.orion
@@ -38,7 +40,10 @@ elif [[ -d /data/prod ]] ; then
   module load module_base.s4
 else
   echo WARNING: UNKNOWN PLATFORM
+  set -x
+  ls /
 fi
+set -x
 
 # Restore stack soft limit:
 ulimit -S -s "$ulimit_s"

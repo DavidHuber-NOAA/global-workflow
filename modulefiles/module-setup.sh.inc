@@ -92,6 +92,12 @@ elif [[ -d /data/prod ]] ; then
         source /usr/share/lmod/lmod/init/$__ms_shell
     fi
     module purge
+elif [[ -d /apps/hpc-stack ]] ; then
+    # We are on GCP
+    if ( ! eval module help > /dev/null 2>&1 ) ; then
+        source /usr/share/lmod/lmod/init/$__ms_shell
+    fi
+    module purge
 else
     echo WARNING: UNKNOWN PLATFORM 1>&2
 fi

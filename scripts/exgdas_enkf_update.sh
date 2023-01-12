@@ -391,7 +391,7 @@ cat stdout stderr > $COMOUT_ANL_ENS/$ENKFSTAT
 ################################################################################
 #  Postprocessing
 cd $pwd
-[[ $mkdata = "YES" ]] && rm -rf $DATA
+#[[ $mkdata = "YES" ]] && rm -rf $DATA
 
 
 exit $err

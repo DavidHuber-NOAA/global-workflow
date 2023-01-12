@@ -24,7 +24,7 @@ class Host:
     """
 
     SUPPORTED_HOSTS = ['HERA', 'ORION', 'JET',
-                       'WCOSS2', 'S4']
+                       'WCOSS2', 'S4', 'GCP']
 
     def __init__(self, host=None):
 
@@ -52,6 +52,8 @@ class Host:
             machine = 'WCOSS2'
         elif os.path.exists('/data/prod'):
             machine = 'S4'
+        if os.path.exists('/scratch/save/glopara'):
+            machine = 'GCP'
 
         if machine not in Host.SUPPORTED_HOSTS:
             raise NotImplementedError(f'This machine is not a supported host.\n' +

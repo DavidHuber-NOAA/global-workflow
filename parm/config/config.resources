@@ -39,6 +39,8 @@ elif [[ "${machine}" = "JET" ]]; then
    fi
 elif [[ ${machine} = "HERA" ]]; then
    export npe_node_max=40
+elif [[ ${machine} = "GCP" ]]; then
+   export npe_node_max=60
 elif [[ ${machine} = "S4" ]]; then
    if [[ ${PARTITION_BATCH} = "s4" ]]; then
       export npe_node_max=32
@@ -239,6 +241,10 @@ elif [ ${step} = "anal" ]; then
       export nth_anal=8
       export nth_anal_gfs=8
     fi
+    if [[ "${machine}" = "GCP" ]]; then
+      export nth_anal=4
+      export nth_anal_gfs=4
+    fi
     if [ ${CASE} = "C384" ]; then
       export npe_anal=160
       export npe_anal_gfs=160
@@ -256,6 +262,12 @@ elif [ ${step} = "anal" ]; then
          export nth_anal=1
          export nth_anal_gfs=1
          export wtime_anal="02:00:00"
+      fi
+      if [[ ${machine} = "GCP" ]]; then
+         export npe_anal=162
+         export npe_anal_gfs=162
+         export nth_anal=10
+         export nth_anal_gfs=10
       fi
     fi
     if [[ ${CASE} = "C192" || ${CASE} = "C96" || ${CASE} = "C48" ]]; then
@@ -430,7 +442,7 @@ elif [ ${step} = "post" ]; then
 
     export wtime_post="00:12:00"
     export wtime_post_gfs="01:00:00"
-    export npe_post=126
+    export npe_post=60
     res=$(echo ${CASE} | cut -c2-)
     if (( npe_post > res )); then
       export npe_post=${res}
@@ -618,6 +630,9 @@ elif [[ ${step} = "eobs" || ${step} = "eomg" ]]; then
     if [[ ${machine} = "S4" ]]; then
        export npe_node_eobs=10
     fi
+    if [[ ${machine} = "GCP" ]]; then
+       export npe_node_eobs=20
+    fi
 
 elif [ ${step} = "ediag" ]; then
 
@@ -643,6 +658,8 @@ elif [ ${step} = "eupd" ]; then
       if [[ "${machine}" = "WCOSS2" ]]; then
         export npe_eupd=315
         export nth_eupd=14
+      elif [[ "${machine}" = "GCP" ]]; then
+        export nth_eupd=4
       elif [[ "${machine}" = "HERA" ]]; then
         export nth_eupd=8
       fi
@@ -695,9 +712,9 @@ elif [ ${step} = "efcs" ]; then
 
 elif [ ${step} = "epos" ]; then
 
-    export wtime_epos="00:15:00"
+    export wtime_epos="00:30:00"
     export npe_epos=80
-    export nth_epos=4
+    export nth_epos=1
     if [[ "${machine}" == "HERA" ]]; then
       export nth_epos=6
     fi

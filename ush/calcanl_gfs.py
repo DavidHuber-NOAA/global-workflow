@@ -192,17 +192,17 @@ def calcanl_gfs(DoIAU, l4DEnsVar, Write4Danl, ComOut, APrefix, ASuffix,
         hosts = []
         [hosts.append(x) for x in hosts_tmp if x not in hosts]
         nhosts = len(hosts)
-        ExecCMDMPI_host = 'srun -n '+str(nFH)+' --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
+        ExecCMDMPI_host = 'srun -n '+str(nFH)+' --mpi=pmi2 --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
         # need to account for when fewer than LEVS tasks are available
         tasks = int(os.getenv('SLURM_NPROCS',1))
         if levs > tasks:
-            ExecCMDMPILevs_host = 'srun -n '+str(tasks)+' --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
-            ExecCMDMPILevs_nohost = 'srun -n '+str(tasks)+' --verbose --export=ALL'
+            ExecCMDMPILevs_host = 'srun -n '+str(tasks)+' --mpi=pmi2 --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
+            ExecCMDMPILevs_nohost = 'srun -n '+str(tasks)+' --mpi=pmi2 --verbose --export=ALL'
         else:
-            ExecCMDMPILevs_host = 'srun -n '+str(levs)+' --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
-            ExecCMDMPILevs_nohost = 'srun -n '+str(levs)+' --verbose --export=ALL'
-        ExecCMDMPI1_host = 'srun -n 1 --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
-        ExecCMDMPI10_host = 'srun -n 10 --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
+            ExecCMDMPILevs_host = 'srun -n '+str(levs)+' --mpi=pmi2 --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
+            ExecCMDMPILevs_nohost = 'srun -n '+str(levs)+' --mpi=pmi2 --verbose --export=ALL'
+        ExecCMDMPI1_host = 'srun -n 1 --mpi=pmi2 --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
+        ExecCMDMPI10_host = 'srun -n 10 --mpi=pmi2 --verbose --export=ALL -c 1 --distribution=arbitrary --cpu-bind=cores'
     elif launcher == 'aprun':
         hostfile = os.getenv('LSB_DJOB_HOSTFILE','')
         with open(hostfile) as f:

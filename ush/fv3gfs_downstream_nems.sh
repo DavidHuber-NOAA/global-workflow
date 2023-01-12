@@ -175,7 +175,7 @@ while [ $nset -le $totalset ]; do
   launcher=${APRUN_DWN:-"aprun -j 1 -n 24 -N 24 -d 1 cfp"}
   if [ $machine = WCOSS2 ] ; then
     $launcher $MP_CMDFILE
-  elif [ $machine = HERA -o $machine = ORION -o $machine = JET -o $machine = S4 ] ; then
+  elif [ $machine = HERA -o $machine = ORION -o $machine = JET -o $machine = S4 -o $machine = GCP ] ; then
     if [ -s $DATA/poescript_srun ]; then rm -f $DATA/poescript_srun; fi
     touch $DATA/poescript_srun
     nm=0

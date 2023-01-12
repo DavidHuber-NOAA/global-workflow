@@ -159,8 +159,10 @@ else
     snoprv=${snoprv:-$FNSNOG}
 fi
 
+tmp_WGRIB_out=$($WGRIB -4yr $snoprv 2>/dev/null | grep -i snowc | awk -F: '{print $3}' | awk -F= '{print $2}')
+[[ -z $tmp_WGRIB_out ]] && tmp_WGRIB_out=-9999
 if [ $($WGRIB -4yr $FNSNOA 2>/dev/null | grep -i snowc | awk -F: '{print $3}' | awk -F= '{print $2}') -le \
-    $($WGRIB -4yr $snoprv 2>/dev/null | grep -i snowc | awk -F: '{print $3}' | awk -F= '{print $2}') ] ; then
+    ${tmp_WGRIB_out} ] ; then
     export FNSNOA=" "
     export CYCLVARS="FSNOL=99999.,FSNOS=99999.,"
 else
