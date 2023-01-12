@@ -152,27 +152,27 @@ mkdir -p "${logdir}"
 
 # The checkout version should always be a speciifc commit (hash or tag), not a branch
 errs=0
-checkout "gfs_utils.fd"    "https://github.com/NOAA-EMC/gfs-utils"              "0b8ff56"                    ; errs=$((errs + $?))
-checkout "ufs_model.fd"    "https://github.com/ufs-community/ufs-weather-model" "${ufs_model_hash:-6b73f5d}" ; errs=$((errs + $?))
-checkout "ufs_utils.fd"    "https://github.com/ufs-community/UFS_UTILS.git"     "8b990c0"                    ; errs=$((errs + $?))
-checkout "verif-global.fd" "https://github.com/NOAA-EMC/EMC_verif-global.git"   "c267780"                    ; errs=$((errs + $?))
+checkout "gfs_utils.fd"    "https://github.com/DavidHuber-NOAA/gfs-utils"              "port2gcp"                   ; errs=$((errs + $?))
+checkout "ufs_model.fd"    "https://github.com/ufs-community/ufs-weather-model" "port2gcp" ; errs=$((errs + $?))
+checkout "ufs_utils.fd"    "https://github.com/ufs-community/UFS_UTILS.git"     "port2gcp"                   ; errs=$((errs + $?))
+checkout "verif-global.fd" "https://github.com/DavidHuber-NOAA/EMC_verif-global.git"   "port2gcp"                   ; errs=$((errs + $?))
 
 if [[ ${checkout_gsi} == "YES" ]]; then
-  checkout "gsi_enkf.fd"     "https://github.com/NOAA-EMC/GSI.git"         "48d8676"; errs=$((errs + $?))
+  checkout "gsi_enkf.fd"     "https://github.com/DavidHuber-NOAA/GSI.git"      "port2gcp"; errs=$((errs + $?))
 fi
 
 if [[ ${checkout_gdas} == "YES" ]]; then
-  checkout "gdas.cd" "https://github.com/NOAA-EMC/GDASApp.git" "843d3a9"; errs=$((errs + $?))
+  checkout "gdas.cd" "https://github.com/DavidHuber-NOAA/GDASApp.git" "port2gcp"; errs=$((errs + $?))
 fi
 
 if [[ ${checkout_gsi} == "YES" || ${checkout_gdas} == "YES" ]]; then
-  checkout "gsi_utils.fd"    "https://github.com/NOAA-EMC/GSI-Utils.git"   "322cc7b"; errs=$((errs + $?))
-  checkout "gsi_monitor.fd"  "https://github.com/NOAA-EMC/GSI-Monitor.git" "c64cc47"; errs=$((errs + $?))
-  checkout "gldas.fd"        "https://github.com/NOAA-EMC/GLDAS.git"       "fd8ba62"; errs=$((errs + $?))
+  checkout "gsi_utils.fd"    "https://github.com/DavidHuber-NOAA/GSI-Utils.git"   "port2gcp"; errs=$((errs + $?))
+  checkout "gsi_monitor.fd"  "https://github.com/DavidHuber-NOAA/GSI-Monitor.git" "port2gcp"; errs=$((errs + $?))
+  checkout "gldas.fd"        "https://github.com/DavidHuber-NOAA/GLDAS.git"       "port2gcp"; errs=$((errs + $?))
 fi
 
 if [[ ${checkout_wafs} == "YES" ]]; then
-  checkout "gfs_wafs.fd" "https://github.com/NOAA-EMC/EMC_gfs_wafs.git" "014a0b8"; errs=$((errs + $?))
+  checkout "gfs_wafs.fd" "https://github.com/DavidHuber-NOAA/EMC_gfs_wafs.git" "port2gcp"; errs=$((errs + $?))
 fi
 
 if [[ ${checkout_gtg} == "YES" ]]; then
