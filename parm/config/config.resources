@@ -13,7 +13,7 @@ if [ $# -ne 1 ]; then
     echo "atmensanalprep atmensanalrun atmensanalpost"
     echo "aeroanlinit aeroanlrun aeroanlfinal"
     echo "anal sfcanl analcalc analdiag gldas fcst post vrfy metp arch echgres"
-    echo "eobs ediag eomg eupd ecen esfc efcs epos earc"
+    echo "eobs ediag eomg eupd ecen esfc efcs epos earc globus"
     echo "init_chem mom6ic ocnpost"
     echo "waveinit waveprep wavepostsbs wavepostbndpnt wavepostbndpntbll wavepostpnt"
     echo "wavegempak waveawipsbulls waveawipsgridded"
@@ -651,7 +651,7 @@ elif [ ${step} = "mom6ic" ]; then
     export npe_node_mom6ic=24
     export is_exclusive=True
 
-elif [[ ${step} = "arch" || ${step} = "earc" || ${step} = "getic" ]]; then
+elif [[ ${step} = "arch" || ${step} = "earc" || ${step} = "getic" || ${step} = "globus" ]]; then
 
     eval "export wtime_${step}='06:00:00'"
     eval "export npe_${step}=1"

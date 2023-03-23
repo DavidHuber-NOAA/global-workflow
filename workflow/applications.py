@@ -104,6 +104,7 @@ class AppConfig:
         self.do_gempak = _base.get('DO_GEMPAK', False)
         self.do_awips = _base.get('DO_AWIPS', False)
         self.do_wafs = _base.get('WAFSF', False)
+        self.do_globus = _base.get('DO_GLOBUS', False)
         self.do_vrfy = _base.get('DO_VRFY', True)
         self.do_metp = _base.get('DO_METP', False)
         self.do_jedivar = _base.get('DO_JEDIVAR', False)
@@ -188,6 +189,9 @@ class AppConfig:
 
         configs += ['sfcanl', 'analcalc', 'fcst', 'post', 'vrfy', 'arch']
 
+        if self.do_globus:
+            configs += ['globus']
+
         if self.do_gldas:
             configs += ['gldas']
 
@@ -239,6 +243,9 @@ class AppConfig:
             configs += ['post', 'vrfy']
 
         configs += ['arch']
+
+        if self.do_globus:
+            configs += ['globus']
 
         if self.model_app in ['S2S', 'S2SW', 'S2SWA', 'NG-GODAS']:
             configs += ['coupled_ic']
@@ -352,6 +359,9 @@ class AppConfig:
         gdas_gfs_common_tasks_after_fcst += ['vrfy']
 
         gdas_gfs_common_cleanup_tasks = ['arch']
+
+        if self.do_globus:
+            gdas_gfs_common_cleanup_tasks += ['globus']
 
         if self.do_jedivar:
             gdas_gfs_common_tasks_before_fcst += ['atmanalprep', 'atmanalrun', 'atmanalpost']
@@ -515,6 +525,9 @@ class AppConfig:
         if self.do_wafs:
             tasks += ['wafs', 'wafsgcip', 'wafsgrib2', 'wafsgrib20p25', 'wafsblending', 'wafsblending0p25']
 
-        tasks += ['arch']  # arch **must** be the last task
+        tasks += ['arch']  # arch **must** be the last task unless globus is used
+
+        if self.do_globus:
+            tasks += ['globus']
 
         return {f"{self._base['CDUMP']}": tasks}

@@ -9,6 +9,12 @@ export n=$((10#${ENSGRP}))
 export CDUMP_ENKF=$(echo "${EUPD_CYC:-"gdas"}" | tr a-z A-Z)
 export ARCH_LIST="${ROTDIR}/${RUN}.${PDY}/${cyc}/earc${ENSGRP}"
 
+if [[ ${LOCALARCH} = "YES" ]]; then
+   tar_dir=${tar_dir:-${ATARDIRloc}}
+elif [[ ${HPSSARCH} = "YES" ]]; then
+   tar_dir=${tar_dir:-${ATARDIR}}
+fi
+
 # ICS are restarts and always lag INC by $assim_freq hours.
 EARCINC_CYC=${ARCH_CYC}
 EARCICS_CYC=$((ARCH_CYC-assim_freq))
@@ -40,7 +46,7 @@ if (( 10#${ENSGRP} > 0 )) && [[ ${HPSSARCH} = "YES" || ${LOCALARCH} = "YES" ]]; 
    TARCMD="htar"
    if [[ ${LOCALARCH} = "YES" ]]; then
        TARCMD="tar"
-       [ ! -d "${ATARDIR}"/"${CDATE}" ] && mkdir -p "${ATARDIR}"/"${CDATE}"
+       [ ! -d "${tar_dir}"/"${CDATE}" ] && mkdir -p "${tar_dir}"/"${CDATE}"
    fi
 
 #--determine when to save ICs for warm start
@@ -65,7 +71,7 @@ if (( 10#${ENSGRP} > 0 )) && [[ ${HPSSARCH} = "YES" || ${LOCALARCH} = "YES" ]]; 
 
    if [ "${CDATE}" -gt "${SDATE}" ]; then # Don't run for first half cycle
 
-     ${TARCMD} -P -cvf "${ATARDIR}/${CDATE}/${RUN}_grp${ENSGRP}.tar" $(cat "${ARCH_LIST}/${RUN}_grp${n}.txt")
+     ${TARCMD} -P -cvf "${tar_dir}/${CDATE}/${RUN}_grp${ENSGRP}.tar" $(cat "${ARCH_LIST}/${RUN}_grp${n}.txt")
      status=$?
      if [ "${status}" -ne 0 ] && [ "${CDATE}" -ge "${firstday}" ]; then
          echo "$(echo "${TARCMD}" | tr 'a-z' 'A-Z') ${CDATE} ${RUN}_grp${ENSGRP}.tar failed"
@@ -73,7 +79,7 @@ if (( 10#${ENSGRP} > 0 )) && [[ ${HPSSARCH} = "YES" || ${LOCALARCH} = "YES" ]]; 
      fi
 
      if [ "${SAVEWARMICA}" = "YES" ] && [ "${cyc}" -eq "${EARCINC_CYC}" ]; then
-       ${TARCMD} -P -cvf "${ATARDIR}/${CDATE}/${RUN}_restarta_grp${ENSGRP}.tar" $(cat "${ARCH_LIST}/${RUN}_restarta_grp${n}.txt")
+       ${TARCMD} -P -cvf "${tar_dir}/${CDATE}/${RUN}_restarta_grp${ENSGRP}.tar" $(cat "${ARCH_LIST}/${RUN}_restarta_grp${n}.txt")
        status=$?
        if [ "${status}" -ne 0 ]; then
            echo "$(echo "${TARCMD}" | tr 'a-z' 'A-Z') ${CDATE} ${RUN}_restarta_grp${ENSGRP}.tar failed"
@@ -82,7 +88,7 @@ if (( 10#${ENSGRP} > 0 )) && [[ ${HPSSARCH} = "YES" || ${LOCALARCH} = "YES" ]]; 
      fi
 
      if [ "${SAVEWARMICB}" = "YES" ] && [ "${cyc}" -eq "${EARCICS_CYC}" ]; then
-       ${TARCMD} -P -cvf "${ATARDIR}/${CDATE}/${RUN}_restartb_grp${ENSGRP}.tar" $(cat "${ARCH_LIST}/${RUN}_restartb_grp{n}.txt")
+       ${TARCMD} -P -cvf "${tar_dir}/${CDATE}/${RUN}_restartb_grp${ENSGRP}.tar" $(cat "${ARCH_LIST}/${RUN}_restartb_grp{n}.txt")
        status=$?
        if [ "${status}" -ne 0 ]; then
            echo "$(echo "${TARCMD}" | tr 'a-z' 'A-Z') ${CDATE} ${RUN}_restartb_grp${ENSGRP}.tar failed"
@@ -105,11 +111,11 @@ if [ "${ENSGRP}" -eq 0 ]; then
         TARCMD="htar"
         if [[ ${LOCALARCH} = "YES" ]]; then
             TARCMD="tar"
-            [ ! -d "${ATARDIR}"/"${CDATE}" ] && mkdir -p "${ATARDIR}"/"${CDATE}"
+            [ ! -d "${tar_dir}"/"${CDATE}" ] && mkdir -p "${tar_dir}"/"${CDATE}"
         fi
 
         set +e
-        ${TARCMD} -P -cvf "${ATARDIR}/${CDATE}/${RUN}.tar" $(cat "${ARCH_LIST}/${RUN}.txt")
+        ${TARCMD} -P -cvf "${tar_dir}/${CDATE}/${RUN}.tar" $(cat "${ARCH_LIST}/${RUN}.txt")
         status=$?
         if [ "${status}" -ne 0 ] && [ "${CDATE}" -ge "${firstday}" ]; then
             echo "$(echo "${TARCMD}" | tr 'a-z' 'A-Z') ${CDATE} ${RUN}.tar failed"

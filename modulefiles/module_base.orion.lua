@@ -39,4 +39,7 @@ load(pathJoin("ufswm", "1.0.0"))
 load(pathJoin("met", "9.1"))
 load(pathJoin("metplus", "3.1"))
 
+-- Set the path to globus
+append_path("PATH", "/home/dhuber/local/bin")
+
 whatis("Description: GFS run environment")

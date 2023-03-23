@@ -9,7 +9,7 @@ __all__ = ['Tasks', 'create_wf_task', 'get_wf_tasks']
 
 
 class Tasks:
-    SERVICE_TASKS = ['arch', 'earc', 'getic']
+    SERVICE_TASKS = ['arch', 'earc', 'getic', 'globus']
     VALID_TASKS = ['aerosol_init', 'coupled_ic', 'getic', 'init',
                    'prep', 'anal', 'sfcanl', 'analcalc', 'analdiag', 'gldas', 'arch',
                    'atmanalprep', 'atmanalrun', 'atmanalpost',
@@ -19,7 +19,7 @@ class Tasks:
                    'atmensanalprep', 'atmensanalrun', 'atmensanalpost',
                    'aeroanlinit', 'aeroanlrun', 'aeroanlfinal',
                    'fcst', 'post', 'ocnpost', 'vrfy', 'metp',
-                   'postsnd', 'awips', 'gempak',
+                   'postsnd', 'awips', 'gempak', 'globus',
                    'wafs', 'wafsblending', 'wafsblending0p25',
                    'wafsgcip', 'wafsgrib2', 'wafsgrib20p25',
                    'waveawipsbulls', 'waveawipsgridded', 'wavegempak', 'waveinit',
@@ -1041,6 +1041,26 @@ class Tasks:
 
         resources = self.get_resource('arch')
         task = create_wf_task('arch', resources, cdump=self.cdump, envar=self.envars, dependency=dependencies,
+                              cycledef=cycledef)
+
+        return task
+
+    def globus(self):
+        deps = []
+        # Build dependencies on archive jobs.
+        dep_dict = {'type': 'task', 'name': f'{self.cdump}arch'}
+        deps.append(rocoto.add_dependency(dep_dict))
+        # Add earc* dependency
+        if self.app_config.do_hybvar and self.cdump in ['gdas']:
+            dep_dict = {'type': 'metatask', 'name': 'gdaseamn'}
+            deps.append(rocoto.add_dependency(dep_dict))
+
+        dependencies = rocoto.create_dependency(dep_condition='and', dep=deps)
+
+        cycledef = 'gdas_half,gdas' if self.cdump in ['gdas'] else self.cdump
+
+        resources = self.get_resource('globus')
+        task = create_wf_task('globus', resources, cdump=self.cdump, envar=self.envars, dependency=dependencies,
                               cycledef=cycledef)
 
         return task

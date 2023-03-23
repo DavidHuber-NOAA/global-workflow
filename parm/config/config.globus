@@ -1,0 +1,29 @@
+#! /usr/bin/env bash
+
+########## config.globus ##########
+# Globus transfer specific
+
+echo "BEGIN: config.globus"
+
+# Get task specific resources
+. ${EXPDIR}/config.resources globus
+
+export GLOBUS_XFR=${GLOBUS_XFR:-"globus transfer --notify failed --preserve-mtime --sync-level mtime"}
+export GLOBUS_RM=${GLOBUS_RM:-"globus rm --notify failed -f"}
+export GLOBUS_WAIT=${GLOBUS_WAIT-"globus task wait"}
+export GLOBUS_LS=${GLOBUS_LS:-"globus ls"}
+
+export TARGET_DIR=${TARGET_DIR:-"/collab1/data/${NIAGARA_USERNAME:-$LOGNAME}/${PSLOT}/${CDATE}"}
+
+if [[ ${machine} == "HERA" ]]; then
+   export LOCAL_GLOBUS_ADDR="82109590-c090-11ea-bef9-0e716405a293"
+elif [[ ${machine} == "ORION" ]]; then
+   export LOCAL_GLOBUS_ADDR="84bad22e-cb80-11ea-9a44-0255d23c44ef"
+elif [[ ${machine} == "JET" ]]; then
+   export LOCAL_GLOBUS_ADDR="34ea8506-1882-11eb-81b5-0e2f230cc907"
+fi
+
+# Default is Niagara
+export REMOTE_GLOBUS_ADDR=${REMOTE_GLOBUS_ADDR:-"21467dd0-afd6-11ea-8f12-0a21f750d19b"}
+
+echo "END: config.arch"

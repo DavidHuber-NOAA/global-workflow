@@ -13,6 +13,12 @@ if [ "${ARCHICS_CYC}" -lt 0 ]; then
     ARCHICS_CYC=$((ARCHICS_CYC+24))
 fi
 
+if [[ ${LOCALARCH} = "YES" ]]; then
+   tar_dir=${tar_dir:-${ATARDIRloc}}
+elif [[ ${HPSSARCH} = "YES" ]]; then
+   tar_dir=${tar_dir:-${ATARDIR}}
+fi
+
 # CURRENT CYCLE
 APREFIX="${CDUMP}.t${cyc}z."
 
@@ -111,8 +117,8 @@ if [[ ${HPSSARCH} = "YES" || ${LOCALARCH} = "YES" ]]; then
 TARCMD="htar"
 if [[ ${LOCALARCH} = "YES" ]]; then
    TARCMD="tar"
-   [ ! -d "${ATARDIR}"/"${CDATE}" ] && mkdir -p "${ATARDIR}"/"${CDATE}"
-   [ ! -d "${ATARDIR}"/"${CDATE_MOS}" ] && [ -d "${ROTDIR}"/gfsmos."${PDY_MOS}" ] && [ "${cyc}" -eq 18 ] && mkdir -p "${ATARDIR}"/"${CDATE_MOS}"
+   [ ! -d "${tar_dir}"/"${CDATE}" ] && mkdir -p "${tar_dir}"/"${CDATE}"
+   [ ! -d "${tar_dir}"/"${CDATE_MOS}" ] && [ -d "${ROTDIR}"/gfsmos."${PDY_MOS}" ] && [ "${cyc}" -eq 18 ] && mkdir -p "${tar_dir}"/"${CDATE_MOS}"
 fi
 
 #--determine when to save ICs for warm start and forecast-only runs
@@ -181,7 +187,7 @@ if [ "${CDUMP}" = "gfs" ]; then
     # Aerosols
     if [ "${DO_AERO}" = "YES" ]; then
         for targrp in chem; do
-            ${TARCMD} -P -cvf "${ATARDIR}"/"${CDATE}"/"${targrp}".tar $(cat "${ARCH_LIST}"/"${targrp}".txt)
+            ${TARCMD} -P -cvf "${tar_dir}"/"${CDATE}"/"${targrp}".tar $(cat "${ARCH_LIST}"/"${targrp}".txt)
             status=$?
             if [ "${status}" -ne 0 ] && [ "${CDATE}" -ge "${firstday}" ]; then
                 echo "HTAR ${CDATE} ${targrp}.tar failed"
@@ -203,7 +209,7 @@ if [ "${CDUMP}" = "gfs" ]; then
     #--save mdl gfsmos output from all cycles in the 18Z archive directory
     if [ -d gfsmos."${PDY_MOS}" ] && [ "${cyc}" -eq 18 ]; then
         set +e
-        ${TARCMD} -P -cvf "${ATARDIR}"/"${CDATE_MOS}"/gfsmos.tar ./gfsmos."${PDY_MOS}"
+        ${TARCMD} -P -cvf "${tar_dir}"/"${CDATE_MOS}"/gfsmos.tar ./gfsmos."${PDY_MOS}"
         status=$?
         if [ "${status}" -ne 0 ] && [ "${CDATE}" -ge "${firstday}" ]; then
             echo "$(echo "${TARCMD}" | tr 'a-z' 'A-Z') ${CDATE} gfsmos.tar failed"
@@ -237,7 +243,7 @@ fi
 shopt -s extglob
 for targrp in ${targrp_list}; do
     set +e
-    ${TARCMD} -P -cvf "${ATARDIR}"/"${CDATE}"/"${targrp}".tar $(cat "${ARCH_LIST}"/"${targrp}".txt)
+    ${TARCMD} -P -cvf "${tar_dir}"/"${CDATE}"/"${targrp}".tar $(cat "${ARCH_LIST}"/"${targrp}".txt)
     status=$?
     if [ "${status}" -ne 0 ] && [ "${CDATE}" -ge "${firstday}" ]; then
         echo "$(echo "${TARCMD}" | tr 'a-z' 'A-Z') ${CDATE} ${targrp}.tar failed"

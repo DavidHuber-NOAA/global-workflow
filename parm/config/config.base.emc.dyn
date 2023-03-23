@@ -47,6 +47,7 @@ export HOMEDIR="@HOMEDIR@"
 export STMP="@STMP@"
 export PTMP="@PTMP@"
 export NOSCRUB="@NOSCRUB@"
+export NIAGARA_USERNAME="${LOGNAME}"
 
 # Base directories for various builds
 export BASE_GIT="@BASE_GIT@"
@@ -87,8 +88,8 @@ export VERBOSE="YES"
 export KEEPDATA="NO"
 export CHGRP_RSTPROD="@CHGRP_RSTPROD@"
 export CHGRP_CMD="@CHGRP_CMD@"
-export NCDUMP="$NETCDF/bin/ncdump"
-export NCLEN="$HOMEgfs/ush/getncdimlen"
+export NCDUMP="${NETCDF}/bin/ncdump"
+export NCLEN="${HOMEgfs}/ush/getncdimlen"
 
 # Machine environment, jobs, and other utility scripts
 export BASE_ENV="${HOMEgfs}/env"
@@ -111,6 +112,7 @@ export DATAROOT="${STMP}/RUNDIRS/${PSLOT}"  # TODO: set via prod_envir in Ops
 export RUNDIR="${DATAROOT}"  # TODO: Should be removed; use DATAROOT instead
 export ARCDIR="${NOSCRUB}/archive/${PSLOT}"
 export ATARDIR="@ATARDIR@"
+export ATARDIRloc="@ATARDIRloc@"
 
 # Commonly defined parameters in JJOBS
 export envir=${envir:-"prod"}
@@ -378,8 +380,10 @@ export binary_diag=".false."
 export DO_METP="YES"         # Run METPLUS jobs - set METPLUS settings in config.metp
 
 # Archiving options
-export HPSSARCH="@HPSSARCH@"        # save data to HPSS archive
+export HPSSARCH="@HPSSARCH@"          # save data to HPSS archive
 export LOCALARCH="@LOCALARCH@"        # save data to local archive
+export DO_GLOBUS="NO"                 # transfer local archives to Niagara for HPSS archive; only valid if LOCALARCH=YES
+export REMOTE_USERNAME=${REMOTE_USERNAME:-${LOGNAME}}
 if [[ ${HPSSARCH} = "YES" ]] && [[ ${LOCALARCH} = "YES" ]]; then
    echo "Both HPSS and local archiving selected.  Please choose one or the other."
    exit 2
