@@ -2,6 +2,68 @@
 {% include "common.yaml.j2" %}
 {% set var = 0 %}
 
+valid_conf:
+    # Determine if the configuration given is valid.
+    {% if DO_ATM %}
+    {% if CASE == "C48" or CASE == "C96" or CASE == "C192" or CASE == "C384" or
+          CASE == "C768" or CASE == "C1152" or CASE == "C3072" %}
+    valid_atm: True
+    {% else %}
+    valid_atm: False
+    {% endif %}
+    {% endif %}
+
+    {% if DO_HYBVAR %}
+    {% if CASE_ENS == "C48" or CASE_ENS == "C96" or CASE_ENS == "C192" or
+          CASE_ENS == "C384" %}
+    valid_atmens: True
+    {% else %}
+    valid_atmens: False
+    {% endif %}
+    {% endif %} # Ensemble resolution
+
+    {% if DO_OCN %}
+    {% if OCNRES == "050" or OCNRES == "100" or OCNRES == "500" %}
+    valid_ocn: True
+    {% else %}
+    valid_ocn: False
+    {% endif %}
+    {% endif %}
+
+    {% if DO_ICE %}
+    {% if DO_OCN and ICERES == OCNRES and (ICERES == "050" or ICERES == "100" or ICERES == "500") %}
+    valid_ice: True
+    {% else %}
+    valid_ice: False
+    {% endif %}
+    {% endif %}
+
+    {% if DO_AERO %}
+    {% if DO_ATM %}
+    {% if MODE == "forecast-only" %}
+    valid_aero: True
+    {% elif MODE == "cycled" and (CASE == "C48" or CASE == "C96" or CASE == "C192" or
+          CASE == "C384" or CASE == "C768") %}
+    valid_aero: True
+    valid_aero_anl: True
+    {% else %}
+    valid_aero: False
+    {% endif %}
+    {% endif %}
+    {% endif %}
+
+    {% if DO_WAVE %}
+    {% if DO_ATM and ( waveGRD == "gnh_10m;aoc_9km;gsh_15m" or
+                       waveGRD == "gwes_30m" or waveGRD == "glo_025" or
+                       waveGRD == "glo_200" or waveGRD == "glo_500" or
+                       waveGRD == "mx025" or waveGRD == "uglo_100km" or
+                       waveGRD == "uglo_m1g16") %}
+    valid_wave: True
+    {% else %}
+    valid_wave: False
+    {% endif %}
+    {% endif %}
+
 prep:
     all_runs:
         walltime: "00:30:00"
@@ -231,34 +293,29 @@ ocnanalbmat:
         mem_per_task: {{ mem_per_cpu }}
 
 ocnanalecen:
-    {% elif OCNRES == "025" %}
-    {% set npes = 40 %}
-    {% set memory_ocnanalecen = "96GB" %}
+    {% if OCNRES == "025" %}
+    {% set num_tasks = 40 %}
+    {% set mem_per_task = "2400MB" %}
     {% endif %}
     {% elif OCNRES == "050" %}
-    {% set npes = 16 %}
-    {% set memory_ocnanalecen = "96GB" %}
+    {% set num_tasks = 16 %}
+    {% set mem_per_task = "2400MB" %}
     {% endif %}
     {% elif OCNRES == "500" %}
-    {% set npes = 16 %}
-    {% set memory_ocnanalecen = "24GB" %}
-    {% else %}
-    {% set npes = 16 %}
+    {% set num_tasks = 16 %}
+    {% set mem_per_taks = "1500MB" %}
     {% endif %}
 
-    wtime_ocnanalecen="00:10:00"
-    npe_ocnanalecen=${npes}
-    nth_ocnanalecen=1
-    is_exclusive=True
-    npe_node_ocnanalecen=$(( npe_node_max / nth_ocnanalecen ))
-    memory_ocnanalecen
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: {{ num_tasks }}
+        threads: 1
+        mem_per_task: {{ mem_per_task }}
 
 ocnanalchkpt:
-    wtime_ocnanalchkpt="00:10:00"
-    npe_ocnanalchkpt=1
-    nth_ocnanalchkpt=1
-    npe_node_ocnanalchkpt=$(( npe_node_max / nth_ocnanalchkpt ))
-    case ${OCNRES} in
+    all_runs:
+        walltime: "00:10:00"
+        threads: 1
       {% if OCNRES == "025" %}
         memory_ocnanalchkpt="128GB"
         npes=40
@@ -274,24 +331,24 @@ ocnanalchkpt:
         echo "FATAL ERROR: Resources not defined for job ${job} at resolution ${OCNRES}"
         exit 4
     esac
-    npe_ocnanalchkpt=${npes}
+        num_tasks: ${npes}
     memory_ocnanalchkpt
 
 ocnanalpost:
-    wtime_ocnanalpost="00:30:00"
-    npe_ocnanalpost=${npe_node_max}
-    nth_ocnanalpost=1
-    npe_node_ocnanalpost=$(( npe_node_max / nth_ocnanalpost ))
+    all_runs:
+        walltime: "00:30:00"
+        threads: 1
 
 ocnanalvrfy:
-    wtime_ocnanalvrfy="00:35:00"
-    npe_ocnanalvrfy=1
-    nth_ocnanalvrfy=1
-    npe_node_ocnanalvrfy=$(( npe_node_max / nth_ocnanalvrfy ))
+    all_runs:
+        walltime: "00:35:00"
+        num_tasks: 1
+        threads: 1
     memory_ocnanalvrfy="24GB"
 
 anal:
-    wtime_anal="01:20:00"
+    all_runs:
+        walltime: "01:20:00"
     wtime_anal_gfs="01:00:00"
     npe_anal=780
     nth_anal=5
@@ -346,325 +403,170 @@ anal:
         exit 4
         {% endif %}
     esac
-    npe_node_anal=$(( npe_node_max / nth_anal ))
     nth_cycle=${nth_anal}
-    npe_node_cycle=$(( npe_node_max / nth_cycle ))
     is_exclusive=True
 
 analcalc:
-    wtime_analcalc="00:10:00"
-    npe_analcalc=127
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 127
     ntasks="${npe_analcalc}"
     nth_analcalc=1
     nth_echgres=4
     nth_echgres_gfs=12
-    npe_node_analcalc=$(( npe_node_max / nth_analcalc ))
     is_exclusive=True
     memory_analcalc="48GB"
 
 analdiag:
-    wtime_analdiag="00:15:00"
-    npe_analdiag=96             # Should be at least twice npe_ediag
-    nth_analdiag=1
-    npe_node_analdiag=$(( npe_node_max / nth_analdiag ))
+    all_runs:
+        walltime: "00:15:00"
+        num_tasks: 96             # Should be at least twice npe_ediag
+        threads: 1
     memory_analdiag="48GB"
 
 sfcanl:
-    wtime_sfcanl="00:20:00"
-    npe_sfcanl=6
-    nth_sfcanl=1
-    npe_node_sfcanl=$(( npe_node_max / nth_sfcanl ))
-    is_exclusive=True
+    all_runs:
+        walltime: "00:20:00"
+        num_tasks: 6
+        threads: 1
+        mem_per_task: "15G"
 
-fcst" | "efcs:
-    is_exclusive=True
+fcst:
+    # Deterministic settings
+    {% set atm_res = CASE %}
+    {% if DO_OCN %}{% set ocn_res = OCNRES %}{% endif %}
+    {% if DO_ICE %}{% set ice_res = ICERES %}{% endif %}
+    {% if DO_WAVE %}{% set wave_grid = waveGRD %}{% endif %}
+    {% if DO_AERO %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
+    enkfgfs:
+        {% set ufs_run = "gfs" %}
+        {% filter indent(width=8) %}
+        {% include "ufs_resources.yaml.j2" %}
+        {% endfilter %}
+    enkfgdas:
+        {% set ufs_run = "gdas" %}
+        {% filter indent(width=8) %}
+        {% include "ufs_resources.yaml.j2" %}
+        {% endfilter %}
 
-    if [[ "${step}" == "fcst" ]]; then
-      _CDUMP_LIST=${CDUMP:-"gdas gfs"}
-    elif [[ "${step}" == "efcs" ]]; then
-      _CDUMP_LIST=${CDUMP:-"enkfgdas enkfgfs"}
-    fi
+    # Ensemble settings
+    {% set atm_res = CASE_ENS %}
+    {% if DO_OCN %}{% set ocn_res = OCNRES %}{% endif %}
+    {% if DO_ICE %}{% set ice_res = ICERES %}{% endif %}
+    {% if DO_WAVE %}{% set wave_grid = waveGRD %}{% endif %}
+    {% if DO_AERO %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
+    enkfgfs:
+        {% set ufs_run = "gfs" %}
+        {% filter indent(width=8) %}
+        {% include "ufs_resources.yaml.j2" %}
+        {% endfilter %}
+    enkfgdas:
+        {% set ufs_run = "gdas" %}
+        {% filter indent(width=8) %}
+        {% include "ufs_resources.yaml.j2" %}
+        {% endfilter %}
 
-    # During workflow creation, we need resources for all CDUMPs and CDUMP is undefined
-    for _CDUMP in ${_CDUMP_LIST}; do
-      if [[ "${_CDUMP}" =~ "gfs" ]]; then
-        layout_x=${layout_x_gfs}
-        layout_y=${layout_y_gfs}
-        WRITE_GROUP=${WRITE_GROUP_GFS}
-        WRTTASK_PER_GROUP_PER_THREAD=${WRTTASK_PER_GROUP_PER_THREAD_GFS}
-        ntasks_fv3=${ntasks_fv3_gfs}
-        ntasks_quilt=${ntasks_quilt_gfs}
-        nthreads_fv3=${nthreads_fv3_gfs}
-        nthreads_ufs=${nthreads_ufs_gfs}
-      fi
-
-      # Determine if using ESMF-managed threading or traditional threading
-      # If using traditional threading, set them to 1
-      if [[ "${USE_ESMF_THREADING:-}" == "YES" ]]; then
-        UFS_THREADS=1
-      else  # traditional threading
-        UFS_THREADS=${nthreads_ufs:-1}
-        nthreads_fv3=1
-        nthreads_mediator=1
-        [[ "${DO_WAVE}" == "YES" ]] && nthreads_ww3=1
-        [[ "${DO_OCN}" == "YES" ]] && nthreads_mom6=1
-        [[ "${DO_ICE}" == "YES" ]] && nthreads_cice6=1
-      fi
-
-      if (( ntiles > 6 )); then
-        layout_x_nest=${layout_x_nest:-10}
-        layout_y_nest=${layout_y_nest:-10}
-        npx_nest=${npx_nest:-1441}
-        npy_nest=${npy_nest:-961}
-      fi
-
-      # PETS for the atmosphere dycore
-      (( FV3PETS = ntasks_fv3 * nthreads_fv3 ))
-      echo "FV3 using (nthreads, PETS) = (${nthreads_fv3}, ${FV3PETS})"
-
-      # PETS for quilting
-      if [[ "${QUILTING:-}" == ".true." ]]; then
-        (( QUILTPETS = ntasks_quilt * nthreads_fv3 ))
-        (( WRTTASK_PER_GROUP = WRTTASK_PER_GROUP_PER_THREAD ))
-        WRTTASK_PER_GROUP
-      else
-        QUILTPETS=0
-      fi
-      echo "QUILT using (nthreads, PETS) = (${nthreads_fv3}, ${QUILTPETS})"
-
-      # Total PETS for the atmosphere component
-      ATMTHREADS=${nthreads_fv3}
-      (( ATMPETS = FV3PETS + QUILTPETS ))
-      ATMPETS ATMTHREADS
-      echo "FV3ATM using (nthreads, PETS) = (${ATMTHREADS}, ${ATMPETS})"
-
-      # Total PETS for the coupled model (starting w/ the atmosphere)
-      NTASKS_TOT=${ATMPETS}
-
-      # The mediator PETS can overlap with other components, usually it lands on the atmosphere tasks.
-      # However, it is suggested limiting mediator PETS to 300, as it may cause the slow performance.
-      # See https://docs.google.com/document/d/1bKpi-52t5jIfv2tuNHmQkYUe3hkKsiG_DG_s6Mnukog/edit
-      # TODO: Update reference when moved to ufs-weather-model RTD
-      MEDTHREADS=${nthreads_mediator:-1}
-      MEDPETS=${MEDPETS:-${FV3PETS}}
-      (( "${MEDPETS}" > 300 )) && MEDPETS=300
-      MEDPETS MEDTHREADS
-      echo "MEDIATOR using (threads, PETS) = (${MEDTHREADS}, ${MEDPETS})"
-
-      CHMPETS=0; CHMTHREADS=0
-      if [[ "${DO_AERO}" == "YES" ]]; then
-        # GOCART shares the same grid and forecast tasks as FV3 (do not add write grid component tasks).
-        (( CHMTHREADS = ATMTHREADS ))
-        (( CHMPETS = FV3PETS ))
-        # Do not add to NTASKS_TOT
-        echo "GOCART using (threads, PETS) = (${CHMTHREADS}, ${CHMPETS})"
-      fi
-      CHMPETS CHMTHREADS
-
-      WAVPETS=0; WAVTHREADS=0
-      if [[ "${DO_WAVE}" == "YES" ]]; then
-        (( WAVPETS = ntasks_ww3 * nthreads_ww3 ))
-        (( WAVTHREADS = nthreads_ww3 ))
-        echo "WW3 using (threads, PETS) = (${WAVTHREADS}, ${WAVPETS})"
-        (( NTASKS_TOT = NTASKS_TOT + WAVPETS ))
-      fi
-      WAVPETS WAVTHREADS
-
-      OCNPETS=0; OCNTHREADS=0
-      if [[ "${DO_OCN}" == "YES" ]]; then
-        (( OCNPETS = ntasks_mom6 * nthreads_mom6 ))
-        (( OCNTHREADS = nthreads_mom6 ))
-        echo "MOM6 using (threads, PETS) = (${OCNTHREADS}, ${OCNPETS})"
-        (( NTASKS_TOT = NTASKS_TOT + OCNPETS ))
-      fi
-      OCNPETS OCNTHREADS
-
-      ICEPETS=0; ICETHREADS=0
-      if [[ "${DO_ICE}" == "YES" ]]; then
-        (( ICEPETS = ntasks_cice6 * nthreads_cice6 ))
-        (( ICETHREADS = nthreads_cice6 ))
-        echo "CICE6 using (threads, PETS) = (${ICETHREADS}, ${ICEPETS})"
-        (( NTASKS_TOT = NTASKS_TOT + ICEPETS ))
-      fi
-      ICEPETS ICETHREADS
-
-      echo "Total PETS for ${_CDUMP} = ${NTASKS_TOT}"
-
-      if [[ "${_CDUMP}" =~ "gfs" ]]; then
-        declare -x "npe_${step}_gfs"="${NTASKS_TOT}"
-        declare -x "nth_${step}_gfs"="${UFS_THREADS}"
-        declare -x "npe_node_${step}_gfs"="${npe_node_max}"
-      else
-        declare -x "npe_${step}"="${NTASKS_TOT}"
-        declare -x "nth_${step}"="${UFS_THREADS}"
-        declare -x "npe_node_${step}"="${npe_node_max}"
-      fi
-
-    done
-
-    case "${CASE}" in
-      "C48" | "C96" | "C192")
-        declare -x "wtime_${step}"="00:15:00"
-        declare -x "wtime_${step}_gfs"="03:00:00"
-        {% endif %}
-      "C384")
-        declare -x "wtime_${step}"="00:30:00"
-        declare -x "wtime_${step}_gfs"="06:00:00"
-        {% endif %}
-      "C768" | "C1152")
-        declare -x "wtime_${step}"="00:30:00"
-        declare -x "wtime_${step}_gfs"="06:00:00"
-        {% endif %}
-        echo "FATAL ERROR: Resources not defined for job ${job} at resolution ${CASE}"
-        exit 4
-        {% endif %}
-    esac
-
-    unset _CDUMP _CDUMP_LIST
-    unset NTASKS_TOT
-
-oceanice_products:
-    wtime_oceanice_products="00:15:00"
-    npe_oceanice_products=1
-    npe_node_oceanice_products=1
-    nth_oceanice_products=1
-    memory_oceanice_products="96GB"
-
-upp:
-    case "${CASE}" in
-      "C48" | "C96")
-        npe_upp=${CASE:1}
-      {% endif %}
-      "C192" | "C384")
-        npe_upp=120
-        memory_upp="96GB"
-      {% endif %}
-      "C768")
-        npe_upp=120
-        memory_upp="96GB"
-        if [[ ${machine} == "WCOSS2" ]]; then memory_upp="480GB" ; fi
-      {% endif %}
-        echo "FATAL ERROR: Resources not defined for job ${job} at resolution ${CASE}"
-        exit 4
-      {% endif %}
-    esac
-    npe_node_upp=${npe_upp}
-
-    nth_upp=1
-
-    wtime_upp="00:15:00"
-    if (( npe_node_upp > npe_node_max )); then
-      npe_node_upp=${npe_node_max}
-    fi
-    is_exclusive=True
+    all_runs:
+        - is_exclusive: True
 
 atmos_products:
-    wtime_atmos_products="00:15:00"
-    npe_atmos_products=24
-    nth_atmos_products=1
-    npe_node_atmos_products="${npe_atmos_products}"
+    all_runs:
+        walltime: "00:15:00"
+        num_tasks: 24
+        threads: 1
     wtime_atmos_products_gfs="${wtime_atmos_products}"
-    npe_atmos_products_gfs="${npe_atmos_products}"
-    nth_atmos_products_gfs="${nth_atmos_products}"
-    npe_node_atmos_products_gfs="${npe_node_atmos_products}"
     is_exclusive=True
 
 verfozn:
-    wtime_verfozn="00:05:00"
-    npe_verfozn=1
-    nth_verfozn=1
-    npe_node_verfozn=1
+    all_runs:
+        walltime: "00:05:00"
+        num_tasks: 1
+        threads: 1
     memory_verfozn="1G"
 
 verfrad:
-    wtime_verfrad="00:40:00"
-    npe_verfrad=1
-    nth_verfrad=1
-    npe_node_verfrad=1
+    all_runs:
+        walltime: "00:40:00"
+        num_tasks: 1
+        threads: 1
     memory_verfrad="5G"
 
 vminmon:
-    wtime_vminmon="00:05:00"
-    npe_vminmon=1
-    nth_vminmon=1
-    npe_node_vminmon=1
+    all_runs:
+        walltime: "00:05:00"
+        num_tasks: 1
+        threads: 1
     wtime_vminmon_gfs="00:05:00"
-    npe_vminmon_gfs=1
-    nth_vminmon_gfs=1
-    npe_node_vminmon_gfs=1
     memory_vminmon="1G"
 
 tracker:
-    wtime_tracker="00:10:00"
-    npe_tracker=1
-    nth_tracker=1
-    npe_node_tracker=1
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 1
+        threads: 1
     memory_tracker="4G"
 
 genesis:
-    wtime_genesis="00:25:00"
-    npe_genesis=1
-    nth_genesis=1
-    npe_node_genesis=1
+    all_runs:
+        walltime: "00:25:00"
+        num_tasks: 1
+        threads: 1
     memory_genesis="10G"
 
 genesis_fsu:
-    wtime_genesis_fsu="00:10:00"
-    npe_genesis_fsu=1
-    nth_genesis_fsu=1
-    npe_node_genesis_fsu=1
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 1
+        threads: 1
     memory_genesis_fsu="10G"
 
 fit2obs:
-    wtime_fit2obs="00:20:00"
-    npe_fit2obs=3
-    nth_fit2obs=1
-    npe_node_fit2obs=1
+    all_runs:
+        walltime: "00:20:00"
+        num_tasks: 3
+        threads: 1
     memory_fit2obs="20G"
     if [[ ${machine} == "WCOSS2" ]]; then npe_node_fit2obs=3 ; fi
 
 metp:
-    nth_metp=1
-    wtime_metp="03:00:00"
-    npe_metp=4
-    npe_node_metp=4
+    all_runs:
+        threads: 1
+        walltime: "03:00:00"
+        num_tasks: 4
     wtime_metp_gfs="06:00:00"
-    npe_metp_gfs=4
-    npe_node_metp_gfs=4
     is_exclusive=True
 
 echgres:
-    wtime_echgres="00:10:00"
-    npe_echgres=3
-    nth_echgres=${npe_node_max}
-    npe_node_echgres=1
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 3
     if [[ "${machine}" == "WCOSS2" ]]; then
       memory_echgres="200GB"
     fi
 
 init:
-    wtime_init="00:30:00"
-    npe_init=24
-    nth_init=1
+    all_runs:
+        walltime: "00:30:00"
+        num_tasks: 24
+        threads: 1
     npe_node_init=6
     memory_init="70GB"
 
 init_chem:
-    wtime_init_chem="00:30:00"
-    npe_init_chem=1
-    npe_node_init_chem=1
+    all_runs:
+        walltime: "00:30:00"
+        num_tasks: 1
     is_exclusive=True
 
 mom6ic:
-    wtime_mom6ic="00:30:00"
-    npe_mom6ic=24
-    npe_node_mom6ic=24
+    all_runs:
+        walltime: "00:30:00"
+        num_tasks: 24
     is_exclusive=True
 
 arch" | "earc" | "getic:
     declare -x "wtime_${step}"="06:00:00"
     declare -x "npe_${step}"="1"
-    declare -x "npe_node_${step}"="1"
     declare -x "nth_${step}"="1"
     declare -x "memory_${step}"="4096M"
     if [[ "${machine}" == "WCOSS2" ]]; then
@@ -672,47 +574,44 @@ arch" | "earc" | "getic:
     fi
 
 cleanup:
-    wtime_cleanup="00:15:00"
-    npe_cleanup=1
-    npe_node_cleanup=1
-    nth_cleanup=1
+    all_runs:
+        walltime: "00:15:00"
+        num_tasks: 1
+        threads: 1
     memory_cleanup="4096M"
 
 stage_ic:
-    wtime_stage_ic="00:15:00"
-    npe_stage_ic=1
-    npe_node_stage_ic=1
-    nth_stage_ic=1
+    all_runs:
+        walltime: "00:15:00"
+        num_tasks: 1
+        threads: 1
     is_exclusive=True
 
 atmensanlinit:
+    all_runs:
     layout_x=${layout_x_atmensanl}
     layout_y=${layout_y_atmensanl}
 
-    wtime_atmensanlinit="00:10:00"
-    npe_atmensanlinit=1
-    nth_atmensanlinit=1
-    npe_node_atmensanlinit=$(( npe_node_max / nth_atmensanlinit ))
+        walltime: "00:10:00"
+        num_tasks: 1
+        threads: 1
     memory_atmensanlinit="3072M"
 
 atmensanlrun:
+    all_runs:
     layout_x=${layout_x_atmensanl}
     layout_y=${layout_y_atmensanl}
 
-    wtime_atmensanlrun="00:30:00"
-    npe_atmensanlrun=$(( layout_x * layout_y * 6 ))
-    npe_atmensanlrun_gfs=$(( layout_x * layout_y * 6 ))
-    nth_atmensanlrun=1
-    nth_atmensanlrun_gfs=${nth_atmensanlrun}
-    npe_node_atmensanlrun=$(( npe_node_max / nth_atmensanlrun ))
+        walltime: "00:30:00"
+        num_tasks: $(( layout_x * layout_y * 6 ))
+        threads: 1
     memory_atmensanlrun="96GB"
     is_exclusive=True
 
 atmensanlfinal:
-    wtime_atmensanlfinal="00:30:00"
-    npe_atmensanlfinal=${npe_node_max}
-    nth_atmensanlfinal=1
-    npe_node_atmensanlfinal=$(( npe_node_max / nth_atmensanlfinal ))
+    all_runs:
+        walltime: "00:30:00"
+        threads: 1
     is_exclusive=True
 
 eobs" | "eomg:
@@ -748,14 +647,15 @@ eobs" | "eomg:
     npe_node_eomg=${npe_node_eobs}
 
 ediag:
-    wtime_ediag="00:15:00"
-    npe_ediag=48
-    nth_ediag=1
-    npe_node_ediag=$(( npe_node_max / nth_ediag ))
+    all_runs:
+        walltime: "00:15:00"
+        num_tasks: 48
+        threads: 1
     memory_ediag="30GB"
 
 eupd:
-    wtime_eupd="00:30:00"
+    all_runs:
+        walltime: "00:30:00"
     case ${CASE} in
       "C768")
         npe_eupd=480
@@ -787,42 +687,39 @@ eupd:
         exit 4
         {% endif %}
     esac
-    npe_node_eupd=$(( npe_node_max / nth_eupd ))
     is_exclusive=True
 
 ecen:
-    wtime_ecen="00:10:00"
-    npe_ecen=80
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 80
     nth_ecen=4
     if [[ "${machine}" == "HERA" ]]; then nth_ecen=6; fi
     if [[ ${CASE} == "C384" || ${CASE} == "C192" || ${CASE} == "C96" || ${CASE} == "C48" ]]; then
       nth_ecen=2
     fi
-    npe_node_ecen=$(( npe_node_max / nth_ecen ))
     nth_cycle=${nth_ecen}
-    npe_node_cycle=$(( npe_node_max / nth_cycle ))
     is_exclusive=True
 
 esfc:
-    wtime_esfc="00:15:00"
-    npe_esfc=80
-    nth_esfc=1
-    npe_node_esfc=$(( npe_node_max / nth_esfc ))
-    nth_cycle=${nth_esfc}
-    npe_node_cycle=$(( npe_node_max / nth_cycle ))
+    all_runs:
+        walltime: "00:15:00"
+        num_tasks: 80
+        threads: 1
     memory_esfc="80GB"
 
 epos:
-    wtime_epos="00:15:00"
-    npe_epos=80
-    nth_epos=1
-    npe_node_epos=$(( npe_node_max / nth_epos ))
+    all_runs:
+        walltime: "00:15:00"
+        num_tasks: 80
+        threads: 1
     is_exclusive=True
 
 postsnd:
-    wtime_postsnd="02:00:00"
+    all_runs:
+        walltime: "02:00:00"
     npe_postsnd=40
-    nth_postsnd=8
+        threads: 8
     npe_node_postsnd=10
     npe_postsndcfp=9
     npe_node_postsndcfp=1
@@ -833,157 +730,170 @@ postsnd:
     is_exclusive=True
 
 awips:
-    wtime_awips="03:30:00"
-    npe_awips=1
-    npe_node_awips=1
-    nth_awips=1
+    all_runs:
+        walltime: "03:30:00"
+        num_tasks: 1
+        threads: 1
     memory_awips="3GB"
 
 npoess:
-    wtime_npoess="03:30:00"
-    npe_npoess=1
-    npe_node_npoess=1
-    nth_npoess=1
+    all_runs:
+        walltime: "03:30:00"
+        num_tasks: 1
+        threads: 1
     memory_npoess="3GB"
 
 gempak:
-    wtime_gempak="03:00:00"
+    all_runs:
+        walltime: "03:00:00"
     npe_gempak=2
     npe_gempak_gfs=28
-    npe_node_gempak=2
-    npe_node_gempak_gfs=28
-    nth_gempak=1
+        threads: 1
     memory_gempak="4GB"
     memory_gempak_gfs="2GB"
 
 mos_stn_prep:
-    wtime_mos_stn_prep="00:10:00"
-    npe_mos_stn_prep=3
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 3
     npe_node_mos_stn_prep=3
-    nth_mos_stn_prep=1
+        threads: 1
     memory_mos_stn_prep="5GB"
     NTASK="${npe_mos_stn_prep}"
     PTILE="${npe_node_mos_stn_prep}"
 
 mos_grd_prep:
-    wtime_mos_grd_prep="00:10:00"
-    npe_mos_grd_prep=4
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 4
     npe_node_mos_grd_prep=4
-    nth_mos_grd_prep=1
+        threads: 1
     memory_mos_grd_prep="16GB"
     NTASK="${npe_mos_grd_prep}"
     PTILE="${npe_node_mos_grd_prep}"
 
 mos_ext_stn_prep:
-    wtime_mos_ext_stn_prep="00:15:00"
-    npe_mos_ext_stn_prep=2
+    all_runs:
+        walltime: "00:15:00"
+        num_tasks: 2
     npe_node_mos_ext_stn_prep=2
-    nth_mos_ext_stn_prep=1
+        threads: 1
     memory_mos_ext_stn_prep="5GB"
     NTASK="${npe_mos_ext_stn_prep}"
     PTILE="${npe_node_mos_ext_stn_prep}"
 
 mos_ext_grd_prep:
-    wtime_mos_ext_grd_prep="00:10:00"
-    npe_mos_ext_grd_prep=7
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 7
     npe_node_mos_ext_grd_prep=7
-    nth_mos_ext_grd_prep=1
+        threads: 1
     memory_mos_ext_grd_prep="3GB"
     NTASK="${npe_mos_ext_grd_prep}"
     PTILE="${npe_node_mos_ext_grd_prep}"
 
 mos_stn_fcst:
-    wtime_mos_stn_fcst="00:10:00"
-    npe_mos_stn_fcst=5
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 5
     npe_node_mos_stn_fcst=5
-    nth_mos_stn_fcst=1
+        threads: 1
     memory_mos_stn_fcst="40GB"
     NTASK="${npe_mos_stn_fcst}"
     PTILE="${npe_node_mos_stn_fcst}"
 
 mos_grd_fcst:
-    wtime_mos_grd_fcst="00:10:00"
-    npe_mos_grd_fcst=7
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 7
     npe_node_mos_grd_fcst=7
-    nth_mos_grd_fcst=1
+        threads: 1
     memory_mos_grd_fcst="50GB"
     NTASK="${npe_mos_grd_fcst}"
     PTILE="${npe_node_mos_grd_fcst}"
 
 mos_ext_stn_fcst:
-    wtime_mos_ext_stn_fcst="00:20:00"
-    npe_mos_ext_stn_fcst=3
+    all_runs:
+        walltime: "00:20:00"
+        num_tasks: 3
     npe_node_mos_ext_stn_fcst=3
-    nth_mos_ext_stn_fcst=1
+        threads: 1
     memory_mos_ext_stn_fcst="50GB"
     NTASK="${npe_mos_ext_stn_fcst}"
     PTILE="${npe_node_mos_ext_stn_fcst}"
     prepost=True
 
 mos_ext_grd_fcst:
-    wtime_mos_ext_grd_fcst="00:10:00"
-    npe_mos_ext_grd_fcst=7
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 7
     npe_node_mos_ext_grd_fcst=7
-    nth_mos_ext_grd_fcst=1
+        threads: 1
     memory_mos_ext_grd_fcst="50GB"
     NTASK="${npe_mos_ext_grd_fcst}"
     PTILE="${npe_node_mos_ext_grd_fcst}"
 
 mos_stn_prdgen:
-    wtime_mos_stn_prdgen="00:10:00"
-    npe_mos_stn_prdgen=1
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 1
     npe_node_mos_stn_prdgen=1
-    nth_mos_stn_prdgen=1
+        threads: 1
     memory_mos_stn_prdgen="15GB"
     NTASK="${npe_mos_stn_prdgen}"
     PTILE="${npe_node_mos_stn_prdgen}"
     prepost=True
 
 mos_grd_prdgen:
-    wtime_mos_grd_prdgen="00:40:00"
-    npe_mos_grd_prdgen=72
+    all_runs:
+        walltime: "00:40:00"
+        num_tasks: 72
     npe_node_mos_grd_prdgen=18
-    nth_mos_grd_prdgen=4
+        threads: 4
     memory_mos_grd_prdgen="20GB"
     NTASK="${npe_mos_grd_prdgen}"
     PTILE="${npe_node_mos_grd_prdgen}"
     OMP_NUM_THREADS="${nth_mos_grd_prdgen}"
 
 mos_ext_stn_prdgen:
-    wtime_mos_ext_stn_prdgen="00:10:00"
-    npe_mos_ext_stn_prdgen=1
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 1
     npe_node_mos_ext_stn_prdgen=1
-    nth_mos_ext_stn_prdgen=1
+        threads: 1
     memory_mos_ext_stn_prdgen="15GB"
     NTASK="${npe_mos_ext_stn_prdgen}"
     PTILE="${npe_node_mos_ext_stn_prdgen}"
     prepost=True
 
 mos_ext_grd_prdgen:
-    wtime_mos_ext_grd_prdgen="00:30:00"
-    npe_mos_ext_grd_prdgen=96
+    all_runs:
+        walltime: "00:30:00"
+        num_tasks: 96
     npe_node_mos_ext_grd_prdgen=6
-    nth_mos_ext_grd_prdgen=16
+        threads: 16
     memory_mos_ext_grd_prdgen="30GB"
     NTASK="${npe_mos_ext_grd_prdgen}"
     PTILE="${npe_node_mos_ext_grd_prdgen}"
     OMP_NUM_THREADS="${nth_mos_ext_grd_prdgen}"
 
 mos_wx_prdgen:
-    wtime_mos_wx_prdgen="00:10:00"
-    npe_mos_wx_prdgen=4
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 4
     npe_node_mos_wx_prdgen=2
-    nth_mos_wx_prdgen=2
+        threads: 2
     memory_mos_wx_prdgen="10GB"
     NTASK="${npe_mos_wx_prdgen}"
     PTILE="${npe_node_mos_wx_prdgen}"
     OMP_NUM_THREADS="${nth_mos_wx_prdgen}"
 
 mos_wx_ext_prdgen:
-    wtime_mos_wx_ext_prdgen="00:10:00"
-    npe_mos_wx_ext_prdgen=4
+    all_runs:
+        walltime: "00:10:00"
+        num_tasks: 4
     npe_node_mos_wx_ext_prdgen=2
-    nth_mos_wx_ext_prdgen=2
+        threads: 2
     memory_mos_wx_ext_prdgen="10GB"
     NTASK="${npe_mos_wx_ext_prdgen}"
     PTILE="${npe_node_mos_wx_ext_prdgen}"

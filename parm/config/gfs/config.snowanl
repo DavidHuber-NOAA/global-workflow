@@ -5,6 +5,9 @@
 
 echo "BEGIN: config.snowanl"
 
+export layout_x
+export layout_y
+
 # Get task specific resources
 source "${EXPDIR}/config.resources" snowanl
 
@@ -24,7 +27,7 @@ export APPLY_INCR_NML_TMPL="${PARMgfs}/gdas/snow/letkfoi/apply_incr_nml.j2"
 
 export JEDI_FIX_YAML="${PARMgfs}/gdas/snow_jedi_fix.yaml.j2"
 
-export io_layout_x=@IO_LAYOUT_X@
-export io_layout_y=@IO_LAYOUT_Y@
+export io_layout_x
+export io_layout_y
 
 echo "END: config.snowanl"
