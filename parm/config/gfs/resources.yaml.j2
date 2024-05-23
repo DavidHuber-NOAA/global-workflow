@@ -2,44 +2,68 @@
 {% include "common.yaml.j2" %}
 {% set var = 0 %}
 
-valid_conf:
+check_configuration:
     # Determine if the configuration given is valid.
-    {% if DO_ATM %}
+    {% if MODE == "forecast-only" or MODE == "cycled" %}
+    {% set valid = True %}
+    valid_mode: True
+    {% else %}
+    {% set valid = False %}
+    valid_mode: False
+    reason_mode: "Invalid mode selected: {{ MODE }}"
+    {% endif %}
+
+    {% if DO_ATM == True %}
     {% if CASE == "C48" or CASE == "C96" or CASE == "C192" or CASE == "C384" or
           CASE == "C768" or CASE == "C1152" or CASE == "C3072" %}
     valid_atm: True
     {% else %}
     valid_atm: False
+    reason_atm: "Invalid CASE specified: {{ CASE }}"
+    {% set valid = False %}
     {% endif %}
     {% endif %}
 
-    {% if DO_HYBVAR %}
+    {% if DO_HYBVAR == True %}
     {% if CASE_ENS == "C48" or CASE_ENS == "C96" or CASE_ENS == "C192" or
           CASE_ENS == "C384" %}
     valid_atmens: True
     {% else %}
     valid_atmens: False
+    reason_atmens: "Invalid CASE_ENS specified: {{ CASE_ENS }}"
+    {% set valid = False %}
     {% endif %}
     {% endif %} # Ensemble resolution
 
-    {% if DO_OCN %}
+    {% if DO_OCN == True %}
     {% if OCNRES == "050" or OCNRES == "100" or OCNRES == "500" %}
     valid_ocn: True
     {% else %}
     valid_ocn: False
+    reason_ocn: "Invalid OCNRES specified: {{ OCNRES }}"
+    {% set valid = False %}
     {% endif %}
     {% endif %}
 
-    {% if DO_ICE %}
+    {% if DO_ICE == True %}
     {% if DO_OCN and ICERES == OCNRES and (ICERES == "050" or ICERES == "100" or ICERES == "500") %}
     valid_ice: True
     {% else %}
     valid_ice: False
+    {% if not DO_OCN == True %}
+    {% set reason_ice = "Cannot run ICE without OCN (DO_OCN must also be YES)" %}
+    {% elif ICERES != OCNRES %}
+    {% set reason_ice = "ICERES ({{ ICERES }}) cannot be different than OCNRES ({{ OCNRES }})" %}
+    {% else %}
+    {% set reason_ice = "Invalid ICERES ({{ ICERES }})"
+    {% endif %}
+    reason_ice: {{ reason_ice }}
+    {% set valid = False %}
     {% endif %}
     {% endif %}
 
-    {% if DO_AERO %}
-    {% if DO_ATM %}
+    {% if DO_AERO == True %}
+    {% if DO_ATM == True %}
     {% if MODE == "forecast-only" %}
     valid_aero: True
     {% elif MODE == "cycled" and (CASE == "C48" or CASE == "C96" or CASE == "C192" or
@@ -47,62 +71,66 @@ valid_conf:
     valid_aero: True
     valid_aero_anl: True
     {% else %}
+    {% set valid = False %}
     valid_aero: False
+    reason_aero: "Invalid aerosol resolution (CASE): {{ CASE }}"
     {% endif %}
     {% endif %}
     {% endif %}
 
-    {% if DO_WAVE %}
-    {% if DO_ATM and ( waveGRD == "gnh_10m;aoc_9km;gsh_15m" or
+    {% if DO_WAVE == True %}
+    {% if DO_ATM == True and ( waveGRD == "gnh_10m;aoc_9km;gsh_15m" or
                        waveGRD == "gwes_30m" or waveGRD == "glo_025" or
                        waveGRD == "glo_200" or waveGRD == "glo_500" or
                        waveGRD == "mx025" or waveGRD == "uglo_100km" or
                        waveGRD == "uglo_m1g16") %}
     valid_wave: True
     {% else %}
+    {% set valid = False %}
     valid_wave: False
+    {% if DO_ATM == False %}
+    reason_wave: "Cannot run waves without ATM (DO_ATM must be YES)"
+    {% else %}
+    reason_wave: "Invalid WW3 resolution (waveGRD): {{ waveGRD }}"
     {% endif %}
     {% endif %}
+    {% endif %}
+
+    valid: {{ valid }}
 
 prep:
     all_runs:
         walltime: "00:30:00"
         num_tasks: 4
-        threads: 1
         mem_per_task: "20GB"
 
 prepsnowobs:
     all_runs:
         walltime: "00:05:00"
         num_tasks: 1
-        threads: 1
         mem_per_task: "0"
 
 prepatmiodaobs:
     all_runs:
         walltime: "00:30:00"
         num_tasks: 1
-        threads: 1
         mem_per_task: "0"
 
 aerosol_init:
     all_runs:
         walltime: "00:05:00"
         num_tasks: 1
-        threads: 1
         mem_per_task: "6GB"
 
 waveinit:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 12
-        threads: 1
         mem_per_task: "200MB"
 
 waveprep:
     all_runs:
         walltime: "00:10:00"
-        threads: 1
     gfs:
         num_tasks: 65
         mem_per_task: "2500MB"
@@ -113,7 +141,6 @@ waveprep:
 wavepostsbs:
     all_runs:
         num_tasks: 8
-        threads: 1
         mem_per_task: "1300MB"
     gdas:
         walltime: "00:20:00"
@@ -124,56 +151,48 @@ wavepostbndpnt:
     all_runs:
         walltime: "01:00:00"
         num_tasks: 240
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
 
 wavepostbndpntbll:
     all_runs:
         walltime: "01:00:00"
         num_tasks: 448
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
 
 wavepostpnt:
     all_runs:
         walltime: "04:00:00"
         num_tasks: 200
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
 
 wavegempak:
     all_runs:
         walltime: "02:00:00"
         num_tasks: 1
-        threads: 1
         mem_per_task: "1GB"
 
 waveawipsbulls:
     all_runs:
         walltime: "00:20:00"
         num_tasks: 1
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
 
 waveawipsgridded:
     all_runs:
         walltime: "02:00:00"
         num_tasks: 1
-        threads: 1
         mem_per_task: "1GB"
 
 atmanlinit:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 1
-        threads: 1
         mem_per_task: "3072M"
 
 atmanlvar:
     all_runs:
         walltime: "00:30:00"
         num_tasks: {{ LAYOUT_X_ATMANL * LAYOUT_Y_ATMANL * 6 }}
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
         layout:
             x: {{ LAYOUT_X_ATMANL }}
@@ -185,7 +204,6 @@ atmanlfv3inc:
     all_runs:
         walltime: "00:30:00"
         num_tasks: {{ LAYOUT_X_ATMANL * LAYOUT_Y_ATMANL * 6 }}
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
         layout:
             x: {{ LAYOUT_X_ATMANL }}
@@ -197,7 +215,6 @@ atmanlfinal:
     all_runs:
         num_tasks: {{ cpus_per_node }}
         walltime: "00:30:00"
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
 
 snowanl:
@@ -211,7 +228,6 @@ snowanl:
     all_runs:
         num_tasks: {{ layout_x_snowanl * layout_y_snowanl * 6 }}
         walltime: "00:15:00"
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
         layout:
             x: {{ layout_x_snowanl }}
@@ -232,7 +248,6 @@ aeroanlinit:
     all_runs:
         num_tasks: 1
         walltime: "00:10:00"
-        threads: 1
         mem_per_task: "3072M"
         layout:
             x: {{ layout_x_aeroanlinit }}
@@ -251,7 +266,6 @@ aeroanlrun:
     all_runs:
         num_tasks: {{ layout_x_aeroanlrun * layout_y_aeroanlrun * 6 }}
         walltime: "00:30:00"
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
         layout:
             x: {{ layout_x_aeroanlrun }}
@@ -261,21 +275,18 @@ aeroanlfinal:
     all_runs:
         num_tasks: 1
         walltime: "00:10:00"
-        threads: 1
         mem_per_task: "3072M"
 
 ocnanalprep:
     all_runs:
         num_tasks: 1
         walltime: "00:10:00"
-        threads: 1
         mem_per_task: "24GB"
 
 prepoceanobs:
     all_runs:
         num_tasks: 1
         walltime: "00:10:00"
-        threads: 1
         mem_per_task: "48GB"
 
 ocnanalbmat:
@@ -289,7 +300,6 @@ ocnanalbmat:
     all_runs:
         num_tasks: {{ tasks_ocnanalbmat }}
         walltime: "00:15:00"
-        threads: 1
         mem_per_task: {{ mem_per_cpu }}
 
 ocnanalecen:
@@ -303,141 +313,91 @@ ocnanalecen:
     {% endif %}
     {% elif OCNRES == "500" %}
     {% set num_tasks = 16 %}
-    {% set mem_per_taks = "1500MB" %}
+    {% set mem_per_task = "1500MB" %}
     {% endif %}
 
     all_runs:
         walltime: "00:10:00"
         num_tasks: {{ num_tasks }}
-        threads: 1
         mem_per_task: {{ mem_per_task }}
 
 ocnanalchkpt:
     all_runs:
         walltime: "00:10:00"
-        threads: 1
-      {% if OCNRES == "025" %}
-        memory_ocnanalchkpt="128GB"
-        npes=40
+        {% if OCNRES == "025" %}
+        {% set mem_per_task = "3.2GB" %}
+        {% set num_tasks = 40 %}
+        {% elif OCNRES == "050" %}
+        {% set mem_per_task = "2GB" %}
+        {% set num_tasks = 16 %}
+        {% elif OCNRES == "500" %}
+        {% set mem_per_task = "4GB" %}
+        {% set num_tasks = 8 %}
         {% endif %}
-      {% if OCNRES == "050" %}
-        memory_ocnanalchkpt="32GB"
-        npes=16
-        {% endif %}
-      {% if OCNRES == "500" %}
-        memory_ocnanalchkpt="32GB"
-        npes=8
-        {% endif %}
-        echo "FATAL ERROR: Resources not defined for job ${job} at resolution ${OCNRES}"
-        exit 4
-    esac
-        num_tasks: ${npes}
-    memory_ocnanalchkpt
+        num_tasks: {{ num_tasks }}
+        mem_per_task: {{ mem_per_task }}
 
 ocnanalpost:
     all_runs:
         walltime: "00:30:00"
-        threads: 1
 
 ocnanalvrfy:
     all_runs:
         walltime: "00:35:00"
         num_tasks: 1
-        threads: 1
-    memory_ocnanalvrfy="24GB"
+        mem_per_task: "24GB"
 
 anal:
+    {% set atm_res = CASE %}
+    gdas:
+        {% set gsi_run = 'gdas' %}
+        {% filter indent(width=8) %}
+        {% include "gsi_resources.yaml" %}
+        {% endfilter %}
+
+    gfs:
+        {% set gsi_run = 'gdas' %}
+        {% filter indent(width=8) %}
+        {% include "gsi_resources.yaml" %}
+        {% endfilter %}
+
     all_runs:
-        walltime: "01:20:00"
-    wtime_anal_gfs="01:00:00"
-    npe_anal=780
-    nth_anal=5
-    npe_anal_gfs=825
-    nth_anal_gfs=5
-    if [[ "${machine}" == "WCOSS2" ]]; then
-      nth_anal=8
-      nth_anal_gfs=8
-    fi
-    case ${CASE} in
-      "C384")
-        npe_anal=160
-        npe_anal_gfs=160
-        nth_anal=10
-        nth_anal_gfs=10
-        if [[ ${machine} = "HERA" ]]; then
-          npe_anal=270
-          npe_anal_gfs=270
-          nth_anal=8
-          nth_anal_gfs=8
-        fi	  
-        if [[ ${machine} = "S4" ]]; then
-          #On the S4-s4 partition, this is accomplished by increasing the task
-          #count to a multiple of 32
-          if [[ ${PARTITION_BATCH} = "s4" ]]; then
-            npe_anal=416
-            npe_anal_gfs=416
-          fi
-          #S4 is small, so run this task with just 1 thread
-          nth_anal=1
-          nth_anal_gfs=1
-          wtime_anal="02:00:00"
-        fi
-        {% endif %}
-      "C192" | "C96" | "C48")
-        npe_anal=84
-        npe_anal_gfs=84
-        if [[ ${machine} == "S4" ]]; then
-          nth_anal=4
-          nth_anal_gfs=4
-          #Adjust job count for S4
-          if [[ ${PARTITION_BATCH} == "s4" ]]; then
-            npe_anal=88
-            npe_anal_gfs=88
-          elif [[ ${PARTITION_BATCH} == "ivy" ]]; then
-            npe_anal=90
-            npe_anal_gfs=90
-          fi
-        fi
-        {% endif %}
-        echo "FATAL ERROR: Resources not defined for job ${job} at resolution ${CASE}"
-        exit 4
-        {% endif %}
-    esac
-    nth_cycle=${nth_anal}
-    is_exclusive=True
+        exclusive: True
 
 analcalc:
+    # The analcalc job consists of a few sub jobs, each requiring a different
+    # number of tasks.  echgres is run as part of analcalc and needs a different layout
+    # the number of tasks is the length of IAUFHRS
+    gdas:
+        threads_echgres: 4
+        mem_per_cpu_echgres: "4.8GB"
+    gfs:
+        threads_echgres: 12
+        mem_per_cpu_echgres: "16GB"
     all_runs:
         walltime: "00:10:00"
         num_tasks: 127
-    ntasks="${npe_analcalc}"
-    nth_analcalc=1
-    nth_echgres=4
-    nth_echgres_gfs=12
-    is_exclusive=True
-    memory_analcalc="48GB"
+        exclusive: True
 
 analdiag:
     all_runs:
         walltime: "00:15:00"
         num_tasks: 96             # Should be at least twice npe_ediag
-        threads: 1
-    memory_analdiag="48GB"
+        mem_per_task: "1.2GB"
 
 sfcanl:
     all_runs:
         walltime: "00:20:00"
         num_tasks: 6
-        threads: 1
         mem_per_task: "15G"
 
 fcst:
     # Deterministic settings
     {% set atm_res = CASE %}
-    {% if DO_OCN %}{% set ocn_res = OCNRES %}{% endif %}
-    {% if DO_ICE %}{% set ice_res = ICERES %}{% endif %}
-    {% if DO_WAVE %}{% set wave_grid = waveGRD %}{% endif %}
-    {% if DO_AERO %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
+    {% if DO_OCN == True %}{% set ocn_res = OCNRES %}{% endif %}
+    {% if DO_ICE == True %}{% set ice_res = ICERES %}{% endif %}
+    {% if DO_WAVE == True %}{% set wave_grid = waveGRD %}{% endif %}
+    {% if DO_AERO == True %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
     enkfgfs:
         {% set ufs_run = "gfs" %}
         {% filter indent(width=8) %}
@@ -451,10 +411,10 @@ fcst:
 
     # Ensemble settings
     {% set atm_res = CASE_ENS %}
-    {% if DO_OCN %}{% set ocn_res = OCNRES %}{% endif %}
-    {% if DO_ICE %}{% set ice_res = ICERES %}{% endif %}
-    {% if DO_WAVE %}{% set wave_grid = waveGRD %}{% endif %}
-    {% if DO_AERO %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
+    {% if DO_OCN == True %}{% set ocn_res = OCNRES %}{% endif %}
+    {% if DO_ICE == True %}{% set ice_res = ICERES %}{% endif %}
+    {% if DO_WAVE == True %}{% set wave_grid = waveGRD %}{% endif %}
+    {% if DO_AERO == True %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
     enkfgfs:
         {% set ufs_run = "gfs" %}
         {% filter indent(width=8) %}
@@ -473,435 +433,354 @@ atmos_products:
     all_runs:
         walltime: "00:15:00"
         num_tasks: 24
-        threads: 1
-    wtime_atmos_products_gfs="${wtime_atmos_products}"
-    is_exclusive=True
+        mem_per_task: "3.8GB"
 
 verfozn:
     all_runs:
         walltime: "00:05:00"
         num_tasks: 1
-        threads: 1
-    memory_verfozn="1G"
+        mem_per_task: "1GB"
 
 verfrad:
     all_runs:
         walltime: "00:40:00"
         num_tasks: 1
-        threads: 1
-    memory_verfrad="5G"
+        mem_per_task: "5GB"
 
 vminmon:
     all_runs:
         walltime: "00:05:00"
         num_tasks: 1
-        threads: 1
-    wtime_vminmon_gfs="00:05:00"
-    memory_vminmon="1G"
+        mem_per_task: "1GB"
 
 tracker:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 1
-        threads: 1
-    memory_tracker="4G"
+        mem_per_task: "4GB"
 
 genesis:
     all_runs:
         walltime: "00:25:00"
         num_tasks: 1
-        threads: 1
-    memory_genesis="10G"
+        mem_per_task: "10GB"
 
 genesis_fsu:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 1
-        threads: 1
-    memory_genesis_fsu="10G"
+        mem_per_task: "1GB"
 
 fit2obs:
     all_runs:
         walltime: "00:20:00"
         num_tasks: 3
-        threads: 1
-    memory_fit2obs="20G"
-    if [[ ${machine} == "WCOSS2" ]]; then npe_node_fit2obs=3 ; fi
+        mem_per_task: "20GB"
+        # if [[ ${machine} == "WCOSS2" ]]; then npe_node_fit2obs=3 ; fi
 
 metp:
-    all_runs:
-        threads: 1
+    gdas:
         walltime: "03:00:00"
+    gfs:
+        walltime: "06:00:00"
+    all_runs:
         num_tasks: 4
-    wtime_metp_gfs="06:00:00"
-    is_exclusive=True
+        tasks_per_node: 4
+        mem_per_task: "max"
 
 echgres:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 3
-    if [[ "${machine}" == "WCOSS2" ]]; then
-      memory_echgres="200GB"
-    fi
+        mem_per_task: "max"
 
 init:
     all_runs:
         walltime: "00:30:00"
         num_tasks: 24
-        threads: 1
-    npe_node_init=6
-    memory_init="70GB"
+        mem_per_task: "12GB"
+        tasks_per_node: 6
 
 init_chem:
     all_runs:
         walltime: "00:30:00"
         num_tasks: 1
-    is_exclusive=True
+        mem_per_task: "max"
 
 mom6ic:
     all_runs:
         walltime: "00:30:00"
         num_tasks: 24
-    is_exclusive=True
+        mem_per_task: "max"
 
-arch" | "earc" | "getic:
-    declare -x "wtime_${step}"="06:00:00"
-    declare -x "npe_${step}"="1"
-    declare -x "nth_${step}"="1"
-    declare -x "memory_${step}"="4096M"
-    if [[ "${machine}" == "WCOSS2" ]]; then
-      declare -x "memory_${step}"="50GB"
-    fi
+arch:
+    all_runs:
+        walltime: "06:00:00"
+        tasks: 1
+        mem_per_task: "4GB"
+
+earc:
+    all_runs:
+        walltime: "06:00:00"
+        tasks: 1
+        mem_per_task: "4GB"
+
+getic:
+    all_runs:
+        walltime: "06:00:00"
+        tasks: 1
+        mem_per_task: "4GB"
 
 cleanup:
     all_runs:
         walltime: "00:15:00"
         num_tasks: 1
-        threads: 1
-    memory_cleanup="4096M"
+        mem_per_task: "4GB"
 
 stage_ic:
     all_runs:
         walltime: "00:15:00"
         num_tasks: 1
-        threads: 1
-    is_exclusive=True
+        mem_per_task: {{ mem_per_node }}
 
 atmensanlinit:
     all_runs:
-    layout_x=${layout_x_atmensanl}
-    layout_y=${layout_y_atmensanl}
+        layout:
+            x: {{ LAYOUT_X_ATMENSANL }}
+            y: {{ LAYOUT_Y_ATMENSANL }}
 
         walltime: "00:10:00"
         num_tasks: 1
-        threads: 1
-    memory_atmensanlinit="3072M"
+        mem_per_task: "3GB"
 
 atmensanlrun:
     all_runs:
-    layout_x=${layout_x_atmensanl}
-    layout_y=${layout_y_atmensanl}
+        layout:
+            x: {{ LAYOUT_X_ATMENSANL }}
+            y: {{ LAYOUT_Y_ATMENSANL }}
 
         walltime: "00:30:00"
-        num_tasks: $(( layout_x * layout_y * 6 ))
-        threads: 1
-    memory_atmensanlrun="96GB"
-    is_exclusive=True
+        num_tasks: {{ LAYOUT_X_ATMENSANL * LAYOUT_Y_ATMENSANL * 6 }}
+        mem_per_task: "max"
 
 atmensanlfinal:
     all_runs:
         walltime: "00:30:00"
-        threads: 1
-    is_exclusive=True
+        mem_per_task: {{ mem_per_node }}
 
-eobs" | "eomg:
-    wtime_eobs="00:15:00"
-    wtime_eomg="00:30:00"
-    case ${CASE} in
-      "C768")                 npe_eobs=200
-      {% endif %}
-      "C384")                 npe_eobs=100
-      {% endif %}
-      "C192" | "C96" | "C48") npe_eobs=40
-      {% endif %}
-        echo "FATAL ERROR: Resources not defined for job ${job} at resolution ${CASE}"
-        exit 4
+eobs:
+    all_res:
+        walltime: "00:15:00"
+
+eomg:
+    all_runs:
+        {% if CASE_ENS == "C384" %}
+        tasks: 200
+        {% elif CASE_ENS == "C192" %}
+        tasks: 100
+        {% else %}
+        tasks: 40
         {% endif %}
-    esac
-    npe_eomg=${npe_eobs}
-    nth_eobs=2
-    nth_eomg=${nth_eobs}
-    npe_node_eobs=$(( npe_node_max / nth_eobs ))
-    is_exclusive=True
-    # The number of tasks and cores used must be the same for eobs
-    # See https://github.com/NOAA-EMC/global-workflow/issues/2092 for details
-    # For S4, this is accomplished by running 10 tasks/node
-    if [[ ${machine} = "S4" ]]; then
-      npe_node_eobs=10
-    elif [[ ${machine} = "HERCULES" ]]; then
-      # For Hercules, this is only an issue at C384; use 20 tasks/node
-      if [[ ${CASE} = "C384" ]]; then
-        npe_node_eobs=20
-      fi
-    fi
-    npe_node_eomg=${npe_node_eobs}
+
+        walltime: "00:30:00"
+        threads: 2
+        mem_per_task: "max"
+
+eobs:
+    all_runs:
+        {% if CASE_ENS == "C384" %}
+        tasks: 200
+        {% elif CASE_ENS == "C192" %}
+        tasks: 100
+        {% else %}
+        tasks: 40
+        {% endif %}
+
+        walltime: "00:15:00"
+        threads: 2
+        mem_per_task: "max"
 
 ediag:
     all_runs:
         walltime: "00:15:00"
         num_tasks: 48
-        threads: 1
-    memory_ediag="30GB"
+        mem_per_task: "1.3GB"
 
 eupd:
     all_runs:
         walltime: "00:30:00"
-    case ${CASE} in
-      "C768")
-        npe_eupd=480
-        nth_eupd=6
-        if [[ "${machine}" == "WCOSS2" ]]; then
-          npe_eupd=315
-          nth_eupd=14
-        fi
+        {% if CASE_ENS == "C384" %}
+        tasks: 480
+        mem_per_task: "16GB"
+        {% elif CASE_ENS == "C192" %}
+        tasks: 270
+        mem_per_task: "19GB"
+        {% else %}
+        tasks: 42
+        mem_per_task: "9GB"
         {% endif %}
-      "C384")
-        npe_eupd=270
-        nth_eupd=8
-        if [[ "${machine}" == "WCOSS2" ]]; then
-          npe_eupd=315
-          nth_eupd=14
-        elif [[ ${machine} == "S4" ]]; then
-           npe_eupd=160
-           nth_eupd=2
-        fi
-        {% endif %}
-      "C192" | "C96" | "C48")
-        npe_eupd=42
-        nth_eupd=2
-        if [[ "${machine}" == "HERA" || "${machine}" == "JET" ]]; then
-          nth_eupd=4
-        fi
-        {% endif %}
-        echo "FATAL ERROR: Resources not defined for job ${job} at resolution ${CASE}"
-        exit 4
-        {% endif %}
-    esac
-    is_exclusive=True
 
 ecen:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 80
-    nth_ecen=4
-    if [[ "${machine}" == "HERA" ]]; then nth_ecen=6; fi
-    if [[ ${CASE} == "C384" || ${CASE} == "C192" || ${CASE} == "C96" || ${CASE} == "C48" ]]; then
-      nth_ecen=2
-    fi
-    nth_cycle=${nth_ecen}
-    is_exclusive=True
+        {% if CASE_ENS == "C384" %}
+        mem_per_task: "16GB"
+        {% else %}
+        mem_per_task: "4.6GB"
+        {% endif %}
 
 esfc:
     all_runs:
         walltime: "00:15:00"
         num_tasks: 80
-        threads: 1
-    memory_esfc="80GB"
+        mem_per_task: {{ mem_per_node }}
 
 epos:
     all_runs:
         walltime: "00:15:00"
         num_tasks: 80
-        threads: 1
-    is_exclusive=True
+        mem_per_task: {{ mem_per_cpu }}
 
 postsnd:
     all_runs:
         walltime: "02:00:00"
-    npe_postsnd=40
+        tasks: 40
         threads: 8
-    npe_node_postsnd=10
-    npe_postsndcfp=9
-    npe_node_postsndcfp=1
-    postsnd_req_cores=$(( npe_node_postsnd * nth_postsnd ))
-    if (( postsnd_req_cores > npe_node_max )); then
-        npe_node_postsnd=$(( npe_node_max / nth_postsnd ))
-    fi
-    is_exclusive=True
+        mem_per_task: "24GB"
+
+#    npe_node_postsnd=10
+#    npe_postsndcfp=9
+#    npe_node_postsndcfp=1
+#    postsnd_req_cores=$(( npe_node_postsnd * nth_postsnd ))
+#    if (( postsnd_req_cores > npe_node_max )); then
+#        npe_node_postsnd=$(( npe_node_max / nth_postsnd ))
+#    fi
+#    is_exclusive=True
 
 awips:
     all_runs:
         walltime: "03:30:00"
         num_tasks: 1
-        threads: 1
-    memory_awips="3GB"
+        mem_per_task: "3GB"
 
 npoess:
     all_runs:
         walltime: "03:30:00"
         num_tasks: 1
-        threads: 1
-    memory_npoess="3GB"
+        mem_per_task: "3GB"
 
 gempak:
     all_runs:
         walltime: "03:00:00"
-    npe_gempak=2
-    npe_gempak_gfs=28
-        threads: 1
-    memory_gempak="4GB"
-    memory_gempak_gfs="2GB"
+    gdas:
+        tasks: 2
+        mem_per_task: "2GB"
+    gfs:
+        tasks: 28
+        mem_per_task: "100MB"
 
 mos_stn_prep:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 3
-    npe_node_mos_stn_prep=3
-        threads: 1
-    memory_mos_stn_prep="5GB"
-    NTASK="${npe_mos_stn_prep}"
-    PTILE="${npe_node_mos_stn_prep}"
+        mem_per_task: "2GB"
+        PTILE: 3
 
 mos_grd_prep:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 4
-    npe_node_mos_grd_prep=4
-        threads: 1
-    memory_mos_grd_prep="16GB"
-    NTASK="${npe_mos_grd_prep}"
-    PTILE="${npe_node_mos_grd_prep}"
+        mem_per_task: "4GB"
+        PTILE: 4
 
 mos_ext_stn_prep:
     all_runs:
         walltime: "00:15:00"
         num_tasks: 2
-    npe_node_mos_ext_stn_prep=2
-        threads: 1
-    memory_mos_ext_stn_prep="5GB"
-    NTASK="${npe_mos_ext_stn_prep}"
-    PTILE="${npe_node_mos_ext_stn_prep}"
+        mem_per_task: "3GB"
+        PTILE: 2
 
 mos_ext_grd_prep:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 7
-    npe_node_mos_ext_grd_prep=7
-        threads: 1
-    memory_mos_ext_grd_prep="3GB"
-    NTASK="${npe_mos_ext_grd_prep}"
-    PTILE="${npe_node_mos_ext_grd_prep}"
+        mem_per_task: "500MB"
+        PTILE: 7
 
 mos_stn_fcst:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 5
-    npe_node_mos_stn_fcst=5
-        threads: 1
-    memory_mos_stn_fcst="40GB"
-    NTASK="${npe_mos_stn_fcst}"
-    PTILE="${npe_node_mos_stn_fcst}"
+        mem_per_task: "8GB"
+        PTILE: 5
 
 mos_grd_fcst:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 7
-    npe_node_mos_grd_fcst=7
-        threads: 1
-    memory_mos_grd_fcst="50GB"
-    NTASK="${npe_mos_grd_fcst}"
-    PTILE="${npe_node_mos_grd_fcst}"
+        mem_per_task: "7GB"
+        PTILE: 7
 
 mos_ext_stn_fcst:
     all_runs:
         walltime: "00:20:00"
         num_tasks: 3
-    npe_node_mos_ext_stn_fcst=3
-        threads: 1
-    memory_mos_ext_stn_fcst="50GB"
-    NTASK="${npe_mos_ext_stn_fcst}"
-    PTILE="${npe_node_mos_ext_stn_fcst}"
-    prepost=True
+        mem_per_task: "16.5GB"
+        PTILE: 3
+        prepost: True
 
 mos_ext_grd_fcst:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 7
-    npe_node_mos_ext_grd_fcst=7
-        threads: 1
-    memory_mos_ext_grd_fcst="50GB"
-    NTASK="${npe_mos_ext_grd_fcst}"
-    PTILE="${npe_node_mos_ext_grd_fcst}"
+        mem_per_task: "7GB"
+        PTILE: 7
 
 mos_stn_prdgen:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 1
-    npe_node_mos_stn_prdgen=1
-        threads: 1
-    memory_mos_stn_prdgen="15GB"
-    NTASK="${npe_mos_stn_prdgen}"
-    PTILE="${npe_node_mos_stn_prdgen}"
-    prepost=True
+        mem_per_task: "15GB"
+        PTILE: 1
+        prepost: True
 
 mos_grd_prdgen:
     all_runs:
         walltime: "00:40:00"
         num_tasks: 72
-    npe_node_mos_grd_prdgen=18
         threads: 4
-    memory_mos_grd_prdgen="20GB"
-    NTASK="${npe_mos_grd_prdgen}"
-    PTILE="${npe_node_mos_grd_prdgen}"
-    OMP_NUM_THREADS="${nth_mos_grd_prdgen}"
+        mem_per_task: "2GB"
+        PTILE: 72
 
 mos_ext_stn_prdgen:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 1
-    npe_node_mos_ext_stn_prdgen=1
-        threads: 1
-    memory_mos_ext_stn_prdgen="15GB"
-    NTASK="${npe_mos_ext_stn_prdgen}"
-    PTILE="${npe_node_mos_ext_stn_prdgen}"
-    prepost=True
+        mem_per_task: "15GB"
+        PTILE: 1
+        prepost: True
 
 mos_ext_grd_prdgen:
     all_runs:
         walltime: "00:30:00"
         num_tasks: 96
-    npe_node_mos_ext_grd_prdgen=6
         threads: 16
-    memory_mos_ext_grd_prdgen="30GB"
-    NTASK="${npe_mos_ext_grd_prdgen}"
-    PTILE="${npe_node_mos_ext_grd_prdgen}"
-    OMP_NUM_THREADS="${nth_mos_ext_grd_prdgen}"
+        mem_per_node: "15GB"
+        PTILE: 96
 
 mos_wx_prdgen:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 4
-    npe_node_mos_wx_prdgen=2
         threads: 2
-    memory_mos_wx_prdgen="10GB"
-    NTASK="${npe_mos_wx_prdgen}"
-    PTILE="${npe_node_mos_wx_prdgen}"
-    OMP_NUM_THREADS="${nth_mos_wx_prdgen}"
+        mem_per_task: "2.5GB"
+        PTILE: 4
 
 mos_wx_ext_prdgen:
     all_runs:
         walltime: "00:10:00"
         num_tasks: 4
-    npe_node_mos_wx_ext_prdgen=2
         threads: 2
-    memory_mos_wx_ext_prdgen="10GB"
-    NTASK="${npe_mos_wx_ext_prdgen}"
-    PTILE="${npe_node_mos_wx_ext_prdgen}"
-    OMP_NUM_THREADS="${nth_mos_wx_ext_prdgen}"
-
-    echo "FATAL ERROR: Invalid job ${step} passed to ${BASH_SOURCE[0]}"
-    exit 1
-
-esac
-
-echo "END: config.resources"
+        mem_per_task: "2.5GB"
+        PTILE: 4
