@@ -256,16 +256,19 @@ def fill_ROTDIR_forecasts(host, inputs):
 
 def fill_EXPDIR(inputs):
     """
-    Method to copy config files from workflow to experiment directory
+    Method to copy config files and resource templates from workflow to
+    the experiment directory.
     INPUTS:
         inputs: user inputs to `setup_expt.py`
     """
     configdir = inputs.configdir
     expdir = os.path.join(inputs.expdir, inputs.pslot)
 
-    configs = glob.glob(f'{configdir}/config.*')
+    configs = (glob.glob(f'{configdir}/config.*') +
+               glob.glob(f'{configdir}/*resources.yaml.j2'))
     if len(configs) == 0:
         raise IOError(f'no config files found in {configdir}')
+
     for config in configs:
         shutil.copy(config, expdir)
 

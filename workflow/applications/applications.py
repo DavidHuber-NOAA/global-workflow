@@ -84,7 +84,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
         self.configs_names = self._get_app_configs()
 
         # Source the config_files for the jobs in the application
-        self.configs = self._source_configs(conf)
+        self.configs = self._source_configs(conf, verbose=False)
 
         # Update the base config dictionary base on application
         self.configs['base'] = self._update_base(self.configs['base'])
@@ -95,8 +95,76 @@ class AppConfig(ABC, metaclass=AppConfigInit):
         # Get more configuration options into the class attributes
         self.gfs_cyc = self._base.get('gfs_cyc')
 
-        # Finally get task names for the application
+        # Get task names for the application
         self.task_names = self.get_task_names()
+
+        # Populate configs with resource definitions
+        self.task_name_configs = self._populate_task_configs()
+
+        # Finally, re-source the config files
+        self.configs = self._source_configs(conf, verbose=True)
+
+    def _populate_task_configs(self, resource_yaml = 'resources.yaml.j2'):
+    """
+    Add task-specific information to the configuration files
+    Inputs:
+    -------
+    """
+
+        expdir = self._base["EXPDIR"]
+        yaml_filename = os.path.join(expdir, "resources.yaml.j2")
+
+        resources = parse_j2yaml(yaml_filename,
+                                 self._base,
+                                 allow_missing=False)
+
+        if not resources['check_configuration']['valid']:
+            conf = resources['check_configuration']
+            for key in conf if "valid_" in key and not conf[key]:
+                component = key.replace("valid_", "")
+                print(conf["reason_" + component])
+
+            raise ValueError("Invalid configuration specified in config.base.")
+
+        for run in self.task_names.keys():
+            for task in self.task_names[run]:
+                # Construct the config filename
+                config_name = os.path.join(expdir,"config." + task)
+
+                # Get the run- and task-specific variables from the parsed yaml
+                variables = {}
+                task_vars = resources[task]
+                variables.update(task_vars["all_runs"]) if "all_runs" in task_vars
+                variables.update(task_vars[run]) if run in task_vars
+
+                # Check that resources were defined
+                if len(variables) == 0:
+                    raise ValueError(
+                         f"No resources are defined for task {task_name} in {yaml_filename}")
+                elif "num_PEs" not in variables:
+                    raise KeyError(
+                         f"{yaml_filename} does not define PE count for {task_name}")
+                elif "walltime" not in variables:
+                    raise KeyError(
+                         f"{yaml_filename} does not define walltime for {task_name}")
+
+                # Add the definitions to the top of the config file after the shebang
+                # Read the entirety of the config file
+                with open(config_path, 'r') as cfg_file:
+                    config_contents = cfg_file.readlines
+
+                # Add the new definitions starting on line 2
+                index = 1
+                config_contents.insert(index, "if [[ ${RUN} == " + RUN + " ]]; then\n")
+                index += 1
+                for variable,value in variables.items():
+                    config_contents.insert(index, f"export {variable}={value}\n")
+                    index += 1
+
+                config_contents.insert(index, "fi\n")
+
+                with open(config_path, "w") as cfg_file:
+                    cfg_file.writelines(config_contents)
 
     @abstractmethod
     def _get_app_configs(self):
@@ -121,7 +189,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
         '''
         pass
 
-    def _source_configs(self, conf: Configuration) -> Dict[str, Any]:
+    def _source_configs(self, conf: Configuration, verbose = False) -> Dict[str, Any]:
         """
         Given the configuration object and jobs,
         source the configurations for each config and return a dictionary
@@ -154,7 +222,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
             else:
                 files += [f'config.{config}']
 
-            print(f'sourcing config.{config}')
+            print(f'sourcing config.{config}') if verbose
             configs[config] = conf.parse_config(files)
 
         return configs

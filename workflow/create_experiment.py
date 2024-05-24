@@ -8,8 +8,8 @@ where ${HOMEgfs} is determined from the location of this script.
  ${HOMEgfs}/workflow/setup_expt.py
  ${HOMEgfs}/workflow/setup_xml.py
 
-The yaml file are simply the arguments for these two scripts.
-After this scripts runs the experiment is ready for launch.
+The yaml file is simply the arguments for these two scripts.
+After these scripts run, the experiment is ready for launch.
 
 Output
 ------

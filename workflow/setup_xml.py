@@ -57,8 +57,10 @@ def main(*argv):
                          'taskthrottle': user_inputs.taskthrottle,
                          'verbosity': user_inputs.verbosity}
 
+    # Read the current configuration
     cfg = Configuration(user_inputs.expdir)
 
+    # Parse config.base to get options for resource and task matrices
     base = cfg.parse_config('config.base')
 
     check_expdir(user_inputs.expdir, base['EXPDIR'])
