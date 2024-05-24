@@ -224,13 +224,11 @@
 
 # Add run-specific information to resources.yaml.j2
 walltime: {{ ufs_resources[ufs_run]['walltime'] }}
-layout:
-    x: {{ ufs_resources[ufs_run]['x']}}
-    y: {{ ufs_resources[ufs_run]['y'] }}
+layout_x: {{ ufs_resources[ufs_run]['x']}}
+layout_y: {{ ufs_resources[ufs_run]['y'] }}
     {% if ntiles > 6 %}
-    nest:
-        x: {{ ufs_resources['nest']['x']}}
-        y: {{ ufs_resources['nest']['y'] }}
+layout_x_nest: {{ ufs_resources['nest']['x']}}
+layout_y_nest: {{ ufs_resources['nest']['y'] }}
     {% endif %}
 write_groups: {{ ufs_resources[ufs_run]['write_groups'] }}
 write_tasks_per_group_per_thread: {{ ufs_resources[ufs_run]['write_tasks_per_group_per_thread'] }}

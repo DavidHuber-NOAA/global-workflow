@@ -194,22 +194,20 @@ atmanlvar:
         walltime: "00:30:00"
         num_tasks: {{ LAYOUT_X_ATMANL * LAYOUT_Y_ATMANL * 6 }}
         mem_per_task: {{ mem_per_cpu }}
-        layout:
-            x: {{ LAYOUT_X_ATMANL }}
-            y: {{ LAYOUT_Y_ATMANL }}
-            io_x: {{ IO_LAYOUT_X }}
-            io_y: {{ IO_LAYOUT_Y }}
+        layout_x: {{ LAYOUT_X_ATMANL }}
+        layout_y: {{ LAYOUT_Y_ATMANL }}
+        layout_io_x: {{ IO_LAYOUT_X }}
+        layout_io_y: {{ IO_LAYOUT_Y }}
 
 atmanlfv3inc:
     all_runs:
         walltime: "00:30:00"
         num_tasks: {{ LAYOUT_X_ATMANL * LAYOUT_Y_ATMANL * 6 }}
         mem_per_task: {{ mem_per_cpu }}
-        layout:
-            x: {{ LAYOUT_X_ATMANL }}
-            y: {{ LAYOUT_Y_ATMANL }}
-            io_x: {{ IO_LAYOUT_X }}
-            io_y: {{ IO_LAYOUT_Y }}
+        layout_x: {{ LAYOUT_X_ATMANL }}
+        layout_y: {{ LAYOUT_Y_ATMANL }}
+        layout_io_x: {{ IO_LAYOUT_X }}
+        layout_io_y: {{ IO_LAYOUT_Y }}
 
 atmanlfinal:
     all_runs:
@@ -229,11 +227,10 @@ snowanl:
         num_tasks: {{ layout_x_snowanl * layout_y_snowanl * 6 }}
         walltime: "00:15:00"
         mem_per_task: {{ mem_per_cpu }}
-        layout:
-            x: {{ layout_x_snowanl }}
-            y: {{ layout_y_snowanl }}
-            io_x: {{ IO_LAYOUT_X }}
-            io_y: {{ IO_LAYOUT_Y }}
+        layout_x: {{ layout_x_snowanl }}
+        layout_y: {{ layout_y_snowanl }}
+        layout_io_x: {{ IO_LAYOUT_X }}
+        layout_io_y: {{ IO_LAYOUT_Y }}
 
 aeroanlinit:
     {% if CASE == "C768" %}
@@ -249,9 +246,8 @@ aeroanlinit:
         num_tasks: 1
         walltime: "00:10:00"
         mem_per_task: "3072M"
-        layout:
-            x: {{ layout_x_aeroanlinit }}
-            y: {{ layout_y_aeroanlinit }}
+        layout_x: {{ layout_x_aeroanlinit }}
+        layout_y: {{ layout_y_aeroanlinit }}
 
 aeroanlrun:
     {% if CASE == "C768" %}
@@ -267,9 +263,8 @@ aeroanlrun:
         num_tasks: {{ layout_x_aeroanlrun * layout_y_aeroanlrun * 6 }}
         walltime: "00:30:00"
         mem_per_task: {{ mem_per_cpu }}
-        layout:
-            x: {{ layout_x_aeroanlrun }}
-            y: {{ layout_y_aeroanlrun }}
+        layout_x: {{ layout_x_aeroanlrun }}
+        layout_y: {{ layout_y_aeroanlrun }}
 
 aeroanlfinal:
     all_runs:
@@ -545,9 +540,8 @@ stage_ic:
 
 atmensanlinit:
     all_runs:
-        layout:
-            x: {{ LAYOUT_X_ATMENSANL }}
-            y: {{ LAYOUT_Y_ATMENSANL }}
+        layout_x: {{ LAYOUT_X_ATMENSANL }}
+        layout_y: {{ LAYOUT_Y_ATMENSANL }}
 
         walltime: "00:10:00"
         num_tasks: 1
@@ -555,9 +549,8 @@ atmensanlinit:
 
 atmensanlrun:
     all_runs:
-        layout:
-            x: {{ LAYOUT_X_ATMENSANL }}
-            y: {{ LAYOUT_Y_ATMENSANL }}
+        layout_x: {{ LAYOUT_X_ATMENSANL }}
+        layout_y: {{ LAYOUT_Y_ATMENSANL }}
 
         walltime: "00:30:00"
         num_tasks: {{ LAYOUT_X_ATMENSANL * LAYOUT_Y_ATMENSANL * 6 }}
