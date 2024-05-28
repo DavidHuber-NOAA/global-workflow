@@ -103,48 +103,48 @@ check_configuration:
 prep:
     parameters:
         walltime: "00:30:00"
-        num_tasks: 4
-        mem_per_task: "20GB"
+        num_PEs: 4
+        mem_per_PE: "20GB"
 
 prepsnowobs:
     parameters:
         walltime: "00:05:00"
-        num_tasks: 1
-        mem_per_task: "{{ mem_per_node }}"
+        num_PEs: 1
+        mem_per_PE: "{{ mem_per_node }}"
 
 prepatmiodaobs:
     parameters:
         walltime: "00:30:00"
-        num_tasks: 1
-        mem_per_task: "{{ mem_per_node }}"
+        num_PEs: 1
+        mem_per_PE: "{{ mem_per_node }}"
 
 aerosol_init:
     parameters:
         walltime: "00:05:00"
-        num_tasks: 1
-        mem_per_task: "6GB"
+        num_PEs: 1
+        mem_per_PE: "6GB"
 
 waveinit:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 12
-        mem_per_task: "200MB"
+        num_PEs: 12
+        mem_per_PE: "200MB"
 
 waveprep:
     parameters:
         walltime: "00:10:00"
 
     gfs:
-        num_tasks: 65
-        mem_per_task: "2.3GB"
+        num_PEs: 65
+        mem_per_PE: "2.3GB"
     gdas:
-        num_tasks: 5
-        mem_per_task: "20GB"
+        num_PEs: 5
+        mem_per_PE: "20GB"
 
 wavepostsbs:
     parameters:
-        num_tasks: 8
-        mem_per_task: "1.3GB"
+        num_PEs: 8
+        mem_per_PE: "1.3GB"
 
     gdas:
         walltime: "00:20:00"
@@ -154,50 +154,54 @@ wavepostsbs:
 wavepostbndpnt:
     parameters:
         walltime: "01:00:00"
-        num_tasks: 240
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: 240
+        mem_per_PE: "{{ mem_per_core }}"
 
 wavepostbndpntbll:
     parameters:
         walltime: "01:00:00"
-        num_tasks: 448
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: 448
+        mem_per_PE: "{{ mem_per_core }}"
 
 wavepostpnt:
     parameters:
         walltime: "04:00:00"
-        num_tasks: 200
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: 200
+        mem_per_PE: "{{ mem_per_core }}"
 
 wavegempak:
     parameters:
         walltime: "02:00:00"
-        num_tasks: 1
-        mem_per_task: "1GB"
+        num_PEs: 1
+        mem_per_PE: "1GB"
 
 waveawipsbulls:
     parameters:
         walltime: "00:20:00"
-        num_tasks: 1
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: 1
+        mem_per_PE: "{{ mem_per_core }}"
 
 waveawipsgridded:
     parameters:
         walltime: "02:00:00"
-        num_tasks: 1
-        mem_per_task: "1GB"
+        num_PEs: 1
+        mem_per_PE: "1GB"
 
 atmanlinit:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 1
-        mem_per_task: "3GB"
+        num_PEs: 1
+        mem_per_PE: "3GB"
+        layout_x: @LAYOUT_X_ATMANL@
+        layout_y: @LAYOUT_Y_ATMANL@
+        layout_gsib_x: {{ @IO_LAYOUT_X@ * 3 }}
+        layout_gsib_y: {{ @IO_LAYOUT_Y@ * 2 }}
 
 atmanlvar:
     parameters:
         walltime: "00:30:00"
-        num_tasks: {{ @LAYOUT_X_ATMANL@ * @LAYOUT_Y_ATMANL@ * 6 }}
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: {{ @LAYOUT_X_ATMANL@ * @LAYOUT_Y_ATMANL@ * 6 }}
+        mem_per_PE: "{{ mem_per_core }}"
         layout_x: @LAYOUT_X_ATMANL@
         layout_y: @LAYOUT_Y_ATMANL@
         layout_io_x: @IO_LAYOUT_X@
@@ -206,8 +210,8 @@ atmanlvar:
 atmanlfv3inc:
     parameters:
         walltime: "00:30:00"
-        num_tasks: {{ @LAYOUT_X_ATMANL@ * @LAYOUT_Y_ATMANL@ * 6 }}
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: {{ @LAYOUT_X_ATMANL@ * @LAYOUT_Y_ATMANL@ * 6 }}
+        mem_per_PE: "{{ mem_per_core }}"
         layout_x: @LAYOUT_X_ATMANL@
         layout_y: @LAYOUT_Y_ATMANL@
         layout_io_x: @IO_LAYOUT_X@
@@ -215,9 +219,9 @@ atmanlfv3inc:
 
 atmanlfinal:
     parameters:
-        num_tasks: {{ cpus_per_node }}
+        num_PEs: {{ cpus_per_node }}
         walltime: "00:30:00"
-        mem_per_task: "{{ mem_per_core }}"
+        mem_per_PE: "{{ mem_per_core }}"
 
 snowanl:
     {% if CASE == "C768" %}
@@ -226,11 +230,13 @@ snowanl:
         {% set layout_x_snowanl, layout_y_snowanl == (5, 5) %}
     {% elif CASE == "C192" or CASE == "C96" or CASE == "C48" %}
         {% set layout_x_snowanl, layout_y_snowanl == (1, 1) %}
+    {% else %}
+        {% set layout_x_snowanl, layout_y_snowanl == (0, 0)
     {% endif %}
     parameters:
-        num_tasks: {{ layout_x_snowanl * layout_y_snowanl * 6 }}
+        num_PEs: {{ layout_x_snowanl * layout_y_snowanl * 6 }}
         walltime: "00:15:00"
-        mem_per_task: "{{ mem_per_core }}"
+        mem_per_PE: "{{ mem_per_core }}"
         layout_x: {{ layout_x_snowanl }}
         layout_y: {{ layout_y_snowanl }}
         layout_io_x: {{ @IO_LAYOUT_X@ }}
@@ -245,11 +251,13 @@ aeroanlinit:
         {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (8, 8) %}
     {% elif CASE == "C48" %}
         {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (1, 1) %}
+    {% else %}
+        {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (0, 0)
     {% endif %}
     parameters:
-        num_tasks: 1
+        num_PEs: 1
         walltime: "00:10:00"
-        mem_per_task: "3GB"
+        mem_per_PE: "3GB"
         layout_x: {{ layout_x_aeroanlinit }}
         layout_y: {{ layout_y_aeroanlinit }}
 
@@ -263,88 +271,128 @@ aeroanlrun:
     {% endif %}
 
     parameters:
-        num_tasks: {{ layout_x * layout_y * 6 }}
+        num_PEs: {{ layout_x * layout_y * 6 }}
         walltime: "00:30:00"
-        mem_per_task: "{{ mem_per_core }}"
+        mem_per_PE: "{{ mem_per_core }}"
         layout_x: {{ layout_x }}
         layout_y: {{ layout_y }}
 
 aeroanlfinal:
     parameters:
-        num_tasks: 1
+        num_PEs: 1
         walltime: "00:10:00"
-        mem_per_task: "3GB"
+        mem_per_PE: "3GB"
 
 ocnanalprep:
     parameters:
-        num_tasks: 1
+        num_PEs: 1
         walltime: "00:10:00"
-        mem_per_task: "24GB"
+        mem_per_PE: "24GB"
 
 prepoceanobs:
     parameters:
-        num_tasks: 1
+        num_PEs: 1
         walltime: "00:10:00"
-        mem_per_task: "48GB"
+        mem_per_PE: "48GB"
 
 ocnanalbmat:
     {% if OCNRES == "025" %}
-        {% set tasks_ocnanalbmat = 480 %}
+        {% set num_PEs = 480 %}
     {% elif OCNRES == "050" %}
-        {% set tasks_ocnanalbmat = 16 %}
+        {% set num_PEs = 16 %}
     {% elif OCNRES == "500" %}
-        {% set tasks_ocnanalbmat = 16 %}
+        {% set num_PEs = 16 %}
+    {% else %}
+        {% set num_PEs = 0 %}
     {% endif %}
+
     parameters:
-        num_tasks: {{ tasks_ocnanalbmat }}
+        num_PEs: {{ num_PEs }}
         walltime: "00:15:00"
-        mem_per_task: "{{ mem_per_core }}"
+        mem_per_PE: "{{ mem_per_core }}"
+
+ocnanalrun:
+{% set walltime = "00:15:00" %}
+{% if OCNRES == "025" %}
+    {% set num_PEs, mem_per_PE = (480, "max") %}
+{% elif OCNRES == "050" or OCNRES == "500" %}
+    {% set num_PEs, mem_per_PE = (16, "max") %}
+{% elif OCNRES == "050" or OCNRES == "500" %}
+    {% set num_PEs, mem_per_PE = (16, "1.5GB") %}
+{% else %}
+    {% set num_PEs, mem_per_PE, walltime = (0, 0, "00:00:00") %}
+{% endif %}
+
+    parameters:
+        num_PEs: {{ num_PEs }}
+        mem_per_PE: {{ mem_per_PE }}
+        walltime: {{ waltime }}
 
 ocnanalecen:
+    {% set wallclock = "00:10:00" %}
     {% if OCNRES == "025" %}
-        {% set num_tasks = 40 %}
-        {% set mem_per_task = "2.4GB" %}
+        {% set num_PEs, mem_per_PE = (40, mem_per_cpu) %}
     {% elif OCNRES == "050" %}
-        {% set num_tasks = 16 %}
-        {% set mem_per_task = "2.4GB" %}
+        {% set num_PEs, mem_per_PE = (16, "max") %}
     {% elif OCNRES == "500" %}
-        {% set num_tasks = 16 %}
-        {% set mem_per_task = "1.5GB" %}
+        {% set num_PEs, mem_per_PE = (16, "1.5GB") %}
+    {% else %}
+        {% set num_PEs, mem_per_PE, walltime = (0, 0, "00:00:00") %}
     {% endif %}
 
     parameters:
-        walltime: "00:10:00"
-        num_tasks: {{ num_tasks }}
-        mem_per_task: {{ mem_per_task }}
+        walltime: {{ walltime }}
+        num_PEs: {{ num_PEs }}
+        mem_per_PE: {{ mem_per_PE }}
+
+ocnanalletkf:
+    {% set walltime = "00:10:00" %}
+    {% if OCNRES == "025" %}
+        {% set num_PEs, mem_per_PE = (480, mem_per_cpu) %}
+    {% elif OCNRES == "050" or OCNRES == "500" %}
+        {% set num_PEs, mem_per_PE = (16, "max") %}
+    {% elif OCNRES == "050" or OCNRES == "500" %}
+        {% set num_PEs, mem_per_PE = (16, "1.5GB") %}
+    {% else %}
+        {% set num_PEs, mem_per_PE, walltime = (0, 0, "00:00:00") %}
+    {% endif %}
+
+    parameters:
+        walltime: {{ walltime }}
+        num_PEs: {{ num_PEs }}
+        mem_per_PE: {{ mem_per_PE }}
 
 ocnanalchkpt:
     parameters:
-        walltime: "00:10:00"
+        {% set walltime = "00:10:00" %}
         {% if OCNRES == "025" %}
-            {% set mem_per_task = "3.2GB" %}
-            {% set num_tasks = 40 %}
+            {% set num_PEs, mem_per_PE = (40, "3.2GB") %}
         {% elif OCNRES == "050" %}
-            {% set mem_per_task = "2GB" %}
-            {% set num_tasks = 16 %}
+            {% set num_PEs, mem_per_PE = (16, "2GB") %}
         {% elif OCNRES == "500" %}
-            {% set mem_per_task = "4GB" %}
-            {% set num_tasks = 8 %}
+            {% set num_PEs, mem_per_PE = (8, "4GB") %}
+        {% else %}
+            {% set num_PEs, mem_per_PE, walltime = (8, "4GB", "00:00:00") %}
         {% endif %}
-        num_tasks: {{ num_tasks }}
-        mem_per_task: {{ mem_per_task }}
+        num_PEs: {{ num_PEs }}
+        mem_per_PE: {{ mem_per_PE }}
+        walltime: {{ walltime }}
 
 ocnanalpost:
     parameters:
         walltime: "00:30:00"
+        num_PEs: {{ cores_per_node }}
 
 ocnanalvrfy:
     parameters:
         walltime: "00:35:00"
-        num_tasks: 1
-        mem_per_task: "24GB"
+        num_PEs: 1
+        mem_per_PE: "24GB"
 
 anal:
-    {% set atm_res = CASE %}
+    parameters:
+        mem_per_PE: "max"
+
     gdas:
         {% set gsi_run = 'gdas' %}
         {% filter indent(width=12) %}
@@ -359,33 +407,39 @@ anal:
 
 analcalc:
     # The analcalc job consists of a few sub jobs, each requiring a different
-    # number of tasks.  echgres is run as part of analcalc and needs a different layout
-    # the number of tasks is the length of IAUFHRS
+    # number of tasks.
+    # echgres is run as part of analcalc and needs a different layout.
+    #    - The number of tasks is the length of IAUFHRS.
+
     gdas:
-        threads: 4
-        mem_per_task: "4.8GB"
+        nth_echgres: 4
+
     gfs:
         # TODO Determine if this level of threading is really needed or just to resolve memory
-        threads: 12
-        mem_per_task: "16GB"
+        nth_echgres: 12
 
     parameters:
         walltime: "00:10:00"
-        num_tasks: 127
+        num_PEs: 127
+        mem_per_PE: "1.2GB"
+        adjustable: False
 
 analdiag:
     parameters:
         walltime: "00:15:00"
-        num_tasks: 96             # Should be at least twice npe_ediag
-        mem_per_task: "1.2GB"
+        num_PEs: 96             # Should be at least twice npe_ediag
+        mem_per_PE: "1.2GB"
 
 sfcanl:
     parameters:
         walltime: "00:20:00"
-        num_tasks: 6
-        mem_per_task: "15G"
+        num_PEs: 6
+        mem_per_PE: "15G"
 
 fcst:
+    parameters:
+        mem_per_PE: "max"
+
     # Deterministic settings
     {% set atm_res = CASE %}
     {% if DO_OCN == True %}{% set ocn_res = OCNRES %}{% endif %}
@@ -404,8 +458,16 @@ fcst:
         {% include "ufs_resources.yaml.j2" %}
         {% endfilter %}
 
+efcs:
+    parameters:
+        mem_per_PE: "max"
+
     # Ensemble settings
     {% set atm_res = CASE_ENS %}
+    {% if DO_OCN == True %}{% set ocn_res = OCNRES %}{% endif %}
+    {% if DO_ICE == True %}{% set ice_res = ICERES %}{% endif %}
+    {% if DO_WAVE == True %}{% set wave_grid = waveGRD %}{% endif %}
+    {% if DO_AERO == True %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
 
     enkfgfs:
         {% set ufs_run = "gfs" %}
@@ -418,53 +480,77 @@ fcst:
         {% include "ufs_resources.yaml.j2" %}
         {% endfilter %}
 
+oceanice_products:
+    parameters:
+        walltime: "00:15:00"
+        num_PEs: 1
+        mem_per_PE: {{ mem_per_node }}
+
+upp:
+    {% set num_PEs, walltime = (120, "00:15:00") %}
+
+    {% if CASE == "C768" %}
+        {% set mem_per_PE = "max" %}
+    {% elif CASE == "C192" or CASE == "C96" %}
+        {% set mem_per_PE = mem_per_core %}
+    {% elif CASE == "C96" or CASE == "C48" %}
+        {% set num_PEs, mem_per_PE = ( CASE | replace("C", "") | int, mem_per_core %}
+    {% else %}
+        {% set num_PEs, mem_per_PE, walltime = ( 0, 0, "00:00:00" %}
+    {% endif %}
+
+    parameters:
+        walltime: {{ walltime }}
+        num_PEs: {{ num_PEs }}
+        mem_per_PE: {{ mem_per_PE }}
+
 atmos_products:
     parameters:
         walltime: "00:15:00"
-        num_tasks: 24
-        mem_per_task: "2.5GB"
+        num_PEs: 24
+        mem_per_PE: "2.5GB"
 
 verfozn:
     parameters:
         walltime: "00:05:00"
-        num_tasks: 1
-        mem_per_task: "1GB"
+        num_PEs: 1
+        mem_per_PE: "1GB"
 
 verfrad:
     parameters:
         walltime: "00:40:00"
-        num_tasks: 1
-        mem_per_task: "5GB"
+        num_PEs: 1
+        mem_per_PE: "5GB"
 
 vminmon:
     parameters:
         walltime: "00:05:00"
-        num_tasks: 1
-        mem_per_task: "1GB"
+        num_PEs: 1
+        mem_per_PE: "1GB"
 
 tracker:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 1
-        mem_per_task: "4GB"
+        num_PEs: 1
+        mem_per_PE: "4GB"
 
 genesis:
     parameters:
         walltime: "00:25:00"
-        num_tasks: 1
-        mem_per_task: "10GB"
+        num_PEs: 1
+        mem_per_PE: "10GB"
 
 genesis_fsu:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 1
-        mem_per_task: "1GB"
+        num_PEs: 1
+        mem_per_PE: "1GB"
 
 fit2obs:
     parameters:
         walltime: "00:20:00"
-        num_tasks: 3
-        mem_per_task: "20GB"
+        num_PEs: 3
+        mem_per_PE: "20GB"
 
 metp:
     gdas:
@@ -473,62 +559,62 @@ metp:
         walltime: "06:00:00"
 
     parameters:
-        num_tasks: 4
-        mem_per_task: "20GB"
+        num_PEs: 4
+        mem_per_PE: "20GB"
 
 echgres:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 3
-        mem_per_task: "20GB"
+        num_PEs: 3
+        mem_per_PE: "20GB"
 
 init:
     parameters:
         walltime: "00:30:00"
-        num_tasks: 24
-        mem_per_task: "12GB"
+        num_PEs: 24
+        mem_per_PE: "12GB"
 
 init_chem:
     parameters:
         walltime: "00:30:00"
-        num_tasks: 1
-        mem_per_task: "{{ mem_per_node }}"
+        num_PEs: 1
+        mem_per_PE: "{{ mem_per_node }}"
 
 mom6ic:
     parameters:
         walltime: "00:30:00"
-        num_tasks: 24
-        mem_per_task: "3.5GB"
+        num_PEs: 24
+        mem_per_PE: "3.5GB"
 
 arch:
     parameters:
         walltime: "06:00:00"
-        num_tasks: 1
-        mem_per_task: "4GB"
+        num_PEs: 1
+        mem_per_PE: "4GB"
 
 earc:
     parameters:
         walltime: "06:00:00"
-        num_tasks: 1
-        mem_per_task: "4GB"
+        num_PEs: 1
+        mem_per_PE: "4GB"
 
 getic:
     parameters:
         walltime: "06:00:00"
-        num_tasks: 1
-        mem_per_task: "4GB"
+        num_PEs: 1
+        mem_per_PE: "4GB"
 
 cleanup:
     parameters:
         walltime: "00:15:00"
-        num_tasks: 1
-        mem_per_task: "4GB"
+        num_PEs: 1
+        mem_per_PE: "4GB"
 
 stage_ic:
     parameters:
         walltime: "00:15:00"
-        num_tasks: 1
-        mem_per_task: "{{ mem_per_node }}"
+        num_PEs: 1
+        mem_per_PE: "{{ mem_per_node }}"
 
 atmensanlinit:
     parameters:
@@ -536,8 +622,8 @@ atmensanlinit:
         layout_y: @LAYOUT_Y_ATMENSANL@
 
         walltime: "00:10:00"
-        num_tasks: 1
-        mem_per_task: "3GB"
+        num_PEs: 1
+        mem_per_PE: "3GB"
 
 atmensanlrun:
     parameters:
@@ -545,204 +631,207 @@ atmensanlrun:
         layout_y: @LAYOUT_Y_ATMENSANL@
 
         walltime: "00:30:00"
-        num_tasks: {{ @LAYOUT_X_ATMENSANL@ * @LAYOUT_Y_ATMENSANL@ * 6 }}
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: {{ @LAYOUT_X_ATMENSANL@ * @LAYOUT_Y_ATMENSANL@ * 6 }}
+        mem_per_PE: "{{ mem_per_core }}"
 
 atmensanlfinal:
     parameters:
         walltime: "00:30:00"
-        num_tasks: 1
-        mem_per_task: "{{ mem_per_node }}"
-
-eobs:
-    parameters:
-        walltime: "00:15:00"
+        num_PEs: 1
+        mem_per_PE: "{{ mem_per_node }}"
 
 eomg:
     parameters:
         {% if CASE_ENS == "C384" %}
-        num_tasks: 200
+        num_PEs: 200
         {% elif CASE_ENS == "C192" %}
-        num_tasks: 100
+        num_PEs: 100
         {% else %}
-        num_tasks: 40
+        num_PEs: 40
         {% endif %}
 
         walltime: "00:30:00"
         threads: 2
-        mem_per_task: "{{ mem_per_core }}"
+        mem_per_PE: "{{ mem_per_core }}"
 
 eobs:
     parameters:
+        {% set mem_per_PE, threads, walltime = (mem_per_core, 2, "00:15:00") %}
         {% if CASE_ENS == "C384" %}
-        num_tasks: 200
+            {% set num_PEs = 200 %}
         {% elif CASE_ENS == "C192" %}
-        num_tasks: 100
+            {% set num_PEs = 100 %}
+        {% elif CASE_ENS == "C96" or CASE_ENS == "C48" %}
+            {% set num_PEs = 40 %}
         {% else %}
-        num_tasks: 40
+            {% set num_PEs, mem_per_PE, threads, walltime = (0, 0, 0, "00:00:00") %}
         {% endif %}
 
-        walltime: "00:15:00"
-        threads: 2
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: {{ num_PEs }}
+        walltime: {{ walltime }}
+        threads: {{ threads }}
+        mem_per_PE: "{{ mem_per_PE }}"
 
 ediag:
     parameters:
         walltime: "00:15:00"
-        num_tasks: 48
-        mem_per_task: "1.3GB"
+        num_PEs: 48
+        mem_per_PE: "1.3GB"
 
 eupd:
     parameters:
-        walltime: "00:30:00"
+        {% set walltime = "00:30:00" %}
         {% if CASE_ENS == "C384" %}
-        num_tasks: 480
-        mem_per_task: "24GB"
+            {% set num_PEs, mem_per_PE = (480, "24GB") %}
         {% elif CASE_ENS == "C192" %}
-        num_tasks: 270
-        mem_per_task: "19GB"
+            {% set num_PEs, mem_per_PE = (270, "12GB") %}
+        {% elif CASE_ENS == "C96" or CASE_ENS == "C48" %}
+            {% set num_PEs, mem_per_PE = (42, "9GB") %}
         {% else %}
-        num_tasks: 42
-        mem_per_task: "9GB"
+            {% set num_PEs, mem_per_PE, walltime = (0, "0", "00:00:00") %}
         {% endif %}
+
+        walltime: {{ walltime }}
+        mem_per_PE: {{ mem_per_PE }}
+        num_PEs: {{ num_PEs }}
 
 ecen:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 80
+        num_PEs: 80
         {% if CASE_ENS == "C384" %}
-        mem_per_task: "16GB"
+        mem_per_PE: "16GB"
         {% else %}
-        mem_per_task: "4.6GB"
+        mem_per_PE: "4.6GB"
         {% endif %}
 
 esfc:
     parameters:
         walltime: "00:15:00"
-        num_tasks: 80
-        mem_per_task: "{{ mem_per_node }}"
+        num_PEs: 80
+        mem_per_PE: "{{ mem_per_node }}"
 
 epos:
     parameters:
         walltime: "00:15:00"
-        num_tasks: 80
-        mem_per_task: "{{ mem_per_core }}"
+        num_PEs: 80
+        mem_per_PE: "{{ mem_per_core }}"
 
 postsnd:
     parameters:
         walltime: "02:00:00"
-        num_tasks: 40
-        mem_per_task: "9GB"
-        num_tasks_postsndcfp: 9
+        num_PEs: 40
+        mem_per_PE: "9GB"
+        num_PEs_postsndcfp: 9
 
 awips:
     parameters:
         walltime: "03:30:00"
-        num_tasks: 1
-        mem_per_task: "3GB"
+        num_PEs: 1
+        mem_per_PE: "3GB"
 
 npoess:
     parameters:
         walltime: "03:30:00"
-        num_tasks: 1
-        mem_per_task: "3GB"
+        num_PEs: 1
+        mem_per_PE: "3GB"
 
 gempak:
     parameters:
         walltime: "03:00:00"
 
     gdas:
-        num_tasks: 2
-        mem_per_task: "2GB"
+        num_PEs: 2
+        mem_per_PE: "2GB"
     gfs:
-        num_tasks: 28
-        mem_per_task: "100MB"
+        num_PEs: 28
+        mem_per_PE: "100MB"
 
 mos_stn_prep:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 3
-        mem_per_task: "2GB"
+        num_PEs: 3
+        mem_per_PE: "2GB"
         PTILE: 3
 
 mos_grd_prep:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 4
-        mem_per_task: "4GB"
+        num_PEs: 4
+        mem_per_PE: "4GB"
         PTILE: 4
 
 mos_ext_stn_prep:
     parameters:
         walltime: "00:15:00"
-        num_tasks: 2
-        mem_per_task: "3GB"
+        num_PEs: 2
+        mem_per_PE: "3GB"
         PTILE: 2
 
 mos_ext_grd_prep:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 7
-        mem_per_task: "500MB"
+        num_PEs: 7
+        mem_per_PE: "500MB"
         PTILE: 7
 
 mos_stn_fcst:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 5
-        mem_per_task: "8GB"
+        num_PEs: 5
+        mem_per_PE: "8GB"
         PTILE: 5
 
 mos_grd_fcst:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 7
-        mem_per_task: "7GB"
+        num_PEs: 7
+        mem_per_PE: "7GB"
         PTILE: 7
 
 mos_ext_stn_fcst:
     parameters:
         walltime: "00:20:00"
-        num_tasks: 3
-        mem_per_task: "16.5GB"
+        num_PEs: 3
+        mem_per_PE: "16.5GB"
         PTILE: 3
         prepost: True
 
 mos_ext_grd_fcst:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 7
-        mem_per_task: "7GB"
+        num_PEs: 7
+        mem_per_PE: "7GB"
         PTILE: 7
 
 mos_stn_prdgen:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 1
-        mem_per_task: "15GB"
+        num_PEs: 1
+        mem_per_PE: "15GB"
         PTILE: 1
         prepost: True
 
 mos_grd_prdgen:
     parameters:
         walltime: "00:40:00"
-        num_tasks: 72
+        num_PEs: 72
         threads: 4
-        mem_per_task: "2GB"
+        mem_per_PE: "2GB"
         PTILE: 72
 
 mos_ext_stn_prdgen:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 1
-        mem_per_task: "15GB"
+        num_PEs: 1
+        mem_per_PE: "15GB"
         PTILE: 1
         prepost: True
 
 mos_ext_grd_prdgen:
     parameters:
         walltime: "00:30:00"
-        num_tasks: 96
+        num_PEs: 96
         threads: 16
         mem_per_node: "15GB"
         PTILE: 96
@@ -750,15 +839,20 @@ mos_ext_grd_prdgen:
 mos_wx_prdgen:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 4
+        num_PEs: 4
         threads: 2
-        mem_per_task: "2.5GB"
+        mem_per_PE: "2.5GB"
         PTILE: 4
 
 mos_wx_ext_prdgen:
     parameters:
         walltime: "00:10:00"
-        num_tasks: 4
+        num_PEs: 4
         threads: 2
-        mem_per_task: "2.5GB"
+        mem_per_PE: "2.5GB"
         PTILE: 4
+
+# Allow parameters to be redefined by the machine jinja template, if present
+{% if %}
+    {%- include machine ~ "_task_resources.yaml.j2" ignore missing %}
+{% endif %}

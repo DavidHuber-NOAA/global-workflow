@@ -148,6 +148,9 @@ class AppConfig(ABC, metaclass=AppConfigInit):
                     raise KeyError(
                       f"{yaml_filename} does not define walltime for {task_name}")
 
+                # If mem_per_task and/or threads are defined, adjust/calculate
+                # threads and mem_per_node
+
                 # Add the definitions to the top of the config file after the shebang
                 # Read the entirety of the config file
                 with open(config_path, 'r') as cfg_file:

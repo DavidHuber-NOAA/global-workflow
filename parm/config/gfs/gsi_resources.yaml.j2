@@ -3,46 +3,29 @@
 
 # (Standard) Model resolution dependent variables
 # Atmosphere resources
-{% if atm_res == "C768" %}
-{% set gsi_resources =
-     {'gdas':{'min_threads':4, 'max_threads':8, 'tasks':780, 'walltime':'01:20:00'},
-      'gfs' :{'min_threads':4, 'max_threads':8, 'tasks':825, 'walltime':'01:00:00'}} %}
-{% elif atm_res == "C384" %}
-{% set gsi_resources =
-     {'gdas':{'min_threads':8, 'max_threads':10, 'tasks':160, 'walltime':'01:20:00'},
-      'gfs' :{'min_threads':8, 'max_threads':10, 'tasks':160, 'walltime':'01:00:00'}} %}
-#        if [[ ${machine} = "HERA" ]]; then
-#          npe_anal=270
-#          npe_anal_gfs=270
-#          nth_anal=8
-#          nth_anal_gfs=8
-#        fi	  
-{% elif atm_res == "C192" or atm_res == "C96" or atm_res == "C48" %}
-#        if [[ ${machine} = "S4" ]]; then
-#          #On the S4-s4 partition, this is accomplished by increasing the task
-#          #count to a multiple of 32
-#          if [[ ${PARTITION_BATCH} = "s4" ]]; then
-#            npe_anal=416
-#            npe_anal_gfs=416
-#          fi
-#          #S4 is small, so run this task with just 1 thread
-#          nth_anal=1
-#          nth_anal_gfs=1
-#          wtime_anal="02:00:00"
-#        fi
-{% set gsi_resources =
-     {'gdas':{'min_threads':4, 'max_threads':5, 'tasks':84, 'walltime':'01:20:00'},
-      'gfs' :{'min_threads':4, 'max_threads':5, 'tasks':84, 'walltime':'01:00:00'}} %}
+{% if CASE == "C768" %}
+    {% set gsi_resources =
+         {'gdas':{'min_threads':4, 'max_threads':8, 'num_PEs':780, 'walltime':'01:20:00'},
+          'gfs' :{'min_threads':4, 'max_threads':8, 'num_PEs':825, 'walltime':'01:00:00'}} %}
+{% elif CASE == "C384" %}
+    # TODO test if 270 tasks are really neded on Hera
+    {% set gsi_resources =
+         {'gdas':{'min_threads':8, 'max_threads':10, 'num_PEs':160, 'walltime':'01:20:00'},
+          'gfs' :{'min_threads':8, 'max_threads':10, 'num_PEs':160, 'walltime':'01:00:00'}} %}
+{% elif CASE == "C192" or CASE == "C96" or CASE == "C48" %}
+    {% set gsi_resources =
+         {'gdas':{'min_threads':4, 'max_threads':5, 'num_PEs':84, 'walltime':'01:20:00'},
+          'gfs' :{'min_threads':4, 'max_threads':5, 'num_PEs':84, 'walltime':'01:00:00'}} %}
 
 # Unknown resolution
 {% else %}
-{% set gsi_resources =
-     {'gdas':{'min_threads':0, 'max_threads':0, 'tasks':0, 'walltime':'00:00:00'},
-      'gfs' :{'min_threads':0, 'max_threads':0, 'tasks':0, 'walltime':'00:00:00'}} %}
+    {% set gsi_resources =
+         {'gdas':{'min_threads':0, 'max_threads':0, 'num_PEs':0, 'walltime':'00:00:00'},
+          'gfs' :{'min_threads':0, 'max_threads':0, 'num_PEs':0, 'walltime':'00:00:00'}} %}
 {% endif %}
 
 # Add run-specific information to resources.yaml
 walltime: {{ gsi_resources[gsi_run]['walltime'] }}
-num_tasks: {{ gsi_resources[gsi_run]['tasks'] }}
+num_PEs: {{ gsi_resources[gsi_run]['num_PEs'] }}
 min_threads: {{ gsi_resources[gsi_run]['min_threads'] }}
 max_threads: {{ gsi_resources[gsi_run]['max_threads'] }}
