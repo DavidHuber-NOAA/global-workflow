@@ -134,7 +134,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
                 # Get the run- and task-specific variables from the parsed yaml
                 variables = {}
                 task_vars = resources[task]
-                variables.update(task_vars["all_runs"]) if "all_runs" in task_vars
+                variables.update(task_vars["parameters"]) if "parameters" in task_vars
                 variables.update(task_vars[run]) if run in task_vars
 
                 # Check that resources were defined

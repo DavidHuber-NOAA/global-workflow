@@ -1,343 +1,344 @@
 {% include machine_ID + ".yaml.j2" %}
-{% include "common.yaml.j2" %}
-{% set var = 0 %}
 
 check_configuration:
     # Determine if the configuration given is valid.
     {% if MODE == "forecast-only" or MODE == "cycled" %}
-    {% set valid = True %}
+        {% set valid = True %}
     valid_mode: True
     {% else %}
-    {% set valid = False %}
+        {% set valid = False %}
     valid_mode: False
     reason_mode: "Invalid mode selected: {{ MODE }}"
     {% endif %}
 
     {% if DO_ATM == True %}
-    {% if CASE == "C48" or CASE == "C96" or CASE == "C192" or CASE == "C384" or
+        {% if CASE == "C48" or CASE == "C96" or CASE == "C192" or CASE == "C384" or
           CASE == "C768" or CASE == "C1152" or CASE == "C3072" %}
     valid_atm: True
-    {% else %}
+        {% else %}
     valid_atm: False
     reason_atm: "Invalid CASE specified: {{ CASE }}"
-    {% set valid = False %}
-    {% endif %}
+            {% set valid = False %}
+        {% endif %}
     {% endif %}
 
     {% if DO_HYBVAR == True %}
-    {% if CASE_ENS == "C48" or CASE_ENS == "C96" or CASE_ENS == "C192" or
+        {% if CASE_ENS == "C48" or CASE_ENS == "C96" or CASE_ENS == "C192" or
           CASE_ENS == "C384" %}
     valid_atmens: True
-    {% else %}
+        {% else %}
     valid_atmens: False
     reason_atmens: "Invalid CASE_ENS specified: {{ CASE_ENS }}"
-    {% set valid = False %}
-    {% endif %}
+            {% set valid = False %}
+        {% endif %}
+    {% else %}
+        # Not hybrid
+        # Set CASE_ENS to 0 just to prevent undefined below.
+        {% set CASE_ENS = 0 %}
     {% endif %} # Ensemble resolution
 
     {% if DO_OCN == True %}
-    {% if OCNRES == "050" or OCNRES == "100" or OCNRES == "500" %}
+        {% if OCNRES == "050" or OCNRES == "100" or OCNRES == "500" %}
     valid_ocn: True
-    {% else %}
+        {% else %}
     valid_ocn: False
     reason_ocn: "Invalid OCNRES specified: {{ OCNRES }}"
-    {% set valid = False %}
-    {% endif %}
+            {% set valid = False %}
+        {% endif %}
     {% endif %}
 
     {% if DO_ICE == True %}
-    {% if DO_OCN and ICERES == OCNRES and (ICERES == "050" or ICERES == "100" or ICERES == "500") %}
+        {% if DO_OCN and ICERES == OCNRES and (ICERES == "050" or ICERES == "100" or ICERES == "500") %}
     valid_ice: True
-    {% else %}
+        {% else %}
     valid_ice: False
-    {% if not DO_OCN == True %}
-    {% set reason_ice = "Cannot run ICE without OCN (DO_OCN must also be YES)" %}
-    {% elif ICERES != OCNRES %}
-    {% set reason_ice = "ICERES ({{ ICERES }}) cannot be different than OCNRES ({{ OCNRES }})" %}
-    {% else %}
-    {% set reason_ice = "Invalid ICERES ({{ ICERES }})"
-    {% endif %}
+            {% if not DO_OCN == True %}
+                {% set reason_ice = "Cannot run ICE without OCN (DO_OCN must also be YES)" %}
+            {% elif ICERES != OCNRES %}
+                {% set reason_ice = "ICERES ({{ ICERES }}) cannot be different than OCNRES ({{ OCNRES }})" %}
+            {% else %}
+                {% set reason_ice = "Invalid ICERES ({{ ICERES }})"
+            {% endif %}
     reason_ice: {{ reason_ice }}
-    {% set valid = False %}
-    {% endif %}
+            {% set valid = False %}
+        {% endif %}
     {% endif %}
 
     {% if DO_AERO == True %}
-    {% if DO_ATM == True %}
-    {% if MODE == "forecast-only" %}
+        {% if DO_ATM == True %}
+            {% if MODE == "forecast-only" %}
     valid_aero: True
-    {% elif MODE == "cycled" and (CASE == "C48" or CASE == "C96" or CASE == "C192" or
-          CASE == "C384" or CASE == "C768") %}
+            {% elif MODE == "cycled" and (CASE == "C48" or CASE == "C96" or CASE == "C192" or
+              CASE == "C384" or CASE == "C768") %}
     valid_aero: True
     valid_aero_anl: True
-    {% else %}
-    {% set valid = False %}
+            {% else %}
+                {% set valid = False %}
     valid_aero: False
     reason_aero: "Invalid aerosol resolution (CASE): {{ CASE }}"
-    {% endif %}
-    {% endif %}
+            {% endif %}
+        {% endif %}
     {% endif %}
 
     {% if DO_WAVE == True %}
-    {% if DO_ATM == True and ( waveGRD == "gnh_10m;aoc_9km;gsh_15m" or
+        {% if DO_ATM == True and ( waveGRD == "gnh_10m;aoc_9km;gsh_15m" or
                        waveGRD == "gwes_30m" or waveGRD == "glo_025" or
                        waveGRD == "glo_200" or waveGRD == "glo_500" or
                        waveGRD == "mx025" or waveGRD == "uglo_100km" or
                        waveGRD == "uglo_m1g16") %}
     valid_wave: True
-    {% else %}
-    {% set valid = False %}
+        {% else %}
+            {% set valid = False %}
     valid_wave: False
-    {% if DO_ATM == False %}
+            {% if DO_ATM == False %}
     reason_wave: "Cannot run waves without ATM (DO_ATM must be YES)"
-    {% else %}
+            {% else %}
     reason_wave: "Invalid WW3 resolution (waveGRD): {{ waveGRD }}"
-    {% endif %}
-    {% endif %}
+            {% endif %}
+        {% endif %}
     {% endif %}
 
     valid: {{ valid }}
 
 prep:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
         num_tasks: 4
         mem_per_task: "20GB"
 
 prepsnowobs:
-    all_runs:
+    parameters:
         walltime: "00:05:00"
         num_tasks: 1
-        mem_per_task: "0"
+        mem_per_task: "{{ mem_per_node }}"
 
 prepatmiodaobs:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
         num_tasks: 1
-        mem_per_task: "0"
+        mem_per_task: "{{ mem_per_node }}"
 
 aerosol_init:
-    all_runs:
+    parameters:
         walltime: "00:05:00"
         num_tasks: 1
         mem_per_task: "6GB"
 
 waveinit:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 12
         mem_per_task: "200MB"
 
 waveprep:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
+
     gfs:
         num_tasks: 65
-        mem_per_task: "2500MB"
+        mem_per_task: "2.3GB"
     gdas:
         num_tasks: 5
         mem_per_task: "20GB"
 
 wavepostsbs:
-    all_runs:
+    parameters:
         num_tasks: 8
-        mem_per_task: "1300MB"
+        mem_per_task: "1.3GB"
+
     gdas:
         walltime: "00:20:00"
     gfs:
         walltime: "03:00:00"
 
 wavepostbndpnt:
-    all_runs:
+    parameters:
         walltime: "01:00:00"
         num_tasks: 240
-        mem_per_task: {{ mem_per_cpu }}
+        mem_per_task: "{{ mem_per_core }}"
 
 wavepostbndpntbll:
-    all_runs:
+    parameters:
         walltime: "01:00:00"
         num_tasks: 448
-        mem_per_task: {{ mem_per_cpu }}
+        mem_per_task: "{{ mem_per_core }}"
 
 wavepostpnt:
-    all_runs:
+    parameters:
         walltime: "04:00:00"
         num_tasks: 200
-        mem_per_task: {{ mem_per_cpu }}
+        mem_per_task: "{{ mem_per_core }}"
 
 wavegempak:
-    all_runs:
+    parameters:
         walltime: "02:00:00"
         num_tasks: 1
         mem_per_task: "1GB"
 
 waveawipsbulls:
-    all_runs:
+    parameters:
         walltime: "00:20:00"
         num_tasks: 1
-        mem_per_task: {{ mem_per_cpu }}
+        mem_per_task: "{{ mem_per_core }}"
 
 waveawipsgridded:
-    all_runs:
+    parameters:
         walltime: "02:00:00"
         num_tasks: 1
         mem_per_task: "1GB"
 
 atmanlinit:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 1
-        mem_per_task: "3072M"
+        mem_per_task: "3GB"
 
 atmanlvar:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
-        num_tasks: {{ LAYOUT_X_ATMANL * LAYOUT_Y_ATMANL * 6 }}
-        mem_per_task: {{ mem_per_cpu }}
-        layout_x: {{ LAYOUT_X_ATMANL }}
-        layout_y: {{ LAYOUT_Y_ATMANL }}
-        layout_io_x: {{ IO_LAYOUT_X }}
-        layout_io_y: {{ IO_LAYOUT_Y }}
+        num_tasks: {{ @LAYOUT_X_ATMANL@ * @LAYOUT_Y_ATMANL@ * 6 }}
+        mem_per_task: "{{ mem_per_core }}"
+        layout_x: @LAYOUT_X_ATMANL@
+        layout_y: @LAYOUT_Y_ATMANL@
+        layout_io_x: @IO_LAYOUT_X@
+        layout_io_y: @IO_LAYOUT_Y@
 
 atmanlfv3inc:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
-        num_tasks: {{ LAYOUT_X_ATMANL * LAYOUT_Y_ATMANL * 6 }}
-        mem_per_task: {{ mem_per_cpu }}
-        layout_x: {{ LAYOUT_X_ATMANL }}
-        layout_y: {{ LAYOUT_Y_ATMANL }}
-        layout_io_x: {{ IO_LAYOUT_X }}
-        layout_io_y: {{ IO_LAYOUT_Y }}
+        num_tasks: {{ @LAYOUT_X_ATMANL@ * @LAYOUT_Y_ATMANL@ * 6 }}
+        mem_per_task: "{{ mem_per_core }}"
+        layout_x: @LAYOUT_X_ATMANL@
+        layout_y: @LAYOUT_Y_ATMANL@
+        layout_io_x: @IO_LAYOUT_X@
+        layout_io_y: @IO_LAYOUT_Y@
 
 atmanlfinal:
-    all_runs:
+    parameters:
         num_tasks: {{ cpus_per_node }}
         walltime: "00:30:00"
-        mem_per_task: {{ mem_per_cpu }}
+        mem_per_task: "{{ mem_per_core }}"
 
 snowanl:
     {% if CASE == "C768" %}
-    {% set layout_x_snowanl, layout_y_snowanl == (6, 6) %}
+        {% set layout_x_snowanl, layout_y_snowanl == (6, 6) %}
     {% elif CASE == "C384" %}
-    {% set layout_x_snowanl, layout_y_snowanl == (5, 5) %}
+        {% set layout_x_snowanl, layout_y_snowanl == (5, 5) %}
     {% elif CASE == "C192" or CASE == "C96" or CASE == "C48" %}
-    {% set layout_x_snowanl, layout_y_snowanl == (1, 1) %}
+        {% set layout_x_snowanl, layout_y_snowanl == (1, 1) %}
     {% endif %}
-    all_runs:
+    parameters:
         num_tasks: {{ layout_x_snowanl * layout_y_snowanl * 6 }}
         walltime: "00:15:00"
-        mem_per_task: {{ mem_per_cpu }}
+        mem_per_task: "{{ mem_per_core }}"
         layout_x: {{ layout_x_snowanl }}
         layout_y: {{ layout_y_snowanl }}
-        layout_io_x: {{ IO_LAYOUT_X }}
-        layout_io_y: {{ IO_LAYOUT_Y }}
+        layout_io_x: {{ @IO_LAYOUT_X@ }}
+        layout_io_y: {{ @IO_LAYOUT_Y@ }}
 
 aeroanlinit:
     {% if CASE == "C768" %}
-    {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (8, 8) %}
+        {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (8, 8) %}
     {% elif CASE == "C384" %}
-    {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (8, 8) %}
+        {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (8, 8) %}
     {% elif CASE == "C192" or CASE == "C96" %}
-    {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (8, 8) %}
+        {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (8, 8) %}
     {% elif CASE == "C48" %}
-    {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (1, 1) %}
+        {% set layout_x_aeroanlinit, layout_y_aeroanlinit == (1, 1) %}
     {% endif %}
-    all_runs:
+    parameters:
         num_tasks: 1
         walltime: "00:10:00"
-        mem_per_task: "3072M"
+        mem_per_task: "3GB"
         layout_x: {{ layout_x_aeroanlinit }}
         layout_y: {{ layout_y_aeroanlinit }}
 
 aeroanlrun:
-    {% if CASE == "C768" %}
-    {% set layout_x_aeroanlrun, layout_y_aeroanlrun == (8, 8) %}
-    {% elif CASE == "C384" %}
-    {% set layout_x_aeroanlrun, layout_y_aeroanlrun == (8, 8) %}
-    {% elif CASE == "C192" or CASE == "C96" %}
-    {% set layout_x_aeroanlrun, layout_y_aeroanlrun == (8, 8) %}
+    {% if CASE == "C768" or CASE == "C384" or CASE == "C192" or CASE == "C96" %}
+        {% set layout_x, layout_y = (8, 8) %}
     {% elif CASE == "C48" %}
-    {% set layout_x_aeroanlrun, layout_y_aeroanlrun == (1, 1) %}
+        {% set layout_x, layout_y = (1, 1) %}
+    {% else %}
+        {% set layout_x, layout_y = (0, 0) %}
     {% endif %}
-    all_runs:
-        num_tasks: {{ layout_x_aeroanlrun * layout_y_aeroanlrun * 6 }}
+
+    parameters:
+        num_tasks: {{ layout_x * layout_y * 6 }}
         walltime: "00:30:00"
-        mem_per_task: {{ mem_per_cpu }}
-        layout_x: {{ layout_x_aeroanlrun }}
-        layout_y: {{ layout_y_aeroanlrun }}
+        mem_per_task: "{{ mem_per_core }}"
+        layout_x: {{ layout_x }}
+        layout_y: {{ layout_y }}
 
 aeroanlfinal:
-    all_runs:
+    parameters:
         num_tasks: 1
         walltime: "00:10:00"
-        mem_per_task: "3072M"
+        mem_per_task: "3GB"
 
 ocnanalprep:
-    all_runs:
+    parameters:
         num_tasks: 1
         walltime: "00:10:00"
         mem_per_task: "24GB"
 
 prepoceanobs:
-    all_runs:
+    parameters:
         num_tasks: 1
         walltime: "00:10:00"
         mem_per_task: "48GB"
 
 ocnanalbmat:
     {% if OCNRES == "025" %}
-    {% set tasks_ocnanalbmat = 480 %}
+        {% set tasks_ocnanalbmat = 480 %}
     {% elif OCNRES == "050" %}
-    {% set tasks_ocnanalbmat = 16 %}
+        {% set tasks_ocnanalbmat = 16 %}
     {% elif OCNRES == "500" %}
-    {% set tasks_ocnanalbmat = 16 %}
+        {% set tasks_ocnanalbmat = 16 %}
     {% endif %}
-    all_runs:
+    parameters:
         num_tasks: {{ tasks_ocnanalbmat }}
         walltime: "00:15:00"
-        mem_per_task: {{ mem_per_cpu }}
+        mem_per_task: "{{ mem_per_core }}"
 
 ocnanalecen:
     {% if OCNRES == "025" %}
-    {% set num_tasks = 40 %}
-    {% set mem_per_task = "2400MB" %}
-    {% endif %}
+        {% set num_tasks = 40 %}
+        {% set mem_per_task = "2.4GB" %}
     {% elif OCNRES == "050" %}
-    {% set num_tasks = 16 %}
-    {% set mem_per_task = "2400MB" %}
-    {% endif %}
+        {% set num_tasks = 16 %}
+        {% set mem_per_task = "2.4GB" %}
     {% elif OCNRES == "500" %}
-    {% set num_tasks = 16 %}
-    {% set mem_per_task = "1500MB" %}
+        {% set num_tasks = 16 %}
+        {% set mem_per_task = "1.5GB" %}
     {% endif %}
 
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: {{ num_tasks }}
         mem_per_task: {{ mem_per_task }}
 
 ocnanalchkpt:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         {% if OCNRES == "025" %}
-        {% set mem_per_task = "3.2GB" %}
-        {% set num_tasks = 40 %}
+            {% set mem_per_task = "3.2GB" %}
+            {% set num_tasks = 40 %}
         {% elif OCNRES == "050" %}
-        {% set mem_per_task = "2GB" %}
-        {% set num_tasks = 16 %}
+            {% set mem_per_task = "2GB" %}
+            {% set num_tasks = 16 %}
         {% elif OCNRES == "500" %}
-        {% set mem_per_task = "4GB" %}
-        {% set num_tasks = 8 %}
+            {% set mem_per_task = "4GB" %}
+            {% set num_tasks = 8 %}
         {% endif %}
         num_tasks: {{ num_tasks }}
         mem_per_task: {{ mem_per_task }}
 
 ocnanalpost:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
 
 ocnanalvrfy:
-    all_runs:
+    parameters:
         walltime: "00:35:00"
         num_tasks: 1
         mem_per_task: "24GB"
@@ -346,42 +347,40 @@ anal:
     {% set atm_res = CASE %}
     gdas:
         {% set gsi_run = 'gdas' %}
-        {% filter indent(width=8) %}
+        {% filter indent(width=12) %}
         {% include "gsi_resources.yaml" %}
         {% endfilter %}
 
     gfs:
-        {% set gsi_run = 'gdas' %}
-        {% filter indent(width=8) %}
+        {% set gsi_run = 'gfs' %}
+        {% filter indent(width=12) %}
         {% include "gsi_resources.yaml" %}
         {% endfilter %}
-
-    all_runs:
-        exclusive: True
 
 analcalc:
     # The analcalc job consists of a few sub jobs, each requiring a different
     # number of tasks.  echgres is run as part of analcalc and needs a different layout
     # the number of tasks is the length of IAUFHRS
     gdas:
-        threads_echgres: 4
-        mem_per_cpu_echgres: "4.8GB"
+        threads: 4
+        mem_per_task: "4.8GB"
     gfs:
-        threads_echgres: 12
-        mem_per_cpu_echgres: "16GB"
-    all_runs:
+        # TODO Determine if this level of threading is really needed or just to resolve memory
+        threads: 12
+        mem_per_task: "16GB"
+
+    parameters:
         walltime: "00:10:00"
         num_tasks: 127
-        exclusive: True
 
 analdiag:
-    all_runs:
+    parameters:
         walltime: "00:15:00"
         num_tasks: 96             # Should be at least twice npe_ediag
         mem_per_task: "1.2GB"
 
 sfcanl:
-    all_runs:
+    parameters:
         walltime: "00:20:00"
         num_tasks: 6
         mem_per_task: "15G"
@@ -393,228 +392,222 @@ fcst:
     {% if DO_ICE == True %}{% set ice_res = ICERES %}{% endif %}
     {% if DO_WAVE == True %}{% set wave_grid = waveGRD %}{% endif %}
     {% if DO_AERO == True %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
-    enkfgfs:
+
+    gfs:
         {% set ufs_run = "gfs" %}
-        {% filter indent(width=8) %}
+        {% filter indent(width=12) %}
         {% include "ufs_resources.yaml.j2" %}
         {% endfilter %}
-    enkfgdas:
+    gdas:
         {% set ufs_run = "gdas" %}
-        {% filter indent(width=8) %}
+        {% filter indent(width=12) %}
         {% include "ufs_resources.yaml.j2" %}
         {% endfilter %}
 
     # Ensemble settings
     {% set atm_res = CASE_ENS %}
-    {% if DO_OCN == True %}{% set ocn_res = OCNRES %}{% endif %}
-    {% if DO_ICE == True %}{% set ice_res = ICERES %}{% endif %}
-    {% if DO_WAVE == True %}{% set wave_grid = waveGRD %}{% endif %}
-    {% if DO_AERO == True %}{% set aero_res = CASE %}{% endif %} # Not used, but define anyway
+
     enkfgfs:
         {% set ufs_run = "gfs" %}
-        {% filter indent(width=8) %}
+        {% filter indent(width=12) %}
         {% include "ufs_resources.yaml.j2" %}
         {% endfilter %}
     enkfgdas:
         {% set ufs_run = "gdas" %}
-        {% filter indent(width=8) %}
+        {% filter indent(width=12) %}
         {% include "ufs_resources.yaml.j2" %}
         {% endfilter %}
 
-    all_runs:
-        - is_exclusive: True
-
 atmos_products:
-    all_runs:
+    parameters:
         walltime: "00:15:00"
         num_tasks: 24
-        mem_per_task: "3.8GB"
+        mem_per_task: "2.5GB"
 
 verfozn:
-    all_runs:
+    parameters:
         walltime: "00:05:00"
         num_tasks: 1
         mem_per_task: "1GB"
 
 verfrad:
-    all_runs:
+    parameters:
         walltime: "00:40:00"
         num_tasks: 1
         mem_per_task: "5GB"
 
 vminmon:
-    all_runs:
+    parameters:
         walltime: "00:05:00"
         num_tasks: 1
         mem_per_task: "1GB"
 
 tracker:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 1
         mem_per_task: "4GB"
 
 genesis:
-    all_runs:
+    parameters:
         walltime: "00:25:00"
         num_tasks: 1
         mem_per_task: "10GB"
 
 genesis_fsu:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 1
         mem_per_task: "1GB"
 
 fit2obs:
-    all_runs:
+    parameters:
         walltime: "00:20:00"
         num_tasks: 3
         mem_per_task: "20GB"
-        # if [[ ${machine} == "WCOSS2" ]]; then npe_node_fit2obs=3 ; fi
 
 metp:
     gdas:
         walltime: "03:00:00"
     gfs:
         walltime: "06:00:00"
-    all_runs:
+
+    parameters:
         num_tasks: 4
-        tasks_per_node: 4
-        mem_per_task: "max"
+        mem_per_task: "20GB"
 
 echgres:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 3
-        mem_per_task: "max"
+        mem_per_task: "20GB"
 
 init:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
         num_tasks: 24
         mem_per_task: "12GB"
-        tasks_per_node: 6
 
 init_chem:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
         num_tasks: 1
-        mem_per_task: "max"
+        mem_per_task: "{{ mem_per_node }}"
 
 mom6ic:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
         num_tasks: 24
-        mem_per_task: "max"
+        mem_per_task: "3.5GB"
 
 arch:
-    all_runs:
+    parameters:
         walltime: "06:00:00"
-        tasks: 1
+        num_tasks: 1
         mem_per_task: "4GB"
 
 earc:
-    all_runs:
+    parameters:
         walltime: "06:00:00"
-        tasks: 1
+        num_tasks: 1
         mem_per_task: "4GB"
 
 getic:
-    all_runs:
+    parameters:
         walltime: "06:00:00"
-        tasks: 1
+        num_tasks: 1
         mem_per_task: "4GB"
 
 cleanup:
-    all_runs:
+    parameters:
         walltime: "00:15:00"
         num_tasks: 1
         mem_per_task: "4GB"
 
 stage_ic:
-    all_runs:
+    parameters:
         walltime: "00:15:00"
         num_tasks: 1
-        mem_per_task: {{ mem_per_node }}
+        mem_per_task: "{{ mem_per_node }}"
 
 atmensanlinit:
-    all_runs:
-        layout_x: {{ LAYOUT_X_ATMENSANL }}
-        layout_y: {{ LAYOUT_Y_ATMENSANL }}
+    parameters:
+        layout_x: @LAYOUT_X_ATMENSANL@
+        layout_y: @LAYOUT_Y_ATMENSANL@
 
         walltime: "00:10:00"
         num_tasks: 1
         mem_per_task: "3GB"
 
 atmensanlrun:
-    all_runs:
-        layout_x: {{ LAYOUT_X_ATMENSANL }}
-        layout_y: {{ LAYOUT_Y_ATMENSANL }}
+    parameters:
+        layout_x: @LAYOUT_X_ATMENSANL@
+        layout_y: @LAYOUT_Y_ATMENSANL@
 
         walltime: "00:30:00"
-        num_tasks: {{ LAYOUT_X_ATMENSANL * LAYOUT_Y_ATMENSANL * 6 }}
-        mem_per_task: "max"
+        num_tasks: {{ @LAYOUT_X_ATMENSANL@ * @LAYOUT_Y_ATMENSANL@ * 6 }}
+        mem_per_task: "{{ mem_per_core }}"
 
 atmensanlfinal:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
-        mem_per_task: {{ mem_per_node }}
+        num_tasks: 1
+        mem_per_task: "{{ mem_per_node }}"
 
 eobs:
-    all_res:
+    parameters:
         walltime: "00:15:00"
 
 eomg:
-    all_runs:
+    parameters:
         {% if CASE_ENS == "C384" %}
-        tasks: 200
+        num_tasks: 200
         {% elif CASE_ENS == "C192" %}
-        tasks: 100
+        num_tasks: 100
         {% else %}
-        tasks: 40
+        num_tasks: 40
         {% endif %}
 
         walltime: "00:30:00"
         threads: 2
-        mem_per_task: "max"
+        mem_per_task: "{{ mem_per_core }}"
 
 eobs:
-    all_runs:
+    parameters:
         {% if CASE_ENS == "C384" %}
-        tasks: 200
+        num_tasks: 200
         {% elif CASE_ENS == "C192" %}
-        tasks: 100
+        num_tasks: 100
         {% else %}
-        tasks: 40
+        num_tasks: 40
         {% endif %}
 
         walltime: "00:15:00"
         threads: 2
-        mem_per_task: "max"
+        mem_per_task: "{{ mem_per_core }}"
 
 ediag:
-    all_runs:
+    parameters:
         walltime: "00:15:00"
         num_tasks: 48
         mem_per_task: "1.3GB"
 
 eupd:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
         {% if CASE_ENS == "C384" %}
-        tasks: 480
-        mem_per_task: "16GB"
+        num_tasks: 480
+        mem_per_task: "24GB"
         {% elif CASE_ENS == "C192" %}
-        tasks: 270
+        num_tasks: 270
         mem_per_task: "19GB"
         {% else %}
-        tasks: 42
+        num_tasks: 42
         mem_per_task: "9GB"
         {% endif %}
 
 ecen:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 80
         {% if CASE_ENS == "C384" %}
@@ -624,99 +617,91 @@ ecen:
         {% endif %}
 
 esfc:
-    all_runs:
+    parameters:
         walltime: "00:15:00"
         num_tasks: 80
-        mem_per_task: {{ mem_per_node }}
+        mem_per_task: "{{ mem_per_node }}"
 
 epos:
-    all_runs:
+    parameters:
         walltime: "00:15:00"
         num_tasks: 80
-        mem_per_task: {{ mem_per_cpu }}
+        mem_per_task: "{{ mem_per_core }}"
 
 postsnd:
-    all_runs:
+    parameters:
         walltime: "02:00:00"
-        tasks: 40
-        threads: 8
-        mem_per_task: "24GB"
-
-#    npe_node_postsnd=10
-#    npe_postsndcfp=9
-#    npe_node_postsndcfp=1
-#    postsnd_req_cores=$(( npe_node_postsnd * nth_postsnd ))
-#    if (( postsnd_req_cores > npe_node_max )); then
-#        npe_node_postsnd=$(( npe_node_max / nth_postsnd ))
-#    fi
-#    is_exclusive=True
+        num_tasks: 40
+        mem_per_task: "9GB"
+        num_tasks_postsndcfp: 9
 
 awips:
-    all_runs:
+    parameters:
         walltime: "03:30:00"
         num_tasks: 1
         mem_per_task: "3GB"
 
 npoess:
-    all_runs:
+    parameters:
         walltime: "03:30:00"
         num_tasks: 1
         mem_per_task: "3GB"
 
 gempak:
-    all_runs:
+    parameters:
         walltime: "03:00:00"
+
     gdas:
-        tasks: 2
+        num_tasks: 2
         mem_per_task: "2GB"
     gfs:
-        tasks: 28
+        num_tasks: 28
         mem_per_task: "100MB"
 
 mos_stn_prep:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 3
         mem_per_task: "2GB"
         PTILE: 3
 
 mos_grd_prep:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 4
         mem_per_task: "4GB"
         PTILE: 4
 
 mos_ext_stn_prep:
-    all_runs:
+    parameters:
         walltime: "00:15:00"
         num_tasks: 2
         mem_per_task: "3GB"
         PTILE: 2
 
 mos_ext_grd_prep:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 7
         mem_per_task: "500MB"
         PTILE: 7
 
 mos_stn_fcst:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 5
         mem_per_task: "8GB"
         PTILE: 5
 
 mos_grd_fcst:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 7
         mem_per_task: "7GB"
         PTILE: 7
 
 mos_ext_stn_fcst:
-    all_runs:
+    parameters:
         walltime: "00:20:00"
         num_tasks: 3
         mem_per_task: "16.5GB"
@@ -724,14 +709,14 @@ mos_ext_stn_fcst:
         prepost: True
 
 mos_ext_grd_fcst:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 7
         mem_per_task: "7GB"
         PTILE: 7
 
 mos_stn_prdgen:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 1
         mem_per_task: "15GB"
@@ -739,7 +724,7 @@ mos_stn_prdgen:
         prepost: True
 
 mos_grd_prdgen:
-    all_runs:
+    parameters:
         walltime: "00:40:00"
         num_tasks: 72
         threads: 4
@@ -747,7 +732,7 @@ mos_grd_prdgen:
         PTILE: 72
 
 mos_ext_stn_prdgen:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 1
         mem_per_task: "15GB"
@@ -755,7 +740,7 @@ mos_ext_stn_prdgen:
         prepost: True
 
 mos_ext_grd_prdgen:
-    all_runs:
+    parameters:
         walltime: "00:30:00"
         num_tasks: 96
         threads: 16
@@ -763,7 +748,7 @@ mos_ext_grd_prdgen:
         PTILE: 96
 
 mos_wx_prdgen:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 4
         threads: 2
@@ -771,7 +756,7 @@ mos_wx_prdgen:
         PTILE: 4
 
 mos_wx_ext_prdgen:
-    all_runs:
+    parameters:
         walltime: "00:10:00"
         num_tasks: 4
         threads: 2
