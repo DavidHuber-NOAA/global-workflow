@@ -104,12 +104,12 @@ class AppConfig(ABC, metaclass=AppConfigInit):
         # Finally, re-source the config files
         self.configs = self._source_configs(conf, verbose=True)
 
-    def _populate_task_configs(self, resource_yaml = 'resources.yaml.j2'):
-    """
-    Add task-specific information to the configuration files
-    Inputs:
-    -------
-    """
+    def _populate_task_configs(self, resource_yaml='resources.yaml.j2'):
+        """
+        Add task-specific information to the configuration files
+        Inputs:
+        -------
+        """
 
         expdir = self._base["EXPDIR"]
         yaml_filename = os.path.join(expdir, "resources.yaml.j2")
@@ -129,7 +129,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
         for run in self.task_names.keys():
             for task in self.task_names[run]:
                 # Construct the config filename
-                config_name = os.path.join(expdir,"config." + task)
+                config_name = os.path.join(expdir, "config." + task)
 
                 # Get the run- and task-specific variables from the parsed yaml
                 variables = {}
@@ -140,13 +140,13 @@ class AppConfig(ABC, metaclass=AppConfigInit):
                 # Check that resources were defined
                 if len(variables) == 0:
                     raise ValueError(
-                         f"No resources are defined for task {task_name} in {yaml_filename}")
+                      f"No resources are defined for task {task_name} in {yaml_filename}")
                 elif "num_PEs" not in variables:
                     raise KeyError(
-                         f"{yaml_filename} does not define PE count for {task_name}")
+                      f"{yaml_filename} does not define PE count for {task_name}")
                 elif "walltime" not in variables:
                     raise KeyError(
-                         f"{yaml_filename} does not define walltime for {task_name}")
+                      f"{yaml_filename} does not define walltime for {task_name}")
 
                 # Add the definitions to the top of the config file after the shebang
                 # Read the entirety of the config file
@@ -157,7 +157,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
                 index = 1
                 config_contents.insert(index, "if [[ ${RUN} == " + RUN + " ]]; then\n")
                 index += 1
-                for variable,value in variables.items():
+                for variable, value in variables.items():
                     config_contents.insert(index, f"export {variable}={value}\n")
                     index += 1
 
@@ -189,7 +189,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
         '''
         pass
 
-    def _source_configs(self, conf: Configuration, verbose = False) -> Dict[str, Any]:
+    def _source_configs(self, conf: Configuration, verbose=False) -> Dict[str, Any]:
         """
         Given the configuration object and jobs,
         source the configurations for each config and return a dictionary
