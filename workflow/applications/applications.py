@@ -114,9 +114,9 @@ class AppConfig(ABC, metaclass=AppConfigInit):
         expdir = self._base["EXPDIR"]
         yaml_filename = os.path.join(expdir, "resources.yaml.j2")
 
-        resources = parse_j2yaml(yaml_filename,
-                                 self._base,
-                                 allow_missing=False)
+        resource_config = ResourceConfig()
+
+        resource_config.parse_resource_yaml(yaml_filename, self._base)
 
         if not resources['check_configuration']['valid']:
             conf = resources['check_configuration']
@@ -126,30 +126,17 @@ class AppConfig(ABC, metaclass=AppConfigInit):
 
             raise ValueError("Invalid configuration specified in config.base.")
 
+        machine_specs = resources.machine_specs
+        if machine_specs.mem_per_node == "0" or machine_specs.mem_per_core == 0 or
+           machine_specs.cores_per_node == 0:
+            raise ValueError(f"Invalid machine specifications provided in {yaml_filename}")
+
         for run in self.task_names.keys():
             for task in self.task_names[run]:
                 # Construct the config filename
                 config_name = os.path.join(expdir, "config." + task)
 
-                # Get the run- and task-specific variables from the parsed yaml
-                variables = {}
-                task_vars = resources[task]
-                variables.update(task_vars["parameters"]) if "parameters" in task_vars
-                variables.update(task_vars[run]) if run in task_vars
-
-                # Check that resources were defined
-                if len(variables) == 0:
-                    raise ValueError(
-                      f"No resources are defined for task {task_name} in {yaml_filename}")
-                elif "num_PEs" not in variables:
-                    raise KeyError(
-                      f"{yaml_filename} does not define PE count for {task_name}")
-                elif "walltime" not in variables:
-                    raise KeyError(
-                      f"{yaml_filename} does not define walltime for {task_name}")
-
-                # If mem_per_task and/or threads are defined, adjust/calculate
-                # threads and mem_per_node
+                task_config = resource_config.gen_task_config(task, run, config_name)
 
                 # Add the definitions to the top of the config file after the shebang
                 # Read the entirety of the config file
