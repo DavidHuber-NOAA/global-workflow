@@ -1,0 +1,29 @@
+# Hera needs an adjustment for memory to run the GSI at C384
+
+{% if CASE == "C384" %}
+anal:
+    parameters:
+        threads: 8
+        num_PEs: 270
+        mem_per_PE: "max"
+    gdas:
+        wallclock: "01:20:00"
+    gfs:
+        wallclock: "01:00:00"
+{% endif %}
+
+# Redefine eupd resources if running at C192 for size
+{% if CASE_ENS == "C192" %}
+eupd:
+    parameters:
+        walltime: "00:30:00"
+        num_PEs: 160
+        mem_per_PE: "12GB"
+{% elif CASE_ENS == "C384" %}
+    # Invalidate if running C384 (cannot run on S4)
+eupd:
+    parameters:
+        walltime: "00:00:00"
+        num_PEs: 0
+        mem_per_PE: 0
+{% endif %}

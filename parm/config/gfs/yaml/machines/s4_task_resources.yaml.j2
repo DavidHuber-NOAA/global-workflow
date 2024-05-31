@@ -1,0 +1,49 @@
+# S4 is a small system comprised of two partitions, s4 and ivy
+#    - s4 has 32 cores/node and allows jobs of up to 40 nodes
+#    - ivy has 20 cores/node and ~65 nodes
+# Thus, some larger jobs need to run with fewer PEs to fit on these partitions
+
+# Only update if a valid configuration is provided
+{% set update = False %}
+{% if CASE == "C768" %}
+    # Cannot be run on S4
+    {% set update, PEs, threads, wallclock = (True, 0, 0, "00:00:00") %}
+{% if CASE == "C384" %}
+    {% set threads, wallclock = (1, "02:00:00") %}
+    {% if partition == "s4" %}
+        {% set update, PEs = (True, 416) %}
+    {% elif partition == "ivy" %}
+        {% set update, PEs = (True, 400) %}
+    {% endif %}
+{% elif CASE == "C192" or CASE == "C96" or CASE == "C48" %}
+    {% set threads, wallclock = (4, "01:20:00") %}
+    {% if partition == "s4" %}
+        {% set update, PEs = (True, 84) %}
+    {% elif partition == "ivy" %}
+        {% set update, PEs = (True, 88) %}
+    {% endif %}
+{% endif %}
+
+{% if update %}
+anal:
+    parameters:
+        threads: {{ threads }}
+        num_PEs: {{ PEs }}
+        wallclock: {{ walclock }}
+{% endif %}
+
+# Redefine eupd resources if running at C192 for size
+{% if CASE_ENS == "C192" %}
+eupd:
+    parameters:
+        walltime: "00:30:00"
+        num_PEs: 160
+        mem_per_PE: "12GB"
+{% elif CASE_ENS == "C384" %}
+    # Invalidate if running C384 (cannot run on S4)
+eupd:
+    parameters:
+        walltime: "00:00:00"
+        num_PEs: 0
+        mem_per_PE: 0
+{% endif %}
