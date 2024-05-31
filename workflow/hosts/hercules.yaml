@@ -25,3 +25,5 @@ SUPPORTED_RESOLUTIONS: ['C1152', 'C768', 'C384', 'C192', 'C96', 'C48']
 COMINecmwf: /work/noaa/global/glopara/data/external_gempak/ecmwf
 COMINnam: /work/noaa/global/glopara/data/external_gempak/nam
 COMINukmet: /work/noaa/global/glopara/data/external_gempak/ukmet
+MEM_PER_NODE: 512
+CORES_PER_NODE: 80
