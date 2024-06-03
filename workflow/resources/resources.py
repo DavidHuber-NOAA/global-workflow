@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import re
+from math import ceil, floor
+from typing import Any, Dict, List
+
 from hosts import Host
-from math import floor, ceil
-from typing import Dict, List, Any
 from wxflow import AttrDict
 
-class ResourceConfig
+
+class ResourceConfig:
 
     def __init__(self) -> None:
 
@@ -27,8 +29,8 @@ class ResourceConfig
         # Create a dictionary to parse the jinja yaml with
         parse_dict.update(self._get_host_info())
         self.resources = parse_j2yaml(yaml_filename,
-                                 parse_dict,
-                                 allow_missing=True)
+                                      parse_dict,
+                                      allow_missing=True)
 
         # Store the filename for error reporting later
         self.yaml_filename = yaml_filename
@@ -40,9 +42,9 @@ class ResourceConfig
         mem_per_node = f"{self.host_info.MEM_PER_NODE * 1024:.3f}MB"
         cores_per_node = self.CORES_PER_NODE
 
-        return {"host_info": {"cores_per_node" : cores_per_node,
-                                  "mem_per_node" : mem_per_node,
-                                  "mem_per_core" : mem_per_core}}
+        return {"host_info": {"cores_per_node": cores_per_node,
+                              "mem_per_node": mem_per_node,
+                              "mem_per_core": mem_per_core}}
 
     def gen_task_config(self, task: str, run: str) -> Dict[str, Any]:
         """Generate task-specific resources and variables
@@ -78,7 +80,7 @@ class ResourceConfig
         # Check that resources were defined
         if len(task_specs) == 0:
             raise ValueError(
-              f"No resources are defined for task {task_name} in {yaml_filename}")
+                f"No resources are defined for task {task_name} in {yaml_filename}")
         elif "num_PEs" not in task_specs:
             raise KeyError(
                 f"{yaml_filename} does not define PE count for {task_name}")
@@ -98,15 +100,15 @@ class ResourceConfig
             if "threadable" in task_specs:
                 if task_specs["threadable"]:
                     raise KeyError(
-                      f"{task_name} is marked threadable, but 'threads' was"
-                      f"unspecified in {self.yaml_filename}")
-                else
+                        f"{task_name} is marked threadable, but 'threads' was"
+                        f"unspecified in {self.yaml_filename}")
+                else:
                     task_specs["adjustable_threads"] = False
             elif "adjustable_threads" in task_specs:
                 if task_specs["adjustable_threads"]:
                     raise KeyError(
-                      f"{task_name} is marked threadable, but 'threads' was"
-                      f"unspecified in {self.yaml_filename}")
+                        f"{task_name} is marked threadable, but 'threads' was"
+                        f"unspecified in {self.yaml_filename}")
 
             task_specs["threadable"] = False
             task_specs["adjustable_threads"] = False
@@ -135,7 +137,7 @@ class ResourceConfig
                         adjustable_threads: bool,
                         adjustable_PEs: bool,
                         mem_per_PE: str,
-                        max_PEs_per_node: int = -1) -> task_resources: Dict[str, Any]:
+                        max_PEs_per_node: int = -1) -> Dict[str, Any]:
         """ Calculate resources for a specific task
 
         Parameters:
@@ -180,21 +182,21 @@ class ResourceConfig
         # Test that the input memory requirement is valid
         if type(mem_per_PE) is not str:
             raise TypeError(
-              f"mem_per_PE must be a string, but type {type(mem_per_PE)} given"
-        elif not(mem_per_PE == "max" or mem_per_PE == "default"):
+                f"mem_per_PE must be a string, but type {type(mem_per_PE)} given")
+        elif not (mem_per_PE == "max" or mem_per_PE == "default"):
             # Convert bytes from e.g. mb to MB
             mem_per_PE = mem_per_PE.capitalize()
             if mem_per_PE.endswith("MB") or mem_per_PE.endswith("GB"):
                 if not mem_per_PE[:-2].isdigit():
                     raise ValueError(
-                      f"Invalid memory requirement for {task_name}: {mem_per_PE}"
+                        f"Invalid memory requirement for {task_name}: {mem_per_PE}")
             elif mem_per_PE.endswith("TB"):
                 raise NotImplementedError(
-                  f"Terrabyte memory requirement detected."
-                  f"If there is a use case, then implement this option.")
+                    f"Terrabyte memory requirement detected."
+                    f"If there is a use case, then implement this option.")
             else:
                 raise ValueError(
-                  f"Invalid memory requirement for {task_name}: {mem_per_PE}"
+                    f"Invalid memory requirement for {task_name}: {mem_per_PE}")
 
         # Initialize the output task_resources
         task_resources = AttrDict({"num_PEs": num_PEs,
@@ -205,7 +207,7 @@ class ResourceConfig
                                    "exclusive": True})
 
         # Calculate some oft-used constants
-        host_cores_per_node = self.host_info.cores_per_node:
+        host_cores_per_node = self.host_info.cores_per_node
         host_mem_per_node = self.host_info.mem_per_node
         host_mem_per_core = self.host_info.mem_per_core
         i_host_mem_per_node = str_mem_to_int(self.host_info.mem_per_node)
@@ -333,9 +335,9 @@ class ResourceConfig
                         # they fit on a node.
                         if adjustable_threads:
                             threads, nodes, PEs_per_node, mem_per_node = (
-                              adjust_threads_for_mem(threads,
-                                                     mem_per_PE,
-                                                     host_mem_per_node))
+                                adjust_threads_for_mem(threads,
+                                                       mem_per_PE,
+                                                       host_mem_per_node))
                         else:
                             # Adjust PEs_per_node instead
                             PEs_per_node = ceil(host_cores_per_node / PEs_per_node)
@@ -354,7 +356,7 @@ class ResourceConfig
                     threads, num_nodes, PEs_per_node = (
                         adjust_threads_for_mem(threads,
                                                i_mem_per_PE,
-                                               host_mem_per_node)
+                                               host_mem_per_node))
 
                     task_resources.threads = threads
 
@@ -366,8 +368,8 @@ class ResourceConfig
                         task_resources.num_nodes = ceil(num_PEs / PEs_per_node)
                         task_resources.exclusive = True
                         print(
-                          f"INFO OMP threads modified for {task_name} from"
-                          f"     {old_threads} to {new_threads} to satisfy memory requirements")
+                            f"INFO OMP threads modified for {task_name} from"
+                            f"     {old_threads} to {new_threads} to satisfy memory requirements")
 
                     else:
                         # Memory requirement is extreme, adjust downward
@@ -376,9 +378,9 @@ class ResourceConfig
                         task_resources.num_nodes = num_PEs
                         task_resources.exclusive = True
                         print(
-                          f"WARNING {task_name} has a memory requirement of"
-                          f"{mem_per_PE}, but the host only has {host_mem_per_node}."
-                          f"Setting memory request to {host_mem_per_node}."
+                            f"WARNING {task_name} has a memory requirement of"
+                            f"{mem_per_PE}, but the host only has {host_mem_per_node}."
+                            f"Setting memory request to {host_mem_per_node}.")
 
                     return task_resources
 
@@ -391,6 +393,6 @@ class ResourceConfig
                     task_resources.num_nodes = num_PEs
                     task_resources.exclusive = True
                     print(
-                      f"WARNING {task_name} has a memory requirement of"
-                      f"{mem_per_PE}, but the host only has {host_mem_per_node}."
-                      f"Setting memory request to {host_mem_per_node}."
+                        f"WARNING {task_name} has a memory requirement of"
+                        f"{mem_per_PE}, but the host only has {host_mem_per_node}."
+                        f"Setting memory request to {host_mem_per_node}.")

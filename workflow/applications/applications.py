@@ -127,8 +127,9 @@ class AppConfig(ABC, metaclass=AppConfigInit):
             raise ValueError("Invalid configuration specified in config.base.")
 
         machine_specs = resources.machine_specs
-        if machine_specs.mem_per_node == "0" or machine_specs.mem_per_core == 0 or
-           machine_specs.cores_per_node == 0:
+        if (machine_specs.mem_per_node == "0" or machine_specs.mem_per_core == 0 or
+                machine_specs.cores_per_node == 0):
+
             raise ValueError(f"Invalid machine specifications provided in {yaml_filename}")
 
         for run in self.task_names.keys():
