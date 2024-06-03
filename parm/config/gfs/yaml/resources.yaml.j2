@@ -8,7 +8,7 @@
 # Required entries for each task are
 #    num_PEs (integer) - Minimum number of process elements.
 #              The final PE count may be higher depending on the system
-#              specifications unless adjustable_PEs is set to False.
+#              specifications.
 #
 #    walltime (string) - Maximum time required.
 #                        Format: "HH:MM:SS"
@@ -25,8 +25,7 @@
 #            - NOTE this is only for openMP and should not be
 #                   used to adjust memory.  Use mem_per_PE instead.
 #
-#    adjustable_PEs - Boolean flag that tells the setup scripts whether
-#                     num_PEs can be changed.  Default: True
+#    adjustable_threads - Boolean whether the thread count can be adjusted
 #
 # Additional entries may also be added.  Doing so will prepend the key/value
 #    pair to the appropriate config file.  If the entry is in parameters, it
@@ -154,13 +153,13 @@ prepsnowobs:
     parameters:
         walltime: "00:05:00"
         num_PEs: 1
-        mem_per_PE: "{{ host_info.mem_per_node }}"
+        mem_per_PE: "max"
 
 prepatmiodaobs:
     parameters:
         walltime: "00:30:00"
         num_PEs: 1
-        mem_per_PE: "{{ host_info.mem_per_node }}"
+        mem_per_PE: "max"
 
 aerosol_init:
     parameters:
@@ -199,19 +198,19 @@ wavepostbndpnt:
     parameters:
         walltime: "01:00:00"
         num_PEs: 240
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 wavepostbndpntbll:
     parameters:
         walltime: "01:00:00"
         num_PEs: 448
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 wavepostpnt:
     parameters:
         walltime: "04:00:00"
         num_PEs: 200
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 wavegempak:
     parameters:
@@ -223,7 +222,7 @@ waveawipsbulls:
     parameters:
         walltime: "00:20:00"
         num_PEs: 1
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 waveawipsgridded:
     parameters:
@@ -245,7 +244,7 @@ atmanlvar:
     parameters:
         walltime: "00:30:00"
         num_PEs: {{ @LAYOUT_X_ATMANL@ * @LAYOUT_Y_ATMANL@ * 6 }}
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
         layout_x: @LAYOUT_X_ATMANL@
         layout_y: @LAYOUT_Y_ATMANL@
         layout_io_x: @IO_LAYOUT_X@
@@ -255,7 +254,7 @@ atmanlfv3inc:
     parameters:
         walltime: "00:30:00"
         num_PEs: {{ @LAYOUT_X_ATMANL@ * @LAYOUT_Y_ATMANL@ * 6 }}
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
         layout_x: @LAYOUT_X_ATMANL@
         layout_y: @LAYOUT_Y_ATMANL@
         layout_io_x: @IO_LAYOUT_X@
@@ -265,7 +264,7 @@ atmanlfinal:
     parameters:
         num_PEs: {{ host_info.cores_per_node }}
         walltime: "00:30:00"
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 snowanl:
     {% if CASE == "C768" %}
@@ -280,7 +279,7 @@ snowanl:
     parameters:
         num_PEs: {{ layout_x_snowanl * layout_y_snowanl * 6 }}
         walltime: "00:15:00"
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
         layout_x: {{ layout_x_snowanl }}
         layout_y: {{ layout_y_snowanl }}
         layout_io_x: {{ @IO_LAYOUT_X@ }}
@@ -317,7 +316,7 @@ aeroanlrun:
     parameters:
         num_PEs: {{ layout_x * layout_y * 6 }}
         walltime: "00:30:00"
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
         layout_x: {{ layout_x }}
         layout_y: {{ layout_y }}
 
@@ -353,7 +352,7 @@ ocnanalbmat:
     parameters:
         num_PEs: {{ num_PEs }}
         walltime: "00:15:00"
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 ocnanalrun:
 {% set walltime = "00:15:00" %}
@@ -375,7 +374,7 @@ ocnanalrun:
 ocnanalecen:
     {% set wallclock = "00:10:00" %}
     {% if OCNRES == "025" %}
-        {% set num_PEs, mem_per_PE = (40, host_info.mem_per_core) %}
+        {% set num_PEs, mem_per_PE = (40, "default") %}
     {% elif OCNRES == "050" %}
         {% set num_PEs, mem_per_PE = (16, "max") %}
     {% elif OCNRES == "500" %}
@@ -392,7 +391,7 @@ ocnanalecen:
 ocnanalletkf:
     {% set walltime = "00:10:00" %}
     {% if OCNRES == "025" %}
-        {% set num_PEs, mem_per_PE = (480, host_info.mem_per_core) %}
+        {% set num_PEs, mem_per_PE = (480, "default") %}
     {% elif OCNRES == "050" or OCNRES == "500" %}
         {% set num_PEs, mem_per_PE = (16, "max") %}
     {% elif OCNRES == "050" or OCNRES == "500" %}
@@ -436,6 +435,7 @@ ocnanalvrfy:
 anal:
     parameters:
         mem_per_PE: "max"
+        adjustable_threads: True
 
     {% if CASE == "C768" %}
         {% set threads, num_PEs = (5, 780) %}
@@ -478,7 +478,6 @@ analcalc:
         walltime: "00:10:00"
         num_PEs: 127
         mem_per_PE: "1200MB"
-        adjustable_PEs: False
 
 analdiag:
     parameters:
@@ -540,7 +539,7 @@ oceanice_products:
     parameters:
         walltime: "00:15:00"
         num_PEs: 1
-        mem_per_PE: {{ host_info.mem_per_node }}
+        mem_per_PE: "max"
 
 upp:
     {% set num_PEs, walltime = (120, "00:15:00") %}
@@ -548,9 +547,9 @@ upp:
     {% if CASE == "C768" %}
         {% set mem_per_PE = "max" %}
     {% elif CASE == "C192" or CASE == "C96" %}
-        {% set mem_per_PE = host_info.mem_per_core %}
+        {% set mem_per_PE = "default" %}
     {% elif CASE == "C96" or CASE == "C48" %}
-        {% set num_PEs, mem_per_PE = ( CASE | replace("C", "") | int, host_info.mem_per_core %}
+        {% set num_PEs, mem_per_PE = ( CASE | replace("C", "") | int, "default" %}
     {% else %}
         {% set num_PEs, mem_per_PE, walltime = ( 0, 0, "00:00:00" %}
     {% endif %}
@@ -634,7 +633,7 @@ init_chem:
     parameters:
         walltime: "00:30:00"
         num_PEs: 1
-        mem_per_PE: "{{ host_info.mem_per_node }}"
+        mem_per_PE: "max"
 
 mom6ic:
     parameters:
@@ -670,7 +669,7 @@ stage_ic:
     parameters:
         walltime: "00:15:00"
         num_PEs: 1
-        mem_per_PE: "{{ host_info.mem_per_node }}"
+        mem_per_PE: "max"
 
 atmensanlinit:
     parameters:
@@ -688,13 +687,13 @@ atmensanlrun:
 
         walltime: "00:30:00"
         num_PEs: {{ @LAYOUT_X_ATMENSANL@ * @LAYOUT_Y_ATMENSANL@ * 6 }}
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 atmensanlfinal:
     parameters:
         walltime: "00:30:00"
         num_PEs: 1
-        mem_per_PE: "{{ host_info.mem_per_node }}"
+        mem_per_PE: "max"
 
 eomg:
     parameters:
@@ -708,11 +707,11 @@ eomg:
 
         walltime: "00:30:00"
         threads: 2
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 eobs:
     parameters:
-        {% set mem_per_PE, threads, walltime = (host_info.mem_per_core, 2, "00:15:00") %}
+        {% set mem_per_PE, threads, walltime = ("default", 2, "00:15:00") %}
         {% if CASE_ENS == "C384" %}
             {% set num_PEs = 200 %}
         {% elif CASE_ENS == "C192" %}
@@ -727,6 +726,7 @@ eobs:
         walltime: {{ walltime }}
         threads: {{ threads }}
         mem_per_PE: {{ mem_per_PE }}
+        adjustable_threads: True
 
 ediag:
     parameters:
@@ -765,13 +765,13 @@ esfc:
     parameters:
         walltime: "00:15:00"
         num_PEs: 80
-        mem_per_PE: "{{ host_info.mem_per_node }}"
+        mem_per_PE: "max"
 
 epos:
     parameters:
         walltime: "00:15:00"
         num_PEs: 80
-        mem_per_PE: "{{ host_info.mem_per_core }}"
+        mem_per_PE: "default"
 
 postsnd:
     parameters:
