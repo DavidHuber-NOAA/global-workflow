@@ -890,7 +890,7 @@ mos_wx_ext_prdgen:
 # These are the same for gdas (fcst) and enkfgdas (efcs) runs/jobs.
 gdas_fcst_atm_by_res: &GdasFcstAtmRes
     C48:
-        # Call the fv3_resources macro to calculate resources and fill the yaml
+        # Use the fv3_resources macro to calculate resources and fill the yaml
 		{% filter indent(8) %}
 		{{ fv3_resources(layout_x=1,
                          layout_y=1,
@@ -965,81 +965,113 @@ gdas_fcst_atm_by_res: &GdasFcstAtmRes
 # These are the same for gdas (fcst) and enkfgdas (efcs) runs/jobs.
 gfs_fcst_atm_by_res: &GfsFcstAtmRes
     C48:
-        layout_x: 1
-        layout_y: 1
-        threads_ufs: 1
-        threads_fv3: 1
-        write_groups: 1
-        write_tasks_per_group_per_thread_per_tile: 1
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=1,
+                         layout_y=1,
+                         write_groups=1,
+                         threads_fv3=1,
+                         threads_ufs=1,
+                         write_tasks_per_group_per_thread_per_tile=1) }}
+		{% endfilter %}
         walltime: "03:00:00"
     C96:
-        layout_x: 2
-        layout_y: 2
-        threads_fv3: 1
-        threads_ufs: 1
-        write_groups: 1
-        write_tasks_per_group_per_thread_per_tile: 1
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=2,
+                         layout_y=2,
+                         write_groups=1,
+                         threads_fv3=1,
+                         threads_ufs=1,
+                         write_tasks_per_group_per_thread_per_tile=1) }}
+		{% endfilter %}
         walltime: "03:00:00"
     C192:
-        layout_x: 4
-        layout_y: 6
-        threads_fv3: 2
-        threads_ufs: 2
-        write_groups: 2
-        write_tasks_per_group_per_thread_per_tile: 5
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=4,
+                         layout_y=6,
+                         write_groups=2,
+                         threads_fv3=2,
+                         threads_ufs=2,
+                         write_tasks_per_group_per_thread_per_tile=5) }}
+		{% endfilter %}
         walltime: "03:00:00"
     C384:
-        layout_x: 4
-        layout_y: 6
-        threads_fv3: 2
-        threads_ufs: 2
-        write_groups: 2
-        write_tasks_per_group_per_thread_per_tile: 10
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=4,
+                         layout_y=6,
+                         write_groups=2,
+                         threads_fv3=2,
+                         threads_ufs=2,
+                         write_tasks_per_group_per_thread_per_tile=10) }}
+		{% endfilter %}
         walltime: "06:00:00"
     C768:
-        layout_x: 12
-        layout_y: 16
-        write_groups: 4
-        write_tasks_per_group_per_thread_per_tile: 20
-        threads_fv3: 4
-        threads_ufs: 4
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=12,
+                         layout_y=16,
+                         write_groups=4,
+                         threads_fv3=4,
+                         threads_ufs=4,
+                         write_tasks_per_group_per_thread_per_tile=20) }}
+		{% endfilter %}
         walltime: "06:00:00"
     C1152:
-        layout_x: 8
-        layout_y: 16
-        write_groups: 4
-        write_tasks_per_group_per_thread_per_tile: 20
-        threads_fv3: 4
-        threads_ufs: 4
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=8,
+                         layout_y=16,
+                         write_groups=4,
+                         threads_fv3=4,
+                         threads_ufs=4,
+                         write_tasks_per_group_per_thread_per_tile=20) }}
+		{% endfilter %}
         walltime: "06:00:00"
     C3072:
-        layout_x: 16
-        layout_y: 32
-        write_groups: 4
-        write_taskss_per_group_per_thread_per_tile: 10
-        threads_fv3: 4
-        threads_ufs: 4
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=16,
+                         layout_y=32,
+                         write_groups=4,
+                         threads_fv3=4,
+                         threads_ufs=4,
+                         write_tasks_per_group_per_thread_per_tile=10) }}
+		{% endfilter %}
         walltime: "06:00:00"
 
 # Declare global GFS resources for a nested case.
 nested_global_gfs_atm_fcst_by_res: &NestedGfsFcstAtmRes
     C96:
-        layout_x: 4
-        layout_y: 4
-        write_groups: 2
-        write_tasks_per_group_per_thread_per_tile: 2
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=4,
+                         layout_y=4,
+                         layout_x_nest=12,
+                         layout_y_nest=10
+                         write_groups=2,
+                         threads_fv3=1,
+                         threads_ufs=1,
+                         write_tasks_per_group_per_thread_per_tile=2) }}
+		{% endfilter %}
         walltime: "03:00:00"
     C192:
-        layout_x: 15
-        layout_y: 25
-        write_groups: 2
-        write_tasks_per_group_per_thread_per_tile: 15
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=5,
+                         layout_y=6,
+                         layout_x_nest=15,
+                         layout_y_nest=25
+                         write_groups=2,
+                         threads_fv3=1,
+                         threads_ufs=1,
+                         write_tasks_per_group_per_thread_per_tile=15) }}
+		{% endfilter %}
         walltime: "03:00:00"
     C384:
-        layout_x: 34
-        layout_y: 24
-        write_groups: 2
-        write_tasks_per_group_per_thread_per_tile: 20
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=8,
+                         layout_y=8,
+                         layout_x_nest=34,
+                         layout_y_nest=24
+                         write_groups=2,
+                         threads_fv3=1,
+                         threads_ufs=1,
+                         write_tasks_per_group_per_thread_per_tile=20) }}
+		{% endfilter %}
         walltime: "06:00:00"
     C768:
         layout_x: 48

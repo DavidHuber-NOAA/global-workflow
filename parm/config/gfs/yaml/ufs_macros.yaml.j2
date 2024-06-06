@@ -3,7 +3,9 @@
                        write_groups,
                        threads_fv3,
                        threads_ufs,
-                       write_tasks_per_group_per_thread_per_tile) -%}
+                       write_tasks_per_group_per_thread_per_tile,
+                       layout_x_nest=0,
+                       layout_y_nest=0) -%}
 # Define resources for the FV3 portion of non-nested experiment
 
 # Start by calculating quantities, then write the formatted yaml
@@ -16,6 +18,12 @@
 {% endif %}
 
 {% set FV3_PES = layout_x * layout_y * 6 %}
+
+# Nesting (GFS only)
+{% if DO_NEST == True %}  # Add in the nesting tile to FV3_PES
+    {% set FV3_PES = FV3_PES + layout_x_nest * layout_y_nest %}
+{% endif %}
+
 {% set FV3PETS = FV3_PES * threads_fv3 %}
 {% set QUILT_PES = write_groups * write_tasks_per_group_per_thread %}
 
@@ -27,7 +35,7 @@
 {% endif %}
 
 # Mediator is required if any of the non-ATM, non-CHEM components are used
-{% if DO_OCN == True or DO_ICE == True or DO_WAVE == Ture %}
+{% if DO_OCN == True or DO_ICE == True or DO_WAVE == True %}
     {% set DO_MEDIATOR = True %}
 {% else %}
     {% set threads_mediator = threads_fv3 %}
