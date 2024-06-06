@@ -21,7 +21,7 @@
 
 {% if QUILTING == True %}  # Calculate PETs for quilting
     {% set QUILTPETS = QUILT_PES * threads_fv3 %}
-    {% set write_tasks_per_group = write_tasks_per_group_per_thread %}
+    {% set WRTTASK_PER_GROUP = write_tasks_per_group_per_thread %}
 {% else %}
     {% set QUILTPETS = 0 %}
 {% endif %}
