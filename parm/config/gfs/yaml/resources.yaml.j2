@@ -2,7 +2,8 @@
 # This jinja-yaml defines a resource dictionary for each task.
 #
 # Entries can be added to either the 'defaults' dictionary or valid run
-# dictionaries (i.e. gdas, gfs, enkfgdas, enkfgfs) or both.
+# dictionaries (i.e. gdas, gfs, enkfgdas, enkfgfs) or both.  One
+# additional run (nest) is available for fcst and efcs jobs.
 # For any entry duplicated in defaults and a run dictionary, the run
 # dictionary will override the defaults.
 #
@@ -322,17 +323,6 @@ ocnanalbmat:
                 num_PEs: 16
 
 ocnanalrun:
-{% set walltime = "00:15:00" %}
-{% if OCNRES == "025" %}
-    {% set num_PEs, mem_per_PE = (480, "max") %}
-{% elif OCNRES == "050" or OCNRES == "500" %}
-    {% set num_PEs, mem_per_PE = (16, "max") %}
-{% elif OCNRES == "050" or OCNRES == "500" %}
-    {% set num_PEs, mem_per_PE = (16, "1600MB") %}
-{% else %}
-    {% set num_PEs, mem_per_PE, walltime = (0, 0, "00:00:00") %}
-{% endif %}
-
     defaults:
         walltime: "00:15:00"
 
@@ -442,9 +432,8 @@ anal:
         {% endif %}
 
         atmres:
-            C768:
-                num_PEs: 780
-                threads: 5
+            # C768 threads/PEs are dependent on run
+            C768: {}
             C384:
                 {% if machine == "hera" or machine == "jet" %}
                 threads: 8
@@ -464,13 +453,22 @@ anal:
 
     gdas:
         wallclock: "01:20:00"
+        atmres:
+            C768:
+                num_PEs: 780
+                threads: 5
+            # Use defaults for all other resolutions
+            C384: {}
+            C192: {}
+            C96:  {}
+            C48:  {}
 
     gfs:
         wallclock: "01:00:00"
         atmres:
-            # PE count is higher for GFS @C768
             C768:
                 num_PEs: 825
+                threads: 5
             # Use defaults for all other resolutions
             C384: {}
             C192: {}
@@ -506,112 +504,6 @@ sfcanl:
         walltime: "00:20:00"
         num_PEs: 6
         mem_per_PE: "15G"
-
-fcst:
-    # Different resources are needed for nested/non-nested experiments
-    {% if DO_NEST == True %}
-    {% else %}
-    defaults:
-        mem_per_node: "max"
-
-    gfs:
-        atmres:
-            C48:
-                layout_x: 1
-                layout_y: 1
-                threads_ufs: 1
-                threads_fv3: 1
-                write_groups: 1
-                write_tasks_per_group_per_thread_per_tile: 1
-                walltime: "03:00:00"
-            C96:
-                layout_x: 2
-                layout_y: 2
-                threads_fv3: 1
-                threads_ufs: 1
-                write_groups: 1
-                write_tasks_per_group_per_thread_per_tile: 1
-                walltime: "03:00:00"
-            C192:
-                layout_x: 4
-                layout_y: 6
-                threads_fv3: 2
-                threads_ufs: 2
-                write_groups: 2
-                write_tasks_per_group_per_thread_per_tile: 5
-                walltime: "03:00:00"
-            C384:
-                layout_x: 4
-                layout_y: 6
-                threads_fv3: 2
-                threads_ufs: 2
-                write_groups: 2
-                write_tasks_per_group_per_thread_per_tile: 10
-                walltime: "06:00:00"
-            C768:
-                layout_x: 12
-                layout_y: 16
-                write_groups: 4
-                write_tasks_per_group_per_thread_per_tile: 20
-                threads_fv3: 4
-                threads_ufs: 4
-                walltime: "06:00:00"
-    gdas:
-        defaults:
-            walltime: "00:20:00"
-
-        atmres:
-            C48:
-                layout_x: 1
-                layout_y: 1
-                threads_ufs: 1
-                threads_fv3: 1
-                write_groups: 1
-                write_tasks_per_group_per_thread_per_tile: 1
-                walltime: "00:20:00"
-            C96:
-                layout_x: 2
-                layout_y: 2
-                threads_fv3: 1
-                threads_ufs: 1
-                write_groups: 1
-                write_tasks_per_group_per_thread_per_tile: 1
-                walltime: "00:20:00"
-            C192:
-                layout_x: 4
-                layout_y: 6
-                threads_fv3: 1
-                threads_ufs: 1
-                write_groups: 1
-                write_tasks_per_group_per_thread_per_tile: 10
-                walltime: "00:20:00"
-            C384:
-                layout_x: 4
-                layout_y: 6
-                threads_fv3: 2
-                threads_ufs: 2
-                write_groups: 2
-                write_tasks_per_group_per_thread_per_tile: 10
-                walltime: "00:30:00"
-            C768:
-                walltime: "00:30:00"
-                layout_x: 8
-                layout_y: 12
-                write_groups: 2
-                threads_fv3: 4
-                threads_ufs: 4
-                write_tasks_per_group_per_thread_per_tile: 10
-    {% endif %}
-
-# Skipping efcs for now
-efcs:
-    defaults:
-        mem_per_node: "max"
-
-    # Ensemble settings
-
-    enkfgfs:
-    enkfgdas:
 
 oceanice_products:
     defaults:
@@ -986,3 +878,347 @@ mos_wx_ext_prdgen:
         threads: 2
         mem_per_PE: "2600MB"
         PTILE: 4
+
+#####################################################################
+################## FORECAST-SPECIFIC RESOURCES ######################
+#####################################################################
+
+# Define macros to calculate UFS resources and write formatted yaml.
+{% from "ufs_macros.yaml.j2" import fv3_resources %}
+
+# Declare GDAS forecast resources for each resolution.
+# These are the same for gdas (fcst) and enkfgdas (efcs) runs/jobs.
+gdas_fcst_atm_by_res: &GdasFcstAtmRes
+    C48:
+        # Call the fv3_resources macro to calculate resources and fill the yaml
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=1,
+                         layout_y=1,
+                         write_groups=1,
+                         threads_fv3=1,
+                         threads_ufs=1,
+                         write_tasks_per_group_per_thread_per_tile=1) }}
+		{% endfilter %}
+        walltime: "00:20:00"
+    C96:
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=2,
+                         layout_y=2,
+                         write_groups=1,
+                         threads_fv3=1,
+                         threads_ufs=1,
+                         write_tasks_per_group_per_thread_per_tile=1) }}
+		{% endfilter %}
+        walltime: "00:20:00"
+    C192:
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=4,
+                         layout_y=6,
+                         write_groups=1,
+                         threads_fv3=1,
+                         threads_ufs=1,
+                         write_tasks_per_group_per_thread_per_tile=10) }}
+		{% endfilter %}
+        walltime: "00:20:00"
+    C384:
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=4,
+                         layout_y=6,
+                         write_groups=2,
+                         threads_fv3=2,
+                         threads_ufs=2,
+                         write_tasks_per_group_per_thread_per_tile=10) }}
+		{% endfilter %}
+        walltime: "00:30:00"
+    C768:
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=8,
+                         layout_y=12,
+                         write_groups=2,
+                         threads_fv3=4,
+                         threads_ufs=4,
+                         write_tasks_per_group_per_thread_per_tile=10) }}
+		{% endfilter %}
+        walltime: "00:30:00"
+    C1152:
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=8,
+                         layout_y=16,
+                         write_groups=4,
+                         threads_fv3=4,
+                         threads_ufs=4,
+                         write_tasks_per_group_per_thread_per_tile=10) }}
+		{% endfilter %}
+        walltime: "00:30:00"
+    C3072:
+		{% filter indent(8) %}
+		{{ fv3_resources(layout_x=16,
+                         layout_y=32,
+                         write_groups=4,
+                         threads_fv3=4,
+                         threads_ufs=4,
+                         write_tasks_per_group_per_thread_per_tile=10) }}
+		{% endfilter %}
+        walltime: "00:30:00"
+
+# Declare GFS forecast resources for each resolution.
+# These are the same for gdas (fcst) and enkfgdas (efcs) runs/jobs.
+gfs_fcst_atm_by_res: &GfsFcstAtmRes
+    C48:
+        layout_x: 1
+        layout_y: 1
+        threads_ufs: 1
+        threads_fv3: 1
+        write_groups: 1
+        write_tasks_per_group_per_thread_per_tile: 1
+        walltime: "03:00:00"
+    C96:
+        layout_x: 2
+        layout_y: 2
+        threads_fv3: 1
+        threads_ufs: 1
+        write_groups: 1
+        write_tasks_per_group_per_thread_per_tile: 1
+        walltime: "03:00:00"
+    C192:
+        layout_x: 4
+        layout_y: 6
+        threads_fv3: 2
+        threads_ufs: 2
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 5
+        walltime: "03:00:00"
+    C384:
+        layout_x: 4
+        layout_y: 6
+        threads_fv3: 2
+        threads_ufs: 2
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 10
+        walltime: "06:00:00"
+    C768:
+        layout_x: 12
+        layout_y: 16
+        write_groups: 4
+        write_tasks_per_group_per_thread_per_tile: 20
+        threads_fv3: 4
+        threads_ufs: 4
+        walltime: "06:00:00"
+    C1152:
+        layout_x: 8
+        layout_y: 16
+        write_groups: 4
+        write_tasks_per_group_per_thread_per_tile: 20
+        threads_fv3: 4
+        threads_ufs: 4
+        walltime: "06:00:00"
+    C3072:
+        layout_x: 16
+        layout_y: 32
+        write_groups: 4
+        write_taskss_per_group_per_thread_per_tile: 10
+        threads_fv3: 4
+        threads_ufs: 4
+        walltime: "06:00:00"
+
+# Declare global GFS resources for a nested case.
+nested_global_gfs_atm_fcst_by_res: &NestedGfsFcstAtmRes
+    C96:
+        layout_x: 4
+        layout_y: 4
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 2
+        walltime: "03:00:00"
+    C192:
+        layout_x: 15
+        layout_y: 25
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 15
+        walltime: "03:00:00"
+    C384:
+        layout_x: 34
+        layout_y: 24
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 20
+        walltime: "06:00:00"
+    C768:
+        layout_x: 48
+        layout_y: 45
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 90
+        threads_fv3: 2
+        threads_ufs: 2
+        walltime: "06:00:00"
+
+# Declare global GDAS resources for a nested case.
+nested_global_gdas_atm_fcst_by_res: &NestedGdasFcstAtmRes
+    C384:
+        layout_x: 8
+        layout_y: 8
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 20
+        walltime: "00:30:00"
+    C768:
+        layout_x: 16
+        layout_y: 10
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 90
+        threads_fv3: 2
+        threads_ufs: 2
+        walltime: "00:30:00"
+
+# Declare GFS nest resources for a nested case.
+nested_nest_gfs_atm_fcst_by_res: &NestedNestFcstAtmRes
+    C96:
+        layout_x: 12
+        layout_y: 10
+        threads_fv3: 1
+        threads_ufs: 1
+        write_groups: 1
+        write_tasks_per_group_per_thread_per_tile: 1
+        walltime: "03:00:00"
+    C192:
+        layout_x: 4
+        layout_y: 6
+        threads_fv3: 2
+        threads_ufs: 2
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 5
+        walltime: "03:00:00"
+    C384:
+        layout_x: 4
+        layout_y: 6
+        threads_fv3: 2
+        threads_ufs: 2
+        write_groups: 2
+        write_tasks_per_group_per_thread_per_tile: 10
+        walltime: "06:00:00"
+    C768:
+        layout_x: 12
+        layout_y: 16
+        write_groups: 4
+        write_tasks_per_group_per_thread_per_tile: 20
+        threads_fv3: 4
+        threads_ufs: 4
+        walltime: "06:00:00"
+
+
+# Declare MOM6 forecast resources for each resolution.
+# These are the same for gdas and gfs (fcst) and enkfgdas and enkfgfs (efcs) runs/jobs.
+ocn_fcst_by_res: &FcstOcnRes
+    500:
+        num_PEs_mom6: 8
+        threads_mom6: 1
+    100:
+        num_PEs_mom6: 20
+        threads_mom6: 1
+    050:
+        num_PEs_mom6: 60
+        threads_mom6: 1
+    025:
+        num_PEs_mom6: 220
+        threads_mom6: 1
+# Declare CICE6, also the same for gfs, gdas, enkfgdas, and enkfgfs
+ice_fcst_by_res: &FcstICERes
+    500:
+        num_PEs_cice6: 4
+        threads_cice6: 1
+    100:
+        num_PEs_cice6: 10
+        threads_cice6: 1
+    050:
+        num_PEs_cice6: 30
+        threads_cice6: 1
+    025:
+        num_PEs_cice6: 120
+        threads_cice6: 1
+# Declare WW3, also the same for gfs, gdas, enkfgdas, and enkfgfs
+wave_fcst_by_res: &FcstWaveRes
+    gnh_10m;aoc_9km;gsh_15m:
+        ntasks_ww3: 140
+        nthreads_ww3: 2
+    gwes_30m:
+        ntasks_ww3: 100
+        nthreads_ww3: 2
+    glo_025:
+        ntasks_ww3: 262
+        nthreads_ww3: 2
+    glo_100:
+        ntasks_ww3: 20
+        nthreads_ww3: 1
+    glo_200:
+        ntasks_ww3: 30
+        nthreads_ww3: 1
+    glo_500:
+        ntasks_ww3: 12
+        nthreads_ww3: 1
+    mx025:
+        ntasks_ww3: 80
+        nthreads_ww3: 2
+    uglo_100km:
+        ntasks_ww3: 40
+        nthreads_ww3: 1
+    uglo_m1g16:
+        ntasks_ww3: 1000
+        nthreads_ww3: 1
+
+fcst:
+    defaults:
+        mem_per_node: "max"
+        num_PEs: "ATMPETS + OCNPETS + ICEPETS + WAVPETS"
+
+    # Different resources are needed for nested/non-nested experiments
+    # See the definitions of these anchors above
+
+    gdas:  # Options for GDAS forecasts
+        {% if DO_NEST == True %}
+        atmres: *NestedGdasFcstAtmRes
+        {% else %}
+        atmres: *GdasFcstAtmRes
+        {% endif %}
+        ocnres: *FcstOcnRes
+        iceres: *FcstIceRes
+        waveres: *FcstWaveRes
+
+    gfs:  # Options for GFS forecasts
+        {% if DO_NEST == True %}
+        atmres: *NestedGfsFcstAtmRes
+        {% else %}
+        atmres: *GfsFcstAtmRes
+        {% endif %}
+        ocnres: *FcstOcnRes
+        iceres: *FcstIceRes
+        waveres: *FcstWaveRes
+
+# Skipping efcs for now
+efcs:
+    defaults:
+        mem_per_node: "max"
+        USE_ESMF_THREADING: {{ USE_ESMF_THREADING }}
+
+    # Ensemble settings
+    # Different resources are needed for nested/non-nested experiments
+    # See the definitions of these anchors above
+    enkfgdas:  # Options for GDAS forecasts
+        # Use the ensemble atmospheric resolution
+        {% if DO_NEST == True %}
+        atmensres: *NestedGdasFcstAtmRes
+        {% else %}
+        atmensres: *GdasFcstAtmRes
+        {% endif %}
+        # Ocean, ice, and waves ensemble configurations are identical to deterministic
+        ocnres: *FcstOcnRes
+        iceres: *FcstIceRes
+        wavsres: *FcstWaveRes
+
+    enkfgfs:  # Options for GFS forecasts
+        # Use the ensemble atmospheric resolution
+        {% if DO_NEST == True %}
+        atmensres: *NestedGfsFcstAtmRes
+        {% else %}
+        atmensres: *GfsFcstAtmRes
+        {% endif %}
+        # Ocean, ice, and waves ensemble configurations are identical to deterministic
+        ocnres: *FcstOcnRes
+        iceres: *FcstIceRes
+        wavsres: *FcstWaveRes

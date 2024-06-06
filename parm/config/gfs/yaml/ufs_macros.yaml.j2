@@ -1,0 +1,60 @@
+{% macro fv3_resources(layout_x,
+                       layout_y,
+                       write_groups,
+                       threads_fv3,
+                       threads_ufs,
+                       write_tasks_per_group_per_thread_per_tile) -%}
+# Define resources for the FV3 portion of non-nested experiment
+
+# Start by calculating quantities, then write the formatted yaml
+{% set write_tasks_per_group_per_thread = write_tasks_per_group_per_thread_per_tile * 6 %}
+{% if USE_ESMF_THREADING == True %}  # Use ESMF threading
+    {% set threads = threads_fv3 %}
+{% else %}  # Use traditional threading
+    {% set threads_fv3 = 1 %}
+    {% set threads = threads_ufs %}
+{% endif %}
+
+{% set FV3_PES = layout_x * layout_y * 6 %}
+{% set FV3PETS = FV3_PES * threads_fv3 %}
+{% set QUILT_PES = write_groups * write_tasks_per_group_per_thread %}
+
+{% if QUILTING == True %}  # Calculate PETs for quilting
+    {% set QUILTPETS = QUILT_PES * threads_fv3 %}
+    {% set write_tasks_per_group = write_tasks_per_group_per_thread %}
+{% else %}
+    {% set QUILTPETS = 0 %}
+{% endif %}
+
+# Mediator is required if any of the non-ATM, non-CHEM components are used
+{% if DO_OCN == True or DO_ICE == True or DO_WAVE == Ture %}
+    {% set DO_MEDIATOR = True %}
+{% else %}
+    {% set threads_mediator = threads_fv3 %}
+    # The mediator PETS can overlap with other components, usually it lands on the atmosphere tasks.
+    # However, it is suggested limiting mediator PETS to 300, as it may cause the slow performance.
+    # See https://docs.google.com/document/d/1bKpi-52t5jIfv2tuNHmQkYUe3hkKsiG_DG_s6Mnukog/edit
+    # TODO: Update reference when moved to ufs-weather-model RTD
+    {% if MEDPETS is undefined %}
+        {% set MEDPETS = FV3PETS %}
+    {% endif %}
+    {% if MEDPETS > 300 %}
+        {% MEDPETS = 300 %}
+    {% endif %}
+{% endif %}
+
+# Start writing the yaml
+layout_x: {{layout_x}}
+layout_y: {{layout_y}}
+write_groups: {{write_groups}}
+write_tasks_per_group_per_thread_per_tile: {{write_tasks_per_group_per_thread_per_tile}}
+write_tasks_per_group_per_thread: {{write_tasks_per_group_per_thread}}
+num_atm_PEs: {{FV3_PEs}}
+FV3PETS: {{ FV3PETS }}
+threads: {{threads}}
+ATMTHREADS: {{ threads_fv3 }}
+ATMPETS: {{ FV3PETS + QUILTPETS }}
+{% if QUILTING == True %}
+WRTTASK_PER_GROUP: {{ WRTTASK_PER_GROUP }}
+{% endif %}
+{%- endmacro %}
