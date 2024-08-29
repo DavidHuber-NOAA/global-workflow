@@ -16,17 +16,46 @@ fi
 
 ###############################################################
 
+# Test for rstprod data and passwordless ssh
+
+has_rstprod=".false."
+for file in $(find ${ATARDIRloc}/${CDATE} -name "*${RUN}*"); do
+   if [[ -f $file ]]; then
+      if [[ $(stat -c "%G" ${file}) -eq "rstprod" ]]; then
+         has_rstprod=".true."
+      fi
+   fi
+done
+
+if [[ ${has_rstprod} = ".true." ]]; then
+   echo "Archives contain restricted data; verifying this can be sent to target machine"
+   rstprod_sample="${REMOTE_INV_DIR}/test_rstprod"
+   test_rstprod_commands="set -ex; mkdir -p ${REMOTE_INV_DIR}; touch ${rstprod_sample}"
+   test_rstprod_commands="${test_rstprod_commands}; chgrp rstprod ${rstprod_sample}; rm -f ${rstprod_sample}"
+   ssh -t ${REMOTE_USER}@${TARGET_DTN} "${test_rstprod_commands}"
+   status=$?
+   if [[ $status != 0 ]]; then
+      echo "Unable to create test rstprod file on remote system"
+      echo "Verify your remote username, DTN, rstprod access, and location"
+      exit 2
+   fi
+fi
+
 # Send the files to be archived via globus and retain the task ID
 local_target="${LOCAL_GLOBUS_ADDR}:${ATARDIRloc}/${CDATE}"
-remote_target_dir="/collab1/data/${REMOTE_USERNAME}/${PSLOT}/${CDATE}"
+remote_target_dir="${REMOTE_TARGET_DIR}"
 globus_target="${REMOTE_GLOBUS_ADDR}:${remote_target_dir}"
 
 rm -f send_list
+rstprod_files=()
 for file in $(find ${ATARDIRloc}/${CDATE} -name "*${RUN}*"); do
    echo "${file} $(basename ${file})" >> send_list
+   if [[ $(stat -c "%G" ${file}) -eq "rstprod" ]]; then
+      rstprod_files+=("$file")
+   fi
 done
 
-${GLOBUS_XFR} --batch "send_list" ${local_target} ${globus_target} > globus_output
+${GLOBUS_XFR} --batch "send_list" "${local_target}" "${globus_target}" > globus_output
 
 status=$?
 if [ $status -ne 0 ]; then
@@ -42,11 +71,16 @@ ${GLOBUS_WAIT} "${task_id}"
 status=$?
 if [ ${status} -ne 0 ]; then
    echo "Globus data transfer failed after initialization."
+   #Run chgrp commands on any rstprod files that were transferred, ignoring errors
+   for file in "${rstprod_files[@]}"; do
+      chgrp_cmd="chgrp rstprod ${remote_target_dir}/$(basename $file)"
+      ssh -t "${REMOTE_USER}@${TARGET_DTN}" "${chgrp_cmd}"
+   done
    exit ${status}
 fi
 
 #Remove previous copy of the hpss log file used to notify that the job is complete, if it exists
-remote_inv_target_dir="/collab1/data/${REMOTE_USERNAME}/inventory"
+remote_inv_target_dir="${REMOTE_INV_DIR}"
 hpss_log_base=hpss.${PSLOT}.${CDATE}.log
 hpss_log="${remote_inv_target_dir}/${hpss_log_base}"
 tmp_log="${remote_target_dir}/tmp.${PSLOT}.${CDATE}.log"
@@ -82,6 +116,14 @@ for file in ${file_list}; do
    echo "   echo 'Failed to send ${sent_fname} to HPSS, aborting' >> ${tmp_log} 2>&1" >> ${loc_inv}
    echo "   exit 33" >> ${loc_inv}
    echo "fi" >> ${loc_inv}
+   # Change rstprod files' group on HPSS after transfer
+   if [[ " ${rstprod_files[*]} " =~ " ${file} " ]]; then
+      echo "hsi chgrp rstprod ${ATARDIR}/${CDATE}/${sent_fname} >> ${tmp_log} 2>&1" >> ${loc_inv}
+      echo "if [[ \$? != 0 ]]; then" >> ${loc_inv}
+      echo "   echo 'Failed to change group for ${sent_fname} on HPSS, aborting' >> ${tmp_log} 2>&1" >> ${loc_inv}
+      echo "   exit 34" >> ${loc_inv}
+      echo "fi" >> ${loc_inv}
+   fi
 done
 echo "mv ${tmp_log} ${hpss_log}" >> ${loc_inv}
 
@@ -96,8 +138,41 @@ if [ ${status} -ne 0 ]; then
    exit ${status}
 fi
 
-#Send the HPSS push script and retain the task number
-local_target="${LOCAL_GLOBUS_ADDR}:${USHgfs}/push_inv_hpss.sh"
+#Write a script to push data to HPSS
+[[ -f push_inv_hpss.sh ]] && rm -f push_inv_hpss.sh
+
+cat > push_inv_hpss.sh << EOF
+
+#!/usr/bin/bash
+# push_inv_to_hpss.sh
+# Purpose:  Executes inventory scripts sent via globus jobs to facilitate
+# pushing archives to HPSS from systems that do not have HPSS connections.
+
+set -eu
+
+#Move inventory scripts to a temporary directory and then execute them
+#so they are not executed by subsequent cron calls
+work_dir=\$(mktemp -d)
+
+count=0
+for script in ${REMOTE_INV_DIR}/inventory*; do
+   [[ -e \${script} ]] && mv \${script} \${work_dir} && count=\$((count+1))
+done
+
+if [[ \$count -gt 0 ]]; then
+   #Execute the scripts
+   for script in \${work_dir}/*; do
+      [[ -e \${script} ]] && bash \${script}
+   done
+fi
+
+#Remove the working directory now that we're done with it
+rm -rf \${work_dir}
+
+exit 0
+EOF
+
+local_target="${LOCAL_GLOBUS_ADDR}:$(pwd)/push_inv_hpss.sh"
 globus_target="${REMOTE_GLOBUS_ADDR}:${remote_inv_target_dir}/push_inv_hpss.sh"
 ${GLOBUS_XFR} ${local_target} ${globus_target} > globus_push_output
 
@@ -141,10 +216,10 @@ while [[ ${transfer_complete} = 0 ]]; do
       inv_list=$(${GLOBUS_LS} ${globus_target})
       for file in ${inv_list}; do
          inv_count=$(echo "${file}" | grep ${inv_fname} | wc -l)
-         if [[ inv_count != 0 ]]; then
+         if [[ ${inv_count} != 0 ]]; then
             echo "Remote script file has not been touched, cron likely not activated on remote server"
-            echo "If the remote is Niagara, enter a crontab entry like the following and try again"
-            echo "*/5 * * * * [[ -e /collab1/data/$LOGNAME/inventory/push_inv_hpss.sh ]] && bash /collab1/data/$LOGNAME/inventory/push_inv_hpss.sh"
+            echo "Enter a crontab entry like the following on the remote system and try again"
+            echo "*/5 * * * * [[ -e ${REMOTE_INV_DIR}/push_inv_hpss.sh ]] && bash ${REMOTE_INV_DIR}/push_inv_hpss.sh"
             exit 3
          fi
       done
