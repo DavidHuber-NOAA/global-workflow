@@ -47,7 +47,6 @@ export HOMEDIR="@HOMEDIR@"
 export STMP="@STMP@"
 export PTMP="@PTMP@"
 export NOSCRUB="@NOSCRUB@"
-export NIAGARA_USERNAME="${LOGNAME}"
 
 # Base directories for various builds
 export BASE_GIT="@BASE_GIT@"
@@ -111,8 +110,6 @@ fi
 export DATAROOT="${STMP}/RUNDIRS/${PSLOT}"  # TODO: set via prod_envir in Ops
 export RUNDIR="${DATAROOT}"  # TODO: Should be removed; use DATAROOT instead
 export ARCDIR="${NOSCRUB}/archive/${PSLOT}"
-export ATARDIR="@ATARDIR@"
-export ATARDIRloc="@ATARDIRloc@"
 
 # Commonly defined parameters in JJOBS
 export envir=${envir:-"prod"}
@@ -380,14 +377,23 @@ export binary_diag=".false."
 export DO_METP="YES"         # Run METPLUS jobs - set METPLUS settings in config.metp
 
 # Archiving options
+export REMOTE_USER=${REMOTE_USER:-${LOGNAME}}  # Username on remote system (e.g. Niagara/HPSS)
+export ATARDIR="@ATARDIR@"            # HPSS archive location
+export ATARDIRloc="@ATARDIRloc@"      # Local archive location
 export HPSSARCH="@HPSSARCH@"          # save data to HPSS archive
 export LOCALARCH="@LOCALARCH@"        # save data to local archive
-export DO_GLOBUS="NO"                 # transfer local archives to Niagara for HPSS archive; only valid if LOCALARCH=YES
-export REMOTE_USERNAME=${REMOTE_USERNAME:-${LOGNAME}}
 if [[ ${HPSSARCH} = "YES" ]] && [[ ${LOCALARCH} = "YES" ]]; then
    echo "Both HPSS and local archiving selected.  Please choose one or the other."
    exit 2
 fi
+
+# Transfer local archives for HPSS archive
+# Only valid if LOCALARCH=YES
+# Note: REMOTE_USER must be valid for the remote system (most likely Niagara) and HPSS!
+# Also Note: The local archive will be deleted after each globus transfer
+export DO_GLOBUS="NO"
+[[ ${DO_GLOBUS} == "YES" ]] && LOCALARCH="YES"
+
 export ARCH_CYC=00           # Archive data at this cycle for warm_start capability
 export ARCH_WARMICFREQ=4     # Archive frequency in days for warm_start capability
 export ARCH_FCSTICFREQ=1     # Archive frequency in days for gdas and gfs forecast-only capability

@@ -1052,7 +1052,7 @@ class Tasks:
         deps.append(rocoto.add_dependency(dep_dict))
         # Add earc* dependency
         if self.app_config.do_hybvar and self.cdump in ['gdas']:
-            dep_dict = {'type': 'metatask', 'name': 'gdaseamn'}
+            dep_dict = {'type': 'metatask', 'name': 'enkfgdaseamn'}
             deps.append(rocoto.add_dependency(dep_dict))
 
         dependencies = rocoto.create_dependency(dep_condition='and', dep=deps)
