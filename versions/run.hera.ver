@@ -10,4 +10,4 @@ export gempak_ver=7.17.0
 export perl_ver=5.38.0
 
 source "${HOMEgfs:-}/versions/run.spack.ver"
-export spack_mod_path="/scratch1/NCEPDEV/nems/role.epic/spack-stack/spack-stack-${spack_stack_ver}/envs/${spack_env}/install/modulefiles/Core"
+export spack_mod_path="/scratch1/NCEPDEV/global/David.Huber/SPACK/ss_1.8.0/envs/gsi-addon/install/modulefiles/Core"
