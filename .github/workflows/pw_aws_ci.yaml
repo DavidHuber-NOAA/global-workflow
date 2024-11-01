@@ -78,10 +78,14 @@ jobs:
           repo_url="https://github.com/${{ github.repository_owner }}/${{ github.repository }}.git"
         else
           branch=$(gh pr view $pr_number --repo $repo --json headRefName --jq '.headRefName')
-          repo_url=$(gh pr view $pr_number --repo $repo --json headRepository --jq '.headRepository.url')
+          repo_owner=$(gh pr view $pr_number --repo $repo --json headRepositoryOwner --jq '.headRepositoryOwner.login')
+          repo_name=$(gh pr view $pr_number --repo $repo --json headRepository --jq '.headRepository.name')
+          repo_url="https://github.com/$repo_owner/$repo_name.git"
         fi
-        echo "::set-output name=branch::$branch"
-        echo "::set-output name=repo::$repo_url"
+        {
+          echo "branch=$branch"
+          echo "repo=$repo_url"
+        } >> $GITHUB_OUTPUT
 
   checkout:
     needs: fetch-branch
