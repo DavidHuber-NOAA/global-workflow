@@ -298,8 +298,12 @@ do
   ${LINK_OR_COPY} "${HOMEgfs}/sorc/gfs_utils.fd/install/bin/${utilexe}" .
 done
 
-[[ -s "ufs_model.x" ]] && rm -f ufs_model.x
-${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/ufs_model.x" .
+[[ -s "gfs_model.x" ]] && rm -f gfs_model.x
+[[ -s "gefs_model.x" ]] && rm -f gefs_model.x
+[[ -s "sfs_model.x" ]] && rm -f sfs_model.x
+if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/gfs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/gfs_model.x" .; fi
+if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/gefs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/gefs_model.x" .; fi
+if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/sfs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/sfs_model.x" .; fi
 
 [[ -s "upp.x" ]] && rm -f upp.x
 ${LINK_OR_COPY} "${HOMEgfs}/sorc/upp.fd/exec/upp.x" .
