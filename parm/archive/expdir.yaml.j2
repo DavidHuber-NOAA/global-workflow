@@ -1,0 +1,13 @@
+{% set cycle_YMDH = current_cycle | to_YMDH %}
+
+expdir:
+    name: "EXPDIR"
+    changedir: "{{ EXPDIR }}"
+    target: "{{ ATARDIR }}/{{ cycle_YMDH }}/expdir.tar"
+    required:
+        - "{{ EXPDIR | relpath(EXPDIR) }}/config.*"
+        - "{{ EXPDIR | relpath(EXPDIR) }}/{{ pslot }}.db"
+        - "{{ EXPDIR | relpath(EXPDIR) }}/{{ pslot }}.xml"
+        {% if ARCH_HASHES or ARCH_DIFFS %}
+        - "{{ EXPDIR | relpath(EXPDIR) }}/git_info.log"
+        {% endif %}

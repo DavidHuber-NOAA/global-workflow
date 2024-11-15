@@ -9,8 +9,9 @@ from typing import Any, Dict, List
 
 from wxflow import (AttrDict, FileHandler, Hsi, Htar, Task,
                     chgrp, get_gid, logit, mkdir_p, parse_j2yaml, rm_p, strftime,
-                    to_YMDH)
+                    to_YMDH, which, chdir, ProcessError)
 
+git_filename = "git_info.log"
 logger = getLogger(__name__.split('.')[-1])
 
 
@@ -108,6 +109,14 @@ class Archive(Task):
         else:  # Only perform local archiving.  Do not create tarballs.
             self.tar_cmd = ""
             return arcdir_set, []
+
+        # Determine if we are archiving the EXPDIR this cycle
+        arch_dict.archive_expdir = False
+        if arch_dict.ARCH_EXPDIR:
+            arch_dict.archive_expdir = Archive._archive_expdir(arch_dict)
+            # If requested, get workflow git hashes/statuses/diffs for EXPDIR archiving
+            if arch_dict.archive_expdir and (arch_dict.ARCH_HASHES or arch_dict.ARCH_DIFFS):
+                Archive._pop_git_info(arch_dict)
 
         master_yaml = "master_" + arch_dict.RUN + ".yaml.j2"
 
@@ -244,7 +253,7 @@ class Archive(Task):
         return False
 
     @logit(logger)
-    def _protect_rstprod(self, atardir_set: Dict[str, any]) -> None:
+    def _protect_rstprod(self, atardir_set: Dict[str, Any]) -> None:
         """
         Changes the group of the target tarball to rstprod and the permissions to
         640.  If this fails for any reason, attempt to delete the file before exiting.
@@ -289,7 +298,7 @@ class Archive(Task):
                 tarball.add(filename)
 
     @logit(logger)
-    def _gen_relative_paths(self, root_path: str) -> Dict:
+    def _gen_relative_paths(self, root_path: str) -> Dict[str, Any]:
         """Generate a dict of paths in self.task_config relative to root_path
 
         Parameters
@@ -415,5 +424,128 @@ class Archive(Task):
 
         replace_string_from_to_file(in_track_file, out_track_file, "AVNO", pslot4)
         replace_string_from_to_file(in_track_p_file, out_track_p_file, "AVNO", pslot4)
+
+        return
+
+    @staticmethod
+    @logit(logger)
+    def _archive_expdir(arch_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        This function checks if the EXPDIR should be archived this RUN/cycle
+
+        Parameters
+        ----------
+        arch_dict: Dict
+            Dictionary with required parameters, including the following:
+
+            current_cycle: Datetime
+                Date of the current cycle.
+            SDATE: Datetime
+                Starting cycle date.
+            EDATE: Datetime
+                Ending cycle date.
+            NET: str
+                The workflow type (gfs or gefs)
+            ARCH_EXPDIR_FREQ: int
+                Frequency to perform EXPDIR archiving
+        """
+
+        # Get commonly used variables
+        current_cycle = arch_dict.current_cycle
+        sdate = arch_dict.SDATE
+        edate = arch_dict.EDATE
+        # Convert frequency to seconds from hours
+        freq = arch_dict.ARCH_EXPDIR_FREQ * 3600
+
+        # Skip gfs and enkf cycled RUNs (only archive during gdas RUNs)
+        # (do not skip forecast-only, regardless of RUN)
+        if arch_dict.NET == "gfs" and arch_dict.MODE == "cycled" and arch_dict.RUN != "gdas":
+            return False
+
+        # Determine if we should skip this cycle
+        # If the frequency is set to 0, only run on sdate and edate
+        if freq == 0:
+            if current_cycle != sdate or current_cycle != edate:
+                return False
+        # Otherwise, the frequency is in hours
+        elif (sdate - current_cycle).total_seconds() % freq != 0:
+            return False
+
+        # Looks like we are archiving the EXPDIR
+        return True
+
+    @staticmethod
+    @logit(logger)
+    def _pop_git_info(arch_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        This function checks the configuration options ARCH_HASHES and ARCH_DIFFS
+        and ARCH_EXPDIR_FREQ to determine if the git hashes and/or diffs should be
+        added to the EXPDIR for archiving and execute the commands.  The hashes and
+        diffs will be stored in EXPDIR/git_info.log.
+
+        Parameters
+        ----------
+        arch_dict: Dict
+            Dictionary with required parameters, including the following:
+
+            EXPDIR: str
+                Location of the EXPDIR
+            HOMEgfs: str
+                Location of the HOMEgfs (the global workflow)
+            ARCH_HASHES: bool
+                Whether to archive git hashes of the workflow and submodules
+            ARCH_DIFFS: bool
+                Whether to archive git diffs of the workflow and submodules
+        """
+
+        # Get commonly used variables
+        arch_hashes = arch_dict.ARCH_HASHES
+        arch_diffs = arch_dict.ARCH_DIFFS
+        homegfs = arch_dict.HOMEgfs
+        expdir = arch_dict.EXPDIR
+
+        # Find the git command
+        git = which('git')
+        if git is None:
+            raise FileNotFoundError("FATAL ERROR: the git command could not be found!")
+
+        output = ""
+        # Navigate to HOMEgfs to run the git commands
+        with chdir(homegfs):
+
+            # Are we running git to get hashes?
+            if arch_hashes:
+                output += "Global workflow hash:\n"
+
+                try:
+                    output += git("rev-parse", "HEAD", output=str)
+                    output += "\nSubmodule hashes:\n"
+                    output += git("submodule", "status", output=str)
+                except ProcessError:
+                    raise OSError("FATAL ERROR Failed to run git")
+
+            # Are we running git to get diffs?
+            if arch_diffs:
+                output += "Global workflow diffs:\n"
+                # This command will only work on git v2.14+
+                try:
+                    output += git("diff", "--submodule=diff", output=str)
+                except ProcessError:
+                    # The version of git may be too old.  See if we can run just a surface diff.
+                    try:
+                        output += git("diff", output=str)
+                        print("WARNING git was unable to do a recursive diff.\n"
+                              "Only a top level diff was performed.\n"
+                              "Note that the git version must be >= 2.14 for this feature.")
+                    except ProcessError:
+                        raise OSError("FATAL ERROR Failed to run 'git diff'")
+
+        # Write out to the log file
+        try:
+            with open(os.path.join(expdir, git_filename), 'w') as output_file:
+                output_file.write(output)
+        except OSError:
+            fname = os.path.join(expdir, git_filename)
+            raise OSError(f"FATAL ERROR Unable to write git output to '{fname}'")
 
         return
