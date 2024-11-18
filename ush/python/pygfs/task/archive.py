@@ -8,8 +8,8 @@ from logging import getLogger
 from typing import Any, Dict, List
 
 from wxflow import (AttrDict, FileHandler, Hsi, Htar, Task,
-                    chgrp, get_gid, logit, mkdir_p, parse_j2yaml, rm_p, strftime,
-                    to_YMDH, which, chdir, ProcessError)
+                    chgrp, get_gid, logit, mkdir_p, parse_j2yaml, rm_p, rmdir,
+                    strftime, to_YMDH, which, chdir, ProcessError)
 
 git_filename = "git_info.log"
 logger = getLogger(__name__.split('.')[-1])
@@ -43,6 +43,9 @@ class Archive(Task):
 
         # Extend task_config with path_dict
         self.task_config = AttrDict(**self.task_config, **path_dict)
+
+        # Boolean used for cleanup if the EXPDIR was archived
+        self.archive_expdir = False
 
     @logit(logger)
     def configure(self, arch_dict: Dict[str, Any]) -> (Dict[str, Any], List[Dict[str, Any]]):
@@ -111,12 +114,16 @@ class Archive(Task):
             return arcdir_set, []
 
         # Determine if we are archiving the EXPDIR this cycle
-        arch_dict.archive_expdir = False
+        self.temp_expdir = ""
         if arch_dict.ARCH_EXPDIR:
-            arch_dict.archive_expdir = Archive._archive_expdir(arch_dict)
-            # If requested, get workflow git hashes/statuses/diffs for EXPDIR archiving
-            if arch_dict.archive_expdir and (arch_dict.ARCH_HASHES or arch_dict.ARCH_DIFFS):
-                Archive._pop_git_info(arch_dict)
+            self.archive_expdir, self.temp_expdir = Archive._archive_expdir(arch_dict)
+            arch_dict.temp_expdir = self.temp_expdir
+            arch_dict.archive_expdir = self.archive_expdir
+
+            if self.archive_expdir:
+                # If requested, get workflow hashes/statuses/diffs for EXPDIR archiving
+                if arch_dict.ARCH_HASHES or arch_dict.ARCH_DIFFS:
+                    Archive._pop_git_info(arch_dict)
 
         master_yaml = "master_" + arch_dict.RUN + ".yaml.j2"
 
@@ -204,6 +211,12 @@ class Archive(Task):
         """
 
         fileset = []
+        # Check if any external files need to be brought into the ROTDIR (i.e. EXPDIR contents)
+        if "FileHandler" in atardir_set:
+            # Run the file handler to stage files for archiving
+            FileHandler(atardir_set["FileHandler"]).sync()
+
+        # Check that all required files are present and add them to the list of files to archive
         if "required" in atardir_set:
             if atardir_set.required is not None:
                 for item in atardir_set.required:
@@ -213,6 +226,7 @@ class Archive(Task):
                     for entry in glob_set:
                         fileset.append(entry)
 
+        # Check for optional files and add found items to the list of files to archive
         if "optional" in atardir_set:
             if atardir_set.optional is not None:
                 for item in atardir_set.optional:
@@ -429,9 +443,11 @@ class Archive(Task):
 
     @staticmethod
     @logit(logger)
-    def _archive_expdir(arch_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def _archive_expdir(arch_dict: Dict[str, Any]) -> (bool, str):
         """
         This function checks if the EXPDIR should be archived this RUN/cycle
+        and returns the temporary path in the ROTDIR where the EXPDIR will be
+        copied to for archiving.
 
         Parameters
         ----------
@@ -448,6 +464,8 @@ class Archive(Task):
                 The workflow type (gfs or gefs)
             ARCH_EXPDIR_FREQ: int
                 Frequency to perform EXPDIR archiving
+            ROTDIR: str
+                Full path to the ROTDIR
         """
 
         # Get commonly used variables
@@ -460,19 +478,19 @@ class Archive(Task):
         # Skip gfs and enkf cycled RUNs (only archive during gdas RUNs)
         # (do not skip forecast-only, regardless of RUN)
         if arch_dict.NET == "gfs" and arch_dict.MODE == "cycled" and arch_dict.RUN != "gdas":
-            return False
+            return False, ""
 
         # Determine if we should skip this cycle
         # If the frequency is set to 0, only run on sdate and edate
         if freq == 0:
             if current_cycle != sdate or current_cycle != edate:
-                return False
+                return False, ""
         # Otherwise, the frequency is in hours
         elif (sdate - current_cycle).total_seconds() % freq != 0:
-            return False
+            return False, ""
 
         # Looks like we are archiving the EXPDIR
-        return True
+        return True, os.path.join(arch_dict.ROTDIR, "expdir")
 
     @staticmethod
     @logit(logger)
@@ -547,5 +565,18 @@ class Archive(Task):
         except OSError:
             fname = os.path.join(expdir, git_filename)
             raise OSError(f"FATAL ERROR Unable to write git output to '{fname}'")
+
+        return
+
+    @logit(logger)
+    def clean(self):
+        """
+        Remove the temporary directories/files created by the Archive task.
+        Presently, this is only the ROTDIR/expdir directory if EXPDIR archiving
+        was performed.
+        """
+
+        if self.archive_expdir:
+            rmdir(self.temp_expdir)
 
         return

@@ -2,12 +2,24 @@
 
 expdir:
     name: "EXPDIR"
-    changedir: "{{ EXPDIR }}"
+    # Copy the experiment files from the EXPDIR into the ROTDIR for archiving
+    FileHandler:
+        mkdir:
+            - "{{ temp_expdir }}"
+        copy:
+            {% for config in glob(EXPDIR ~ "/config.*") %}
+            - [ "{{ config }}", "{{ temp_expdir }}/." ]
+            {% endfor %}
+            - [ "{{ EXPDIR }}/{{ PSLOT }}.db", "{{ temp_expdir }}/." ]
+            - [ "{{ EXPDIR }}/{{ PSLOT }}.xml", "{{ temp_expdir }}/." ]
+            {% if ARCH_HASHES or ARCH_DIFFS %}
+            - [ "{{ EXPDIR }}/git_info.log", "{{ temp_expdir }}/." ]
+            {% endif %}
     target: "{{ ATARDIR }}/{{ cycle_YMDH }}/expdir.tar"
     required:
-        - "{{ EXPDIR | relpath(EXPDIR) }}/config.*"
-        - "{{ EXPDIR | relpath(EXPDIR) }}/{{ pslot }}.db"
-        - "{{ EXPDIR | relpath(EXPDIR) }}/{{ pslot }}.xml"
+        - "expdir/config.*"
+        - "expdir/{{ PSLOT }}.db"
+        - "expdir/{{ PSLOT }}.xml"
         {% if ARCH_HASHES or ARCH_DIFFS %}
-        - "{{ EXPDIR | relpath(EXPDIR) }}/git_info.log"
+        - "expdir/git_info.log"
         {% endif %}

@@ -60,6 +60,9 @@ def main():
         for atardir_set in atardir_sets:
             archive.execute_backup_dataset(atardir_set)
 
+        # Clean up any temporary files
+        archive.clean()
+
 
 if __name__ == '__main__':
     main()
