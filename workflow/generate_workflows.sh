@@ -140,6 +140,7 @@ while [[ $# -gt 0 && "$1" != "--" ]]; do
         G) _run_all_gfs=true ;;
         E) _run_all_gefs=true ;;
         S) _run_all_sfs=true ;;
+        A) _set_account=true && _hpc_account="${OPTARG}" ;;
         c) _update_cron=true ;;
         e) _email="${OPTARG}" && _set_email=true ;;
         t) _tag="_${OPTARG}" ;;
