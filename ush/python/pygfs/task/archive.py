@@ -7,7 +7,7 @@ import tarfile
 from logging import getLogger
 from typing import Any, Dict, List
 
-from wxflow import (AttrDict, FileHandler, Hsi, Htar, Task,
+from wxflow import (AttrDict, FileHandler, Hsi, Htar, Task, to_timedelta,
                     chgrp, get_gid, logit, mkdir_p, parse_j2yaml, rm_p, rmdir,
                     strftime, to_YMDH, which, chdir, ProcessError)
 
@@ -114,10 +114,8 @@ class Archive(Task):
             return arcdir_set, []
 
         # Determine if we are archiving the EXPDIR this cycle
-        self.temp_expdir = ""
         if arch_dict.ARCH_EXPDIR:
-            self.archive_expdir, self.temp_expdir = Archive._archive_expdir(arch_dict)
-            arch_dict.temp_expdir = self.temp_expdir
+            self.archive_expdir = Archive._archive_expdir(arch_dict)
             arch_dict.archive_expdir = self.archive_expdir
 
             if self.archive_expdir:
@@ -443,7 +441,7 @@ class Archive(Task):
 
     @staticmethod
     @logit(logger)
-    def _archive_expdir(arch_dict: Dict[str, Any]) -> (bool, str):
+    def _archive_expdir(arch_dict: Dict[str, Any]) -> bool:
         """
         This function checks if the EXPDIR should be archived this RUN/cycle
         and returns the temporary path in the ROTDIR where the EXPDIR will be
@@ -472,25 +470,31 @@ class Archive(Task):
         current_cycle = arch_dict.current_cycle
         sdate = arch_dict.SDATE
         edate = arch_dict.EDATE
+        mode = arch_dict.MODE
+        assim_freq = to_timedelta(f"+{arch_dict.assim_freq}H")
         # Convert frequency to seconds from hours
         freq = arch_dict.ARCH_EXPDIR_FREQ * 3600
 
         # Skip gfs and enkf cycled RUNs (only archive during gdas RUNs)
         # (do not skip forecast-only, regardless of RUN)
         if arch_dict.NET == "gfs" and arch_dict.MODE == "cycled" and arch_dict.RUN != "gdas":
-            return False, ""
+            return False
 
         # Determine if we should skip this cycle
-        # If the frequency is set to 0, only run on sdate and edate
+        # If the frequency is set to 0, only run on sdate (+assim_freq for cycled) and edate
         if freq == 0:
-            if current_cycle != sdate or current_cycle != edate:
-                return False, ""
+            if mode == "forecast-only" and (current_cycle != sdate or current_cycle != edate):
+                return False
+            elif mode == "cycled" and (current_cycle != sdate + assim_freq or current_cycle != edate):
+                return False
         # Otherwise, the frequency is in hours
-        elif (sdate - current_cycle).total_seconds() % freq != 0:
-            return False, ""
+        elif mode == "forecast-only" and (sdate - current_cycle).total_seconds() % freq != 0:
+            return False
+        elif mode == "cycled" and (sdate + assim_freq - current_cycle).total_seconds() % freq != 0:
+            return False
 
         # Looks like we are archiving the EXPDIR
-        return True, os.path.join(arch_dict.ROTDIR, "expdir")
+        return True
 
     @staticmethod
     @logit(logger)
@@ -577,6 +581,8 @@ class Archive(Task):
         """
 
         if self.archive_expdir:
-            rmdir(self.temp_expdir)
+            temp_expdir_path = os.path.join(self.task_config.ROTDIR, "expdir." +
+                                            to_YMDH(self.task_config.current_cycle))
+            rmdir(temp_expdir_path)
 
         return
