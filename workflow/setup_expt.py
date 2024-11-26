@@ -409,9 +409,10 @@ def main(*argv):
     validate_user_request(host, user_inputs)
 
     # Update the default host account if the user supplied one
-    if user_inputs.account != "":
+    if user_inputs.account is not None:
         host.info.ACCOUNT = user_inputs.account
 
+    print(host.info.ACCOUNT)
     # Determine ocean resolution if not provided
     if user_inputs.resdetocean <= 0:
         user_inputs.resdetocean = get_ocean_resolution(user_inputs.resdetatmos)
