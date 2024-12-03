@@ -115,13 +115,13 @@ class Archive(Task):
 
         # Determine if we are archiving the EXPDIR this cycle
         if arch_dict.ARCH_EXPDIR:
-            self.archive_expdir = Archive._archive_expdir(arch_dict)
+            self.archive_expdir = self._archive_expdir(arch_dict)
             arch_dict.archive_expdir = self.archive_expdir
 
             if self.archive_expdir:
                 # If requested, get workflow hashes/statuses/diffs for EXPDIR archiving
                 if arch_dict.ARCH_HASHES or arch_dict.ARCH_DIFFS:
-                    Archive._pop_git_info(arch_dict)
+                    self._pop_git_info(arch_dict)
 
         master_yaml = "master_" + arch_dict.RUN + ".yaml.j2"
 
@@ -439,7 +439,6 @@ class Archive(Task):
 
         return
 
-    @staticmethod
     @logit(logger)
     def _archive_expdir(arch_dict: Dict[str, Any]) -> bool:
         """
@@ -482,21 +481,18 @@ class Archive(Task):
 
         # Determine if we should skip this cycle
         # If the frequency is set to 0, only run on sdate (+assim_freq for cycled) and edate
-        if freq == 0:
-            if mode == "forecast-only" and (current_cycle != sdate or current_cycle != edate):
-                return False
-            elif mode == "cycled" and (current_cycle != sdate + assim_freq or current_cycle != edate):
-                return False
-        # Otherwise, the frequency is in hours
-        elif mode == "forecast-only" and (sdate - current_cycle).total_seconds() % freq != 0:
-            return False
-        elif mode == "cycled" and (sdate + assim_freq - current_cycle).total_seconds() % freq != 0:
+        first_full = sdate
+        if mode in ["cycled"]:
+            first_full += assim_freq
+        if current_cycle in [first_full, edate]:
+            # Always save the first and last
+            return True
+        elif (current_cycle - first_full).total_seconds() % freq == 0:
+            # Otherwise, the frequency is in hours
+            return True
+        else
             return False
 
-        # Looks like we are archiving the EXPDIR
-        return True
-
-    @staticmethod
     @logit(logger)
     def _pop_git_info(arch_dict: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -543,8 +539,8 @@ class Archive(Task):
                     output += git("rev-parse", "HEAD", output=str)
                     output += "\nSubmodule hashes:\n"
                     output += git("submodule", "status", output=str)
-                except ProcessError:
-                    raise OSError("FATAL ERROR Failed to run git")
+                except ProcessError as pe:
+                    raise OSError("FATAL ERROR Failed to run git") from pe
 
             # Are we running git to get diffs?
             if arch_diffs:
@@ -559,16 +555,16 @@ class Archive(Task):
                         print("WARNING git was unable to do a recursive diff.\n"
                               "Only a top level diff was performed.\n"
                               "Note that the git version must be >= 2.14 for this feature.")
-                    except ProcessError:
-                        raise OSError("FATAL ERROR Failed to run 'git diff'")
+                    except ProcessError as pe:
+                        raise OSError("FATAL ERROR Failed to run 'git diff'") from pe
 
         # Write out to the log file
         try:
             with open(os.path.join(expdir, git_filename), 'w') as output_file:
                 output_file.write(output)
-        except OSError:
+        except OSError as ose:
             fname = os.path.join(expdir, git_filename)
-            raise OSError(f"FATAL ERROR Unable to write git output to '{fname}'")
+            raise OSError(f"FATAL ERROR Unable to write git output to '{fname}'") from ose
 
         return
 

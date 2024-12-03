@@ -11,7 +11,6 @@ expdir:
             {% for config in glob(EXPDIR ~ "/config.*") %}
             - [ "{{ config }}", "{{ ROTDIR }}/{{ copy_expdir }}/." ]
             {% endfor %}
-            - [ "{{ EXPDIR }}/{{ PSLOT }}.db", "{{ ROTDIR }}/{{ copy_expdir }}/." ]
             - [ "{{ EXPDIR }}/{{ PSLOT }}.xml", "{{ ROTDIR }}/{{ copy_expdir }}/." ]
             {% if ARCH_HASHES or ARCH_DIFFS %}
             - [ "{{ EXPDIR }}/git_info.log", "{{ ROTDIR }}/{{ copy_expdir }}/." ]
@@ -19,7 +18,6 @@ expdir:
     target: "{{ ATARDIR }}/{{ cycle_YMDH }}/expdir.tar"
     required:
         - "{{ copy_expdir }}/config.*"
-        - "{{ copy_expdir }}/{{ PSLOT }}.db"
         - "{{ copy_expdir }}/{{ PSLOT }}.xml"
         {% if ARCH_HASHES or ARCH_DIFFS %}
         - "{{ copy_expdir }}/git_info.log"
