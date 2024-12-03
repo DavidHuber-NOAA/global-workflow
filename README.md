@@ -3,11 +3,13 @@
 [![pynorms](https://github.com/NOAA-EMC/global-workflow/actions/workflows/pynorms.yaml/badge.svg)](https://github.com/NOAA-EMC/global-workflow/actions/workflows/pynorms.yaml)
 
 ![Custom badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/emcbot/e35aa2904a54deae6bbb1fdc2d960c71/raw/hera.json)
-![Custom badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/emcbot/e35aa2904a54deae6bbb1fdc2d960c71/raw/orion.json)
+![Custom badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/emcbot/e35aa2904a54deae6bbb1fdc2d960c71/raw/hercules.json)
 
-The Global Workflow supporting the Global Forecast System (GFS) and Global Ensemble Forecasting System (GEFS) with the [UFS-weather-model](https://github.com/ufs-community/ufs-weather-model) and both [GSI](https://github.com/NOAA-EMC/GSI)- and [GDASApp (JEDI)](https://github.com/NOAA-EMC/GDASApp)-based Data Assimilation systems.
+The Global Workflow supporting the Global Forecast System (GFS) and the Global Ensemble Forecasting System (GEFS) with the [UFS-weather-model](https://github.com/ufs-community/ufs-weather-model).  Data assimilation, currently only available for the GFS, is provide by both the [GSI](https://github.com/NOAA-EMC/GSI)- and [GDASApp (JEDI)](https://github.com/NOAA-EMC/GDASApp)-based Data Assimilation systems.
 
 In progress [documentation](https://global-workflow.readthedocs.io/en/latest/) is available.
+
+# Prerequisites
 
 The Global Workflow depends on the following prerequisities to be available on the system:
 
@@ -16,9 +18,9 @@ The Global Workflow depends on the following prerequisities to be available on t
 * Software - NCEPLIBS (various), ESMF, HDF5, NetCDF, and a host of other softwares (see module files under /modulefiles for additional details).
     - [Spack-stack](https://github.com/JCSDA/spack-stack) is recommended for the installation of dependent libraries.
 
-# Supported platforms
+## Supported platforms
 
-The `global-workflow` currently supports the following machines at the indicated tier.
+The Global Workflow currently supports the following machines at the indicated tier.
 
 | HPC                                     | Tier | Notes                                                                      |
 | --------------------------------------- |:----:|:--------------------------------------------------------------------------:|
