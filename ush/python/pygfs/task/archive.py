@@ -490,7 +490,7 @@ class Archive(Task):
         elif (current_cycle - first_full).total_seconds() % freq == 0:
             # Otherwise, the frequency is in hours
             return True
-        else
+        else:
             return False
 
     @logit(logger)
