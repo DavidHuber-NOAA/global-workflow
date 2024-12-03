@@ -16,35 +16,16 @@ The `global-workflow` depends on the following prerequisities to be available on
 
 The `global-workflow` currently supports the following machines at the indicated tier.
 
-| HPC            | Tier | Notes                                      |
-| -------------- |:----:|:------------------------------------------:|
-| WCOSS2         | 1    | GEFS testing is not regularly performed.   |
-| NCO            |      | GFS weakly coupled DA is not currently     |
-|                |      | supported.                                 |
-| -------------- |:----:|:------------------------------------------:|
-| Hera           | 1    |                                            |
-| NOAA RDHPCS    |      |                                            |
-| -------------- |:----:|:------------------------------------------:|
-| Hercules       | 1    | Currently does not support the TC Tracker. |
-| MSU            |      |                                            |
-| -------------- |:----:|:------------------------------------------:|
-| Orion          | 2    | The GSI runs very slowly on Orion.         |
-| MSU            |      |                                            |
-| -------------- |:----:|:------------------------------------------:|
-| Gaea C5/C6     | 3    | Currently non-operational following an OS  |
-| RDHPCS         |      | upgrade.  Supported by EPIC.               |
-| -------------- |:----:|:------------------------------------------:|
-| Jet            | 3    | Supported by NESDIS.  Supports GSI-based   |
-| RDHPCS         |      | DA only.                                   |
-| -------------- |:----:|:------------------------------------------:|
-| S4             | 3    | Currently non-operational following an OS  |
-| U of Wisc/SSEC |      | upgrade.  Supported by NESDIS.  Supports   |
-|                |      | GSI-based DA only.                         |
-| -------------- |:----:|:------------------------------------------:|
-| AWS, GCP, Azure| 3    | Supported by EPIC.                         |
-| NOAA Parallel  |      |                                            |
-| Works          |      |                                            |
-| -------------- |:----:|:------------------------------------------:|
+| HPC                                     | Tier | Notes                                                                   |
+| --------------------------------------- |:----:|:-----------------------------------------------------------------------:|
+| WCOSS2<br>NCO                           | 1    | GEFS testing is not regularly performed.                                |
+| Hera<br>NOAA RDHPCS                     | 1    |                                                                         |
+| Hercules<br>MSU                         | 1    | Currently does not support the TC Tracker.                              |
+| Orion<br>MSU                            | 2    | The GSI runs very slowly on Orion.                                      |
+| Gaea C5/C6<br>RDHPCS                    | 3    | Currently non-operational following an OS. Supported by EPIC.           |
+| Jet<br>RDHPCS                           | 3    | Supported by NESDIS.  Supports GSI-based DA only.                       |
+| S4<br>SSEC                              | 3    | Currently non-operational following an OS upgrade. Supported by NESDIS. |
+| AWS, GCP, Azure <br>NOAA Parallel Works | 3    | Supported by EPIC.                                                      |
 
 Tier Definitions
 ----------------
