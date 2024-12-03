@@ -14,15 +14,45 @@ The `global-workflow` depends on the following prerequisities to be available on
 * Compiler - Intel Compiler Suite
 * Software - NCEPLIBS (various), ESMF, HDF5, NetCDF, and a host of other softwares (see module files under /modulefiles for additional details)
 
-The `global-workflow` current supports the following tier-1 machines:
+The `global-workflow` currently supports the following machines at the indicated tier.
 
-* NOAA RDHPCS - Hera
-* MSU HPC - Orion
-* MSU HPC - Hercules
-* NOAA's operational HPC - WCOSS2
++----------------+------+--------------------------------------------+
+| HPC            | Tier | Notes                                      |
++================+======+============================================+
+| WCOSS2         | 1    | GEFS testing is not regularly performed.   |
+| NCO            |      | GFS weakly coupled DA is not currently     |
+|                |      | supported.                                 |
++----------------+------+--------------------------------------------+
+| Hera           | 1    |                                            |
+| NOAA RDHPCS    |      |                                            |
++----------------+------+--------------------------------------------+
+| Hercules       | 1    | Currently does not support the TC Tracker. |
+| MSU            |      |                                            |
++----------------+------+--------------------------------------------+
+| Orion          | 2    | The GSI runs very slowly on Orion.         |
+| MSU            |      |                                            |
++----------------+------+--------------------------------------------+
+| Gaea C5/C6     | 3    | Currently non-operational following an OS  |
+| RDHPCS         |      | upgrade.  Supported by EPIC.               |
++----------------+------+--------------------------------------------+
+| Jet            | 3    | Supported by NESDIS.  Supports GSI-based   |
+| RDHPCS         |      | DA only.                                   |
++----------------+------+--------------------------------------------+
+| S4             | 3    | Currently non-operational following an OS  |
+| U of Wisc/SSEC |      | upgrade.  Supported by NESDIS.  Supports   |
+|                |      | GSI-based DA only.                         |
++----------------+------+--------------------------------------------+
+| AWS, GCP, Azure| 3    | Supported by EPIC.                         |
+| NOAA Parallel  |      |                                            |
+| Works          |      |                                            |
++----------------+------+--------------------------------------------+
 
-Additionally, the following tier-2 machine is supported:
-* SSEC at Univ. of Wisconsin - S4 (Note that S2S+ experiments are not fully supported)
+Tier Definitions
+----------------
+
+1. Fully supported by the EMC global workflow team.  CI testing is regularly performed on these systems, the majority of the global workflow features are supported, and the team will address any platform-specific features, bugs, upgrades, and requests for data.
+2. Supported by the global workflow team on an ad-hoc basis.  CI tests are supported on these systems, but not regularly performed.
+3. No official support by the global workflow team, but may be supported by other entities (e.g. EPIC).
 
 Documentation (in progress) is available [here](https://global-workflow.readthedocs.io/en/latest/).
 
