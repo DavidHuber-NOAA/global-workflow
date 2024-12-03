@@ -7,11 +7,12 @@
 
 The Global Workflow supporting the Global Forecast System (GFS) and Global Ensemble Forecasting System (GEFS) with the [UFS-weather-model](https://github.com/ufs-community/ufs-weather-model) and both [GSI](https://github.com/NOAA-EMC/GSI)- and [GDASApp (JEDI)](https://github.com/NOAA-EMC/GDASApp)-based Data Assimilation systems.
 
-The `global-workflow` depends on the following prerequisities to be available on the system:
+The Global Workflow depends on the following prerequisities to be available on the system:
 
 * Workflow Engines - [Rocoto](https://github.com/christopherwharrop/rocoto) and [ecFlow](https://github.com/ecmwf/ecflow) (for NWS Operations)
 * Compiler - Intel classic compiler suite version 2021.x
-* Software - NCEPLIBS (various), ESMF, HDF5, NetCDF, and a host of other softwares (see module files under /modulefiles for additional details)
+* Software - NCEPLIBS (various), ESMF, HDF5, NetCDF, and a host of other softwares (see module files under /modulefiles for additional details).
+    - [Spack-stack](https://github.com/JCSDA/spack-stack) is recommended for the installation of dependent libraries.
 
 The `global-workflow` currently supports the following machines at the indicated tier.
 
@@ -26,8 +27,7 @@ The `global-workflow` currently supports the following machines at the indicated
 | Jet<br>RDHPCS                           | 3    | Supported by NESDIS.                                                       |
 | S4<br>SSEC                              | 3    | Currently non-operational following an OS upgrade.<br>Supported by NESDIS. |
 
-## <ins>Tier Definitions</ins>
-----------------
+<ins>**Tier Definitions**</ins>
 
 1. Fully supported by the EMC global workflow team.  CI testing is regularly performed on these systems, the majority of the global workflow features are supported, and the team will address any platform-specific features, bugs, upgrades, and requests for data.
 2. Supported by the global workflow team on an ad-hoc basis.  CI tests are supported on these systems, but not regularly performed.
