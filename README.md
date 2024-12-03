@@ -5,29 +5,28 @@
 ![Custom badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/emcbot/e35aa2904a54deae6bbb1fdc2d960c71/raw/hera.json)
 ![Custom badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/emcbot/e35aa2904a54deae6bbb1fdc2d960c71/raw/orion.json)
 
-# global-workflow
-Global Workflow currently supporting the Global Forecast System (GFS) with the [UFS-weather-model](https://github.com/ufs-community/ufs-weather-model) and [GSI](https://github.com/NOAA-EMC/GSI)-based Data Assimilation System.
+The Global Workflow supporting the Global Forecast System (GFS) and Global Ensemble Forecasting System (GEFS) with the [UFS-weather-model](https://github.com/ufs-community/ufs-weather-model) and both [GSI](https://github.com/NOAA-EMC/GSI)- and [GDASApp (JEDI)](https://github.com/NOAA-EMC/GDASApp)-based Data Assimilation systems.
 
 The `global-workflow` depends on the following prerequisities to be available on the system:
 
-* Workflow Engine - [Rocoto](https://github.com/christopherwharrop/rocoto) and [ecFlow](https://github.com/ecmwf/ecflow) (for NWS Operations)
-* Compiler - Intel Compiler Suite
+* Workflow Engines - [Rocoto](https://github.com/christopherwharrop/rocoto) and [ecFlow](https://github.com/ecmwf/ecflow) (for NWS Operations)
+* Compiler - Intel classic compiler suite version 2021.x
 * Software - NCEPLIBS (various), ESMF, HDF5, NetCDF, and a host of other softwares (see module files under /modulefiles for additional details)
 
 The `global-workflow` currently supports the following machines at the indicated tier.
 
-| HPC                                     | Tier | Notes                                                                   |
-| --------------------------------------- |:----:|:-----------------------------------------------------------------------:|
-| WCOSS2<br>NCO                           | 1    | GEFS testing is not regularly performed.                                |
-| Hera<br>NOAA RDHPCS                     | 1    |                                                                         |
-| Hercules<br>MSU                         | 1    | Currently does not support the TC Tracker.                              |
-| Orion<br>MSU                            | 2    | The GSI runs very slowly on Orion.                                      |
-| Gaea C5/C6<br>RDHPCS                    | 3    | Currently non-operational following an OS. Supported by EPIC.           |
-| Jet<br>RDHPCS                           | 3    | Supported by NESDIS.  Supports GSI-based DA only.                       |
-| S4<br>SSEC                              | 3    | Currently non-operational following an OS upgrade. Supported by NESDIS. |
-| AWS, GCP, Azure <br>NOAA Parallel Works | 3    | Supported by EPIC.                                                      |
+| HPC                                     | Tier | Notes                                                                      |
+| --------------------------------------- |:----:|:--------------------------------------------------------------------------:|
+| WCOSS2<br>NCO                           | 1    | GEFS testing is not regularly performed.                                   |
+| Hera<br>NOAA RDHPCS                     | 1    |                                                                            |
+| Hercules<br>MSU                         | 1    | Currently does not support the TC Tracker.                                 |
+| Orion<br>MSU                            | 2    | The GSI runs very slowly on Orion.                                         |
+| Gaea C5/C6<br>RDHPCS                    | 3    | Currently non-operational following an OS upgrade.<br>Supported by EPIC.   |
+| AWS, GCP, Azure <br>NOAA Parallel Works | 3    | Supported by EPIC.                                                         |
+| Jet<br>RDHPCS                           | 3    | Supported by NESDIS.                                                       |
+| S4<br>SSEC                              | 3    | Currently non-operational following an OS upgrade.<br>Supported by NESDIS. |
 
-Tier Definitions
+## <ins>Tier Definitions</ins>
 ----------------
 
 1. Fully supported by the EMC global workflow team.  CI testing is regularly performed on these systems, the majority of the global workflow features are supported, and the team will address any platform-specific features, bugs, upgrades, and requests for data.
