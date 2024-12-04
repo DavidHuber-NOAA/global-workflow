@@ -113,8 +113,8 @@ class Archive(Task):
             self.tar_cmd = ""
             return arcdir_set, []
 
-        # Determine if we are archiving the EXPDIR this cycle
-        if arch_dict.ARCH_EXPDIR:
+        # Determine if we are archiving the EXPDIR this cycle (always skip for ensembles)
+        if "enkf" not in arch_dict.RUN and arch_dict.ARCH_EXPDIR:
             self.archive_expdir = self._archive_expdir(arch_dict)
             arch_dict.archive_expdir = self.archive_expdir
 
@@ -440,7 +440,7 @@ class Archive(Task):
         return
 
     @logit(logger)
-    def _archive_expdir(arch_dict: Dict[str, Any]) -> bool:
+    def _archive_expdir(self, arch_dict: Dict[str, Any]) -> bool:
         """
         This function checks if the EXPDIR should be archived this RUN/cycle
         and returns the temporary path in the ROTDIR where the EXPDIR will be
@@ -494,7 +494,7 @@ class Archive(Task):
             return False
 
     @logit(logger)
-    def _pop_git_info(arch_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def _pop_git_info(self, arch_dict: Dict[str, Any]) -> Dict[str, Any]:
         """
         This function checks the configuration options ARCH_HASHES and ARCH_DIFFS
         and ARCH_EXPDIR_FREQ to determine if the git hashes and/or diffs should be
