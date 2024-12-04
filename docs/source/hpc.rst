@@ -52,6 +52,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
 
 +----------+------+---------+---------+-----+---------+---------+------------+-------+-----+---------+--------------+-----------+
 | HPC      | Tier | Coupled | Coupled | GSI | GDASApp | Coupled | TC Tracker | AWIPS | MOS | Fit2Obs | MET/METplus  | HPSS      |
+|          |      |         |         |     |         |         |            |       |     |         |              |           |
 |          |      |   GFS   |   GEFS  |  DA |    DA   |    DA   |            |       |     |         | Verification | Archiving |
 +==========+======+=========+=========+=====+=========+=========+============+=======+=====+=========+==============+===========+
 | WCOSS2   | 1    |    X    |    X    |   X |    X    |         |      X     |   X   |  X  |    X    |      X       |     X     |
