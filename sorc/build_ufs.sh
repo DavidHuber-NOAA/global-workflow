@@ -8,7 +8,7 @@ APP="S2SWA"
 CCPP_SUITES="FV3_GFS_v17_p8_ugwpv1,FV3_GFS_v17_coupled_p8_ugwpv1,FV3_global_nest_v1"  # TODO: does the g-w need to build with all these CCPP_SUITES?
 PDLIB="ON"
 HYDRO="OFF"
-EXEC_NAME="gfs_model.x"
+EXEC_NAME="ufs_model.x"
 
 while getopts ":da:fj:e:vwy" option; do
   case "${option}" in
@@ -44,10 +44,11 @@ elif [[ "${FASTER:-OFF}" == ON ]] ; then
 fi
 
 case "${EXEC_NAME}" in
+  "ufs_model.x") COMPILE_ID=0 ;;
   "gfs_model.x") COMPILE_ID=1 ;;
   "gefs_model.x") COMPILE_ID=2 ;;
   "sfs_model.x") COMPILE_ID=3 ;;
-  *) COMPILE_ID=0 ;;
+  *) echo "Unsupported executable name: ${EXEC_NAME}"; exit 1 ;;
 esac
 CLEAN_BEFORE=YES
 CLEAN_AFTER=NO
