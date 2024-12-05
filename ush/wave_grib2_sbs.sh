@@ -150,7 +150,7 @@ if [[ ! -s "${COMOUT_WAVE_GRID}/${outfile}.idx" ]]; then
     set +x
     echo ' '
     echo '************************************************ '
-    echo '*** FATAL ERROR : ERROR IN ${pgm} encoding *** '
+    echo "*** FATAL ERROR : ERROR IN ${pgm} encoding *** "
     echo '************************************************ '
     echo ' '
     set_trace
