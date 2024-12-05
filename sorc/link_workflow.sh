@@ -301,11 +301,12 @@ if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/sfs_model.x" ]]; then ${LINK_OR_COP
 
 # WW3 pre/post executables
 declare -a ww3_exes=("ww3_grid" "ww3_prep" "ww3_prnc" "ww3_outp" "ww3_outf" "ww3_gint" "ww3_ounf" "ww3_ounp" "ww3_grib")
+# TODO: ww3_prep, ww3_outf, ww3_ounf, ww3_ounp are not used in the workflow # FIXME or remove them from the list
 if [[ -d "${HOMEgfs}/sorc/ufs_model.fd/WW3/install" ]]; then # installed with PDLIB=OFF (Used in GEFS)
   for ww3exe in "${ww3_exes[@]}"; do
     [[ -s "gefs_${ww3exe}" ]] && rm -f "gefs_${HOMEgfs}/exec/${ww3exe}"
     ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/bin/${ww3exe}" \
-      "${HOMEgfs}/exec/gefs_${ww3exe}"
+      "${HOMEgfs}/exec/gefs_${ww3exe}.x"
   done
 fi
 
@@ -313,7 +314,7 @@ if [[ -d "${HOMEgfs}/sorc/ufs_model.fd/WW3/install_pdlib" ]]; then # installed w
   for ww3exe in "${ww3_exes[@]}"; do
     [[ -s "gfs_${ww3exe}" ]] && rm -f "gfs_${ww3exe}"
     ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/WW3/install_pdlib/bin/${ww3exe}" \
-      "${HOMEgfs}/exec/gfs_${ww3exe}"
+      "${HOMEgfs}/exec/gfs_${ww3exe}.x"
   done
 fi
 
