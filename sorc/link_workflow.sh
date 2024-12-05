@@ -293,28 +293,26 @@ for utilexe in fbwndgfs.x gaussian_sfcanl.x gfs_bufr.x supvit.x syndat_getjtbul.
 done
 
 [[ -s "gfs_model.x" ]] && rm -f gfs_model.x
-[[ -s "gefs_model.x" ]] && rm -f gefs_model.x
-[[ -s "sfs_model.x" ]] && rm -f sfs_model.x
 if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/gfs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/gfs_model.x" .; fi
+[[ -s "gefs_model.x" ]] && rm -f gefs_model.x
 if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/gefs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/gefs_model.x" .; fi
+[[ -s "sfs_model.x" ]] && rm -f sfs_model.x
 if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/sfs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/sfs_model.x" .; fi
 
 # WW3 pre/post executables
 declare -a ww3_exes=("ww3_grid" "ww3_prep" "ww3_prnc" "ww3_outp" "ww3_outf" "ww3_gint" "ww3_ounf" "ww3_ounp" "ww3_grib")
 # TODO: ww3_prep, ww3_outf, ww3_ounf, ww3_ounp are not used in the workflow # FIXME or remove them from the list
-if [[ -d "${HOMEgfs}/sorc/ufs_model.fd/WW3/install" ]]; then # installed with PDLIB=OFF (Used in GEFS)
+if [[ -d "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/pdlib_OFF" ]]; then # installed with PDLIB=OFF (Used in GEFS)
   for ww3exe in "${ww3_exes[@]}"; do
-    [[ -s "gefs_${ww3exe}" ]] && rm -f "gefs_${HOMEgfs}/exec/${ww3exe}"
-    ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/bin/${ww3exe}" \
-      "${HOMEgfs}/exec/gefs_${ww3exe}.x"
+    [[ -s "gefs_${ww3exe}.x" ]] && rm -f "gefs_${ww3exe}.x"
+    ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/pdlib_OFF/bin/${ww3exe}" "${HOMEgfs}/exec/gefs_${ww3exe}.x"
   done
 fi
 
-if [[ -d "${HOMEgfs}/sorc/ufs_model.fd/WW3/install_pdlib" ]]; then # installed with PDLIB=ON (Used in GFS, may be SFS later)
+if [[ -d "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/pdlib_ON" ]]; then # installed with PDLIB=ON (Used in GFS, may be SFS later)
   for ww3exe in "${ww3_exes[@]}"; do
-    [[ -s "gfs_${ww3exe}" ]] && rm -f "gfs_${ww3exe}"
-    ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/WW3/install_pdlib/bin/${ww3exe}" \
-      "${HOMEgfs}/exec/gfs_${ww3exe}.x"
+    [[ -s "gfs_${ww3exe}.x" ]] && rm -f "gfs_${ww3exe}.x"
+    ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/pdlib_ON/bin/${ww3exe}" "${HOMEgfs}/exec/gfs_${ww3exe}.x"
   done
 fi
 

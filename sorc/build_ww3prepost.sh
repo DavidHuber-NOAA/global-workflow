@@ -32,22 +32,22 @@ module use "${_HOMEgfs}/sorc/ufs_model.fd/modulefiles"
 module load "ufs_${MACHINE_ID}.intel"
 set -x
 
-#Set WW3 directory, switch, prep and post exes
+#Set WW3 directory
 cd "${_HOMEgfs}/sorc/ufs_model.fd/WW3" || exit 1
 WW3_DIR=$(pwd -P)
 export WW3_DIR
-export SWITCHFILE="${WW3_DIR}/${ww3switch}"
 
 # Determine which switch to use
 if [[ "${PDLIB}" == "ON" ]]; then
   ww3switch="model/bin/switch_meshcap_pdlib"
-  path_build="${WW3_DIR}/build_pdlib"
-  path_install="${WW3_DIR}/install_pdlib"
+  path_build="${WW3_DIR}/build/pdlib_ON"
+  path_install="${WW3_DIR}/install/pdlib_ON"
 else
   ww3switch="model/bin/switch_meshcap"
-  path_build="${WW3_DIR}/build"
-  path_install="install"
+  path_build="${WW3_DIR}/build/pdlib_OFF"
+  path_install="${WW3_DIR}/install/pdlib_OFF"
 fi
+export SWITCHFILE="${WW3_DIR}/${ww3switch}"
 
 #create build directory:
 [[ -d "${path_build}" ]] && rm -rf "${path_build}"
