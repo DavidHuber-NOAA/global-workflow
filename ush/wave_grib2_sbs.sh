@@ -170,7 +170,7 @@ if [[ ! -s "${COMOUT_WAVE_GRID}/${outfile}.idx" ]]; then
     set +x
     echo ' '
     echo '********************************************* '
-    echo '*** FATAL ERROR : ERROR IN ${pgm} *** '  # FIXME: This is not an error in $pgm, but in WGRIB2
+    echo "*** FATAL ERROR : ERROR IN ${pgm} *** "  # FIXME: This is not an error in $pgm, but in WGRIB2
     echo '********************************************* '
     echo ' '
     set_trace
@@ -198,7 +198,7 @@ if [[ ! -s "${COMOUT_WAVE_GRID}/${outfile}.idx" ]]; then
     set +x
     echo ' '
     echo '********************************************* '
-    echo '*** FATAL ERROR : ERROR IN ${pgm} *** '
+    echo "*** FATAL ERROR : ERROR IN ${pgm} *** "
     echo '********************************************* '
     echo ' '
     echo " Error in moving grib file ${outfile} to com"
@@ -210,7 +210,7 @@ if [[ ! -s "${COMOUT_WAVE_GRID}/${outfile}.idx" ]]; then
     set +x
     echo ' '
     echo '*************************************************** '
-    echo '*** FATAL ERROR : ERROR IN ww3_grib2 INDEX FILE *** '
+    echo "*** FATAL ERROR : ERROR IN ${pgm} INDEX FILE *** "
     echo '*************************************************** '
     echo ' '
     echo " Error in moving grib file ${outfile}.idx to com"

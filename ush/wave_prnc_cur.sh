@@ -85,7 +85,7 @@ then
   set $setoff
   echo ' '
   echo '******************************************** '
-  echo '*** WARNING: NON-FATAL ERROR IN ${pgm} *** '
+  echo "*** WARNING: NON-FATAL ERROR IN ${pgm} *** "
   echo '******************************************** '
   echo ' '
   set $seton

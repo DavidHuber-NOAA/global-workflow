@@ -156,7 +156,7 @@ source "${USHgfs}/preamble.sh"
     set +x
     echo ' '
     echo '*************************************************** '
-    echo '*** FATAL ERROR : ERROR IN ${pgm} interpolation * '
+    echo "*** FATAL ERROR : ERROR IN ${pgm} interpolation * "
     echo '*************************************************** '
     echo ' '
     set_trace

@@ -91,8 +91,9 @@ source "${USHgfs}/preamble.sh"
   fi
 
 
+  export pgm="${NET,,}_ww3_grid.x"
 
-  "${EXECgfs}/${NET,,}_ww3_grid.x" 1> "grid_${grdID}.out" 2>&1
+  "${EXECgfs}/${pgm}" 1> "grid_${grdID}.out" 2>&1
   err=$?
 
   if [ "$err" != '0' ]
@@ -100,7 +101,7 @@ source "${USHgfs}/preamble.sh"
     set +x
     echo ' '
     echo '******************************************** '
-    echo '*** FATAL ERROR : ERROR IN ${NET,,}_ww3_grid.x *** '
+    echo "*** FATAL ERROR : ERROR IN ${pgm} *** "
     echo '******************************************** '
     echo ' '
     set_trace
