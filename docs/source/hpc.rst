@@ -52,20 +52,28 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
 
 .. list-table:: Capabilities matrix by HPC
    :header-rows: 1
+   :align: center
 
    * - HPC
      - Tier
-     - Coupled GFS
-     - Coupled GEFS
-     - GSI DA
-     - GDASApp DA
-     - Coupled DA
+     - Coupled
+       GFS
+     - Coupled
+       GEFS
+     - GSI
+       DA
+     - GDASApp
+       DA
+     - Coupled
+       DA
      - TC Tracker
      - AWIPS
      - MOS
      - Fit2Obs
-     - METplus Verification
-     - HPSS Archiving
+     - METplus
+       Verification
+     - HPSS
+       Archiving
    * - WCOSS2  
      - 1
      - X     
@@ -78,7 +86,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - X 
      - X   
      - X        
-     - X     |
+     - X
    * - Hera    
      - 1   
      - X     
@@ -91,7 +99,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - X   
      - X        
-     - X     |
+     - X
    * - Hercules
      - 1   
      - X     
@@ -104,7 +112,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - X   
      - X        
-     - |
+     -
    * - Orion   
      - 2   
      - X     
@@ -117,7 +125,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - X   
      - X        
-     - |
+     -
    * - Gaea C5 
      - 3   
      - X     
@@ -130,7 +138,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - 
      - 
-     - X     |
+     - X
    * - Gaea C6 
      - 3   
      - X     
@@ -143,7 +151,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - 
      - 
-     - X     |
+     - X
    * - AWS (PW)
      - 3   
      - X     
@@ -156,7 +164,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - 
      - 
-     - |
+     -
    * - GCP (PW)
      - 3   
      - X     
@@ -169,7 +177,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - 
      - 
-     - |
+     -
    * - Azure   
      - 3   
      - X     
@@ -182,7 +190,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - 
      - 
-     - |
+     -
    * - Jet     
      - 3   
      - X     
@@ -195,7 +203,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - X   
      - X      
-     - X     |
+     - X
    * - S4      
      - 3   
      - 
@@ -208,7 +216,7 @@ The Global Workflow provides capabilities for deterministic and ensemble forecas
      - 
      - X   
      - X      
-     - |
+     -
 
 ================================
 Experiment troubleshooting help
