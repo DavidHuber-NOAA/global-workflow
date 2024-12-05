@@ -282,7 +282,7 @@ source "${USHgfs}/preamble.sh"
       set +x
       echo ' '
       echo '******************************************** '
-      echo '*** FATAL ERROR : ERROR IN ${pgm} *** '
+      echo "*** FATAL ERROR : ERROR IN ${pgm} *** "
       echo '******************************************** '
       echo ' '
       cat buoy_tmp.loc
