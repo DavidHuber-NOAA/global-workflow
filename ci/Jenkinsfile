@@ -1,7 +1,8 @@
 def Machine = 'none'
 def machine = 'none'
 def CUSTOM_WORKSPACE = 'none'
-def cases = ''
+def HOMEgfs = 'none'
+def CI_CASES = ''
 def GH = 'none'
 // Location of the custom workspaces for each machine in the CI system.  They are persitent for each iteration of the PR.
 def NodeName = [hera: 'Hera-EMC', orion: 'Orion-EMC', hercules: 'Hercules-EMC', gaea: 'Gaea']
@@ -19,8 +20,8 @@ pipeline {
     }
 
     stages { // This initial stage is used to get the Machine name from the GitHub labels on the PR
-             // which is used to designate the Nodes in the Jenkins Controler by the agent label
-             // Each Jenknis Node is connected to said machine via an JAVA agent via an ssh tunnel
+             // which is used to designate the Nodes in the Jenkins Controller by the agent label
+             // Each Jenkins Node is connected to said machine via an JAVA agent via an ssh tunnel
              // no op 2
 
         stage('1. Get Machine') {
@@ -95,7 +96,7 @@ pipeline {
                 axes {
                     axis {
                         name 'system'
-                        values 'gfs', 'gefs'
+                        values 'gfs'
                     }
                 }
                 stages {
@@ -103,8 +104,7 @@ pipeline {
                         steps {
                           catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             script {
-                                def HOMEgfs = "${CUSTOM_WORKSPACE}/${system}" // local HOMEgfs is used to build the system on per system basis under the custome workspace for each buile system
-                                env.HOME_GFS = HOMEgfs // setting path in HOMEgfs as an environment variable HOME_GFS for some systems that using the path in its .bashrc
+                                HOMEgfs = "${CUSTOM_WORKSPACE}/global-workflow"
                                 sh(script: "mkdir -p ${HOMEgfs}")
                                 ws(HOMEgfs) {
                                     if (fileExists("${HOMEgfs}/sorc/BUILT_semaphor")) { // if the system is already built, skip the build in the case of re-runs
@@ -115,7 +115,7 @@ pipeline {
                                         }
                                     } else {
                                         try {
-                                            echo "Checking out the code for ${system} on ${Machine} using scm in ${HOMEgfs}"
+                                            echo "Checking out the code on ${Machine} using scm in ${HOMEgfs}"
                                             checkout scm
                                         } catch (Exception e) {
                                             if (env.CHANGE_ID) {
@@ -127,14 +127,13 @@ pipeline {
                                         def gist_url = ""
                                         def error_logs = ""
                                         def error_logs_message = ""
-                                        def builds_file = readYaml file: 'ci/cases/yamls/build.yaml'
-                                        def build_args_list = builds_file['builds']
-                                        def build_args = build_args_list[system].join(' ').trim().replaceAll('null', '')
                                         dir("${HOMEgfs}/sorc") {
                                             try {
-                                                sh(script: "${build_args}")
+                                                sh(script: './build_all.sh -kgu')  // build the global-workflow executables for GFS variant (UFS-wx-model, WW3 pre/post executables)
+                                                sh(script: './build_ww3prepost.sh -w')  // build the WW3 pre/post processing executables for GEFS variant
+                                                sh(script: './build_ufs.sh -w')  // build the UFS-wx-model executable for GEFS variant
                                             } catch (Exception error_build) {
-                                                echo "Failed to build system: ${error_build.getMessage()}"
+                                                echo "Failed to build global-workflow: ${error_build.getMessage()}"
                                                 if ( fileExists("logs/error.logs") ) {
                                                     def fileContent = readFile 'logs/error.logs'
                                                     def lines = fileContent.readLines()
@@ -157,24 +156,22 @@ pipeline {
                                                         echo "Failed to comment on PR: ${error_comment.getMessage()}"
                                                     }
                                                     STATUS = 'Failed'
-                                                    error("Failed to build system on ${Machine}")
+                                                    error("Failed to build global-workflow on ${Machine}")
                                                 }
                                             }
                                             sh(script: './link_workflow.sh')
-                                            //sh(script: "echo ${HOMEgfs} > BUILT_semaphor")
                                         }
                                     }
-                                    if (env.CHANGE_ID && system == 'gfs') {
+                                    if (env.CHANGE_ID) {
                                         try {
                                             sh(script: """${GH} pr edit ${env.CHANGE_ID} --repo ${repo_url} --add-label "CI-${Machine}-Running" --remove-label "CI-${Machine}-Building" """)
                                         } catch (Exception e) {
                                             echo "Failed to update label from Buildng to Running: ${e.getMessage()}"
                                         }
                                     }
-                                    if (system == 'gfs') {
-                                        cases = sh(script: "${HOMEgfs}/ci/scripts/utils/get_host_case_list.py ${machine}", returnStdout: true).trim().split()
-                                        echo "Cases to run: ${cases}"
-                                    }
+                                    // Get a list of CI cases to run
+                                    CI_CASES = sh(script: "${HOMEgfs}/ci/scripts/utils/get_host_case_list.py ${machine}", returnStdout: true).trim().split()
+                                    echo "Cases to run: ${CI_CASES}"
                                }
                             }
                           }
@@ -191,21 +188,16 @@ pipeline {
             agent { label NodeName[machine].toLowerCase() }
             steps {
                 script {
-                    def parallelStages = cases.collectEntries { caseName ->
+                    def parallelStages = CI_CASES.collectEntries { caseName ->
                         ["${caseName}": {
                             stage("Create ${caseName}") {
                                 script {
-                                        sh(script: "sed -n '/{.*}/!p' ${CUSTOM_WORKSPACE}/gfs/ci/cases/pr/${caseName}.yaml > ${CUSTOM_WORKSPACE}/gfs/ci/cases/pr/${caseName}.yaml.tmp")
-                                        def yaml_case = readYaml file: "${CUSTOM_WORKSPACE}/gfs/ci/cases/pr/${caseName}.yaml.tmp"
-                                        def build_system = yaml_case.experiment.system
-                                        def HOMEgfs = "${CUSTOM_WORKSPACE}/${build_system}"   // local HOMEgfs is used to populate the XML on per system basis
-                                        env.HOME_GFS = HOMEgfs // setting path in HOMEgfs as an environment variable HOME_GFS for some systems that using the path in its .bashrc
                                         env.RUNTESTS = "${CUSTOM_WORKSPACE}/RUNTESTS"
                                         try {
                                               error_output = sh(script: "${HOMEgfs}/ci/scripts/utils/ci_utils_wrapper.sh create_experiment ${HOMEgfs}/ci/cases/pr/${caseName}.yaml", returnStdout: true).trim()
                                         } catch (Exception error_create) {
-                                            sh(script: """${GH} pr comment ${env.CHANGE_ID} --repo ${repo_url} --body "${Case} **FAILED** to create experment on ${Machine} in BUILD# ${env.BUILD_NUMBER}\n with the error:\n\\`\\`\\`\n${error_output}\\`\\`\\`" """)
-                                            error("Case ${caseName} failed to create experment directory")
+                                            sh(script: """${GH} pr comment ${env.CHANGE_ID} --repo ${repo_url} --body "${Case} **FAILED** to create experiment on ${Machine} in BUILD# ${env.BUILD_NUMBER}\n with the error:\n\\`\\`\\`\n${error_output}\\`\\`\\`" """)
+                                            error("Case ${caseName} failed to create experiment directory")
                                         }
                                      }
                             }
@@ -213,15 +205,11 @@ pipeline {
                             stage("Running ${caseName}") {
                                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                                         script {
-                                                HOMEgfs = "${CUSTOM_WORKSPACE}/gfs"  // common HOMEgfs is used to launch the scripts that run the experiments
-                                                env.HOME_GFS = HOMEgfs // setting path in HOMEgfs as an environment variable HOME_GFS for some systems that using the path in its .bashrc
                                                 def pslot = sh(script: "${HOMEgfs}/ci/scripts/utils/ci_utils_wrapper.sh get_pslot ${CUSTOM_WORKSPACE}/RUNTESTS ${caseName}", returnStdout: true).trim()
                                                 def error_file = "${CUSTOM_WORKSPACE}/RUNTESTS/${pslot}_error.logs"
                                                 sh(script: " rm -f ${error_file}")
-                                                def yaml_case = readYaml file: "${CUSTOM_WORKSPACE}/gfs/ci/cases/pr/${caseName}.yaml.tmp"
-                                                def build_system = yaml_case.experiment.system
                                                 try {
-                                                    sh(script: "${HOMEgfs}/ci/scripts/run-check_ci.sh ${CUSTOM_WORKSPACE} ${pslot} ${build_system}")
+                                                    sh(script: "${HOMEgfs}/ci/scripts/run-check_ci.sh ${CUSTOM_WORKSPACE} ${pslot} 'global-workflow'")
                                                     sh(script: "${HOMEgfs}/ci/scripts/utils/ci_utils_wrapper.sh cleanup_experiment ${CUSTOM_WORKSPACE}/RUNTESTS/EXPDIR/${pslot}")
                                                 } catch (Exception error_experment) {
                                                     sh(script: "${HOMEgfs}/ci/scripts/utils/ci_utils_wrapper.sh cancel_batch_jobs ${pslot}")
@@ -251,7 +239,7 @@ pipeline {
                                                                 echo "Failed to comment on PR: ${error_comment.getMessage()}"
                                                             }
                                                         } else {
-                                                            echo "No error logs found for failed cases in $CUSTOM_WORKSPACE/RUNTESTS/${pslot}_error.logs"
+                                                            echo "No error logs found for failed cases in ${CUSTOM_WORKSPACE}/RUNTESTS/${pslot}_error.logs"
                                                         }
                                                         STATUS = 'Failed'
                                                         try {
@@ -273,11 +261,10 @@ pipeline {
             }
         }
 
-        stage( '5. FINALIZE' ) {
+        stage( '5. Finalize' ) {
             agent { label NodeName[machine].toLowerCase() }
             steps {
                 script {
-                    env.HOME_GFS = "${CUSTOM_WORKSPACE}/gfs" // setting path to HOMEgfs as an environment variable HOME_GFS for some systems that using the path in its .bashrc
                     sh(script: """
                         labels=\$(${GH} pr view ${env.CHANGE_ID} --repo ${repo_url} --json labels --jq '.labels[].name')
                         for label in \$labels; do
@@ -298,7 +285,7 @@ pipeline {
                             echo "Failed to remove custom work directory ${CUSTOM_WORKSPACE} on ${Machine}: ${e.getMessage()}"
                         }
                     } else {
-                        echo "Failed to build and run Global-workflow in ${CUSTOM_WORKSPACE} and on ${Machine}"
+                        echo "Failed to build and run global-workflow in ${CUSTOM_WORKSPACE} on ${Machine}"
                     }
                 }
             }
