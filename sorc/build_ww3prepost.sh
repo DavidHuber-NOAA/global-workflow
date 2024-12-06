@@ -1,6 +1,7 @@
 #! /usr/bin/env bash
 set -x
 
+# shellcheck disable=SC2312
 _HOMEgfs=$(cd "$(dirname "$(readlink -f -n "${BASH_SOURCE[0]}" )" )/.." && pwd -P)
 cd "${_HOMEgfs}/sorc" || exit 1
 
