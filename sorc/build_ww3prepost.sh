@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 set -x
 
-readonly _HOMEgfs=$(cd "$(dirname "$(readlink -f -n "${BASH_SOURCE[0]}")")/.." && pwd -P)
+_HOMEgfs=$(cd "$(dirname "$(readlink -f -n "${BASH_SOURCE[0]}" )" )/.." && pwd -P)
 cd "${_HOMEgfs}/sorc" || exit 1
 
 # Default settings
