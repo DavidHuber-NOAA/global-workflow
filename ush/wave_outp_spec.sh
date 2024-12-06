@@ -219,7 +219,7 @@ source "${USHgfs}/preamble.sh"
     set +x
     echo ' '
     echo '***************************************************************** '
-    echo '*** FATAL ERROR : OUTPUT DATA FILE FOR BOUY $bouy NOT FOUND *** '
+    echo "*** FATAL ERROR : OUTPUT DATA FILE FOR BOUY ${bouy} NOT FOUND *** "
     echo '***************************************************************** '
     echo ' '
     set_trace
