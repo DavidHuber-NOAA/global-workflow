@@ -54,6 +54,7 @@ export SWITCHFILE="${WW3_DIR}/${ww3switch}"
 [[ -d "${path_build}" ]] && rm -rf "${path_build}"
 mkdir -p "${path_build}" || exit 1
 cd "${path_build}" || exit 1
+echo "Forcing a SHRD build"
 
 buildswitch="${path_build}/switch"
 
