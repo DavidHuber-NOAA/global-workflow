@@ -144,7 +144,7 @@ source "${USHgfs}/preamble.sh"
   export err=$?;err_chk
 
 # Write interpolation file to main TEMP dir area if not there yet
-  if [ "wht_OK" = 'no' ]  # FIXME: This is never going to evaluate to true, wht_OK is a string and needs to be ${wht_OK}
+  if [ "${wht_OK}" = 'no' ]
   then
     cp -f ./WHTGRIDINT.bin ${DATA}/ww3_gint.WHTGRIDINT.bin.${grdID}
     cp -f ./WHTGRIDINT.bin ${FIXgfs}/wave/ww3_gint.WHTGRIDINT.bin.${grdID}
