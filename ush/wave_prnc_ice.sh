@@ -143,7 +143,7 @@ source "${USHgfs}/preamble.sh"
   cp -f ${DATA}/ww3_prnc.ice.$WAVEICE_FID.inp.tmpl ww3_prnc.inp
 
   export pgm="${NET,,}_ww3_prnc.x"
-  . prep_step
+  source prep_step
 
   "${EXECgfs}/${pgm}" 1> prnc_${WAVEICE_FID}_${cycle}.out 2>&1
   export err=$?; err_chk
