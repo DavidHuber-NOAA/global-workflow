@@ -134,7 +134,7 @@ source "${USHgfs}/preamble.sh"
 # 1.b Run interpolation code
 
   export pgm="${NET,,}_ww3_gint.x"
-  . prep_step
+  source prep_step
 
   set +x
   echo "   Executing ${pgm}"
