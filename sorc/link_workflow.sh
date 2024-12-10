@@ -292,12 +292,16 @@ for utilexe in fbwndgfs.x gaussian_sfcanl.x gfs_bufr.x supvit.x syndat_getjtbul.
   ${LINK_OR_COPY} "${HOMEgfs}/sorc/gfs_utils.fd/install/bin/${utilexe}" .
 done
 
-[[ -s "gfs_model.x" ]] && rm -f gfs_model.x
-if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/gfs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/gfs_model.x" .; fi
-[[ -s "gefs_model.x" ]] && rm -f gefs_model.x
-if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/gefs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/gefs_model.x" .; fi
-[[ -s "sfs_model.x" ]] && rm -f sfs_model.x
-if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/sfs_model.x" ]]; then ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/sfs_model.x" .; fi
+declare -a model_systems=("gfs" "gefs" "sfs")
+for sys in "${model_systems[@]}"; do
+  model_exe="${sys}_model.x"
+  if [[ -s "${model_exe}" ]]; then
+    rm -f "${model_exe}"
+  fi
+  if [[ -f "${HOMEgfs}/sorc/ufs_model.fd/tests/${model_exe}" ]]; then
+    ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/tests/${model_exe}" "${model_exe}"
+  fi
+done
 
 # WW3 pre/post executables
 declare -a ww3_exes=("ww3_grid" "ww3_prep" "ww3_prnc" "ww3_outp" "ww3_outf" "ww3_gint" "ww3_ounf" "ww3_ounp" "ww3_grib")
