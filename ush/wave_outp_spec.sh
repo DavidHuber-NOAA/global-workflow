@@ -162,7 +162,7 @@ source "${USHgfs}/preamble.sh"
 # 2.b Run the postprocessor
 
   export pgm="${NET,,}_ww3_outp.x"
-  . prep_step
+  source prep_step
 
   set +x
   echo "   Executing ${EXECgfs}/${pgm}"
