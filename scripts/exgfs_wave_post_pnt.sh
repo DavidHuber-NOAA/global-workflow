@@ -273,7 +273,7 @@ source "${USHgfs}/preamble.sh"
     ${NLN} ./mod_def.${waveuoutpGRD} ./mod_def.ww3
 
     export pgm="${NET,,}_ww3_outp.x"
-    . prep_step
+    source prep_step
 
     "${EXECgfs}/${pgm}" > buoy_lst.loc 2>&1
     export err=$?;err_chk
