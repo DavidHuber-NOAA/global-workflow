@@ -75,7 +75,7 @@ ${NLN} "cur_glo_uv_${PDY}_${fext}${fh3}_5min.nc" "cur.nc"
 ${NLN} "${DATA}/mod_def.${WAVECUR_FID}" ./mod_def.ww3
 
 export pgm="${NET,,}_ww3_prnc.x"
-. prep_step
+source prep_step
 
 "${EXECgfs}/${pgm}" 1> prnc_${WAVECUR_FID}_${ymdh_rtofs}.out 2>&1
 export err=$?; err_chk
