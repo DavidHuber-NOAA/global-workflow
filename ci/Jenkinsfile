@@ -82,7 +82,9 @@ pipeline {
                         properties([parameters([[$class: 'NodeParameterDefinition', allowedSlaves: ['built-in', 'Hercules-EMC', 'Hera-EMC', 'Orion-EMC', 'Gaea'], defaultSlaves: ['built-in'], name: '', nodeEligibility: [$class: 'AllNodeEligibility'], triggerIfResult: 'allCases']])])
                         GH = sh(script: "which gh || echo '~/bin/gh'", returnStdout: true).trim()
                         CUSTOM_WORKSPACE = "${WORKSPACE}"
-                        sh(script: "mkdir -p ${CUSTOM_WORKSPACE}/RUNTESTS;rm -Rf ${CUSTOM_WORKSPACE}/RUNTESTS/*")
+                        HOMEgfs = "${CUSTOM_WORKSPACE}/global-workflow"
+                        sh(script: "rm -Rf ${CUSTOM_WORKSPACE}/global-workflow; mkdir -p ${CUSTOM_WORKSPACE}/global-workflow")
+                        sh(script: "rm -Rf ${CUSTOM_WORKSPACE}/RUNTESTS; mkdir -p ${CUSTOM_WORKSPACE}/RUNTESTS")
                         sh(script: """${GH} pr edit ${env.CHANGE_ID} --repo ${repo_url} --add-label "CI-${Machine}-Building" --remove-label "CI-${Machine}-Ready" """)
                     }
                     echo "Building and running on ${Machine} in directory ${CUSTOM_WORKSPACE}"
@@ -95,63 +97,60 @@ pipeline {
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     script {
-                        HOMEgfs = "${CUSTOM_WORKSPACE}/global-workflow"
-                        sh(script: "mkdir -p ${HOMEgfs}")
                         ws(HOMEgfs) {
-                            if (fileExists("${HOMEgfs}/sorc/BUILT_semaphor")) { // if the system is already built, skip the build in the case of re-runs
-                                sh(script: "cat ${HOMEgfs}/sorc/BUILT_semaphor", returnStdout: true).trim() // TODO: and user configurable control to manage build semphore
+                            echo "Checking out the code on ${Machine} using scm in ${HOMEgfs}"
+                            try {
                                 checkout scm
-                                dir('sorc') {
-                                    sh(script: './link_workflow.sh')
-                                }
-                            } else {
+                            } catch (Exception e) {
+                                echo "Failed to checkout the code on ${Machine} using scm in ${HOMEgfs}, try again ..."
+                                sleep time: 45, unit: 'SECONDS'
                                 try {
-                                    echo "Checking out the code on ${Machine} using scm in ${HOMEgfs}"
                                     checkout scm
-                                } catch (Exception e) {
+                                } catch (Exception ee) {
+                                    echo "Failed to checkout the code on ${Machine} using scm in ${HOMEgfs}: ${ee.getMessage()}"
                                     if (env.CHANGE_ID) {
-                                        sh(script: """${GH} pr comment ${env.CHANGE_ID} --repo ${repo_url} --body "Checkout **Failed** on ${Machine} in Build# ${env.BUILD_NUMBER}: ${e.getMessage()}" """)
+                                        sh(script: """${GH} pr comment ${env.CHANGE_ID} --repo ${repo_url} --body "Checkout **Failed** on ${Machine} in Build# ${env.BUILD_NUMBER}: ${ee.getMessage()}" """)
                                     }
                                     STATUS = 'Failed'
-                                    error("Failed to checkout: ${e.getMessage()}")
+                                    error("Failed to checkout: ${ee.getMessage()}")
                                 }
-                                def gist_url = ""
-                                def error_logs = ""
-                                def error_logs_message = ""
-                                dir("${HOMEgfs}/sorc") {
-                                    try {
-                                        sh(script: './build_all.sh -kgu')  // build the global-workflow executables for GFS variant (UFS-wx-model, WW3 pre/post executables)
-                                        sh(script: './build_ww3prepost.sh -w > ./logs/build_ww3prepost_gefs.log 2>&1')  // build the WW3 pre/post processing executables for GEFS variant
-                                        sh(script: './build_ufs.sh -w -e gefs_model.x > ./logs/build_ufs_gefs.log 2>&1')  // build the UFS-wx-model executable for GEFS variant
-                                    } catch (Exception error_build) {
-                                        echo "Failed to build global-workflow: ${error_build.getMessage()}"
-                                        if ( fileExists("logs/error.logs") ) {
-                                            def fileContent = readFile 'logs/error.logs'
-                                            def lines = fileContent.readLines()
-                                            for (line in lines) {
-                                                echo "archiving: ${line}"
-                                                if (fileExists("${line}") && readFile("${line}").length() > 0 ){
-                                                    try {
-                                                        archiveArtifacts artifacts: "${line}", fingerprint: true
-                                                        error_logs = error_logs + "${HOMEgfs}/sorc/${line} "
-                                                        error_logs_message = error_logs_message + "${HOMEgfs}/sorc/${line}\n"
-                                                    }
-                                                    catch (Exception error_arch) { echo "Failed to archive error log ${line}: ${error_arch.getMessage()}" }
+                            }
+                            def gist_url = ""
+                            def error_logs = ""
+                            def error_logs_message = ""
+                            dir("${HOMEgfs}/sorc") {
+                                try {
+                                    sh(script: './build_all.sh -kgu')  // build the global-workflow executables for GFS variant (UFS-wx-model, WW3 pre/post executables)
+                                    sh(script: './build_ww3prepost.sh -w > ./logs/build_ww3prepost_gefs.log 2>&1')  // build the WW3 pre/post processing executables for GEFS variant
+                                    sh(script: './build_ufs.sh -w -e gefs_model.x > ./logs/build_ufs_gefs.log 2>&1')  // build the UFS-wx-model executable for GEFS variant
+                                } catch (Exception error_build) {
+                                    echo "Failed to build global-workflow: ${error_build.getMessage()}"
+                                    if ( fileExists("logs/error.logs") ) {
+                                        def fileContent = readFile 'logs/error.logs'
+                                        def lines = fileContent.readLines()
+                                        for (line in lines) {
+                                            echo "archiving: ${line}"
+                                            if (fileExists("${line}") && readFile("${line}").length() > 0 ){
+                                                try {
+                                                    archiveArtifacts artifacts: "${line}", fingerprint: true
+                                                    error_logs = error_logs + "${HOMEgfs}/sorc/${line} "
+                                                    error_logs_message = error_logs_message + "${HOMEgfs}/sorc/${line}\n"
                                                 }
+                                                catch (Exception error_arch) { echo "Failed to archive error log ${line}: ${error_arch.getMessage()}" }
                                             }
-                                            try {
-                                                sh(script: "${HOMEgfs}/ci/scripts/utils/publish_logs.py --file ${error_logs} --repo PR_BUILD_${env.CHANGE_ID}")
-                                                gist_url=sh(script: "${HOMEgfs}/ci/scripts/utils/publish_logs.py --file ${error_logs} --gist PR_BUILD_${env.CHANGE_ID}", returnStdout: true).trim()
-                                                sh(script:  """${GH} pr comment ${env.CHANGE_ID} --repo ${repo_url} --body "Build **FAILED** on **${Machine}** in Build# ${env.BUILD_NUMBER} with error logs:\n\\`\\`\\`\n${error_logs_message}\\`\\`\\`\n\nFollow link here to view the contents of the above file(s): [(link)](${gist_url})" """)
-                                            } catch (Exception error_comment) {
-                                                echo "Failed to comment on PR: ${error_comment.getMessage()}"
-                                            }
-                                            STATUS = 'Failed'
-                                            error("Failed to build global-workflow on ${Machine}")
                                         }
+                                        try {
+                                            sh(script: "${HOMEgfs}/ci/scripts/utils/publish_logs.py --file ${error_logs} --repo PR_BUILD_${env.CHANGE_ID}")
+                                            gist_url=sh(script: "${HOMEgfs}/ci/scripts/utils/publish_logs.py --file ${error_logs} --gist PR_BUILD_${env.CHANGE_ID}", returnStdout: true).trim()
+                                            sh(script:  """${GH} pr comment ${env.CHANGE_ID} --repo ${repo_url} --body "Build **FAILED** on **${Machine}** in Build# ${env.BUILD_NUMBER} with error logs:\n\\`\\`\\`\n${error_logs_message}\\`\\`\\`\n\nFollow link here to view the contents of the above file(s): [(link)](${gist_url})" """)
+                                        } catch (Exception error_comment) {
+                                            echo "Failed to comment on PR: ${error_comment.getMessage()}"
+                                        }
+                                        STATUS = 'Failed'
+                                        error("Failed to build global-workflow on ${Machine}")
                                     }
-                                    sh(script: './link_workflow.sh')
                                 }
+                                sh(script: './link_workflow.sh')
                             }
                             if (env.CHANGE_ID) {
                                 try {
