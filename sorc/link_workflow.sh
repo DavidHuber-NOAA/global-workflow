@@ -311,7 +311,7 @@ wave_systems["gfs"]="pdlib_ON"
 wave_systems["gefs"]="pdlib_OFF"
 wave_systems["sfs"]="pdlib_OFF"
 
-for sys in ${!wave_systems[@]}; do
+for sys in "${!wave_systems[@]}"; do
   build_loc="${wave_systems[${sys}]}"
   if [[ -d "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/${build_loc}" ]]; then
     for ww3exe in "${ww3_exes[@]}"; do
