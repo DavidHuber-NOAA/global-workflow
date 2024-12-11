@@ -319,7 +319,7 @@ for sys in "${!wave_systems[@]}"; do
       if [[ -s "${target_ww3_exe}" ]]; then
         rm -f "${target_ww3_exe}"
       fi
-      ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/${build_loc}/bin/${ww3exe}.x" "${HOMEgfs}/exec/${target_ww3_exe}"
+      ${LINK_OR_COPY} "${HOMEgfs}/sorc/ufs_model.fd/WW3/install/${build_loc}/bin/${ww3exe}" "${HOMEgfs}/exec/${target_ww3_exe}"
     done
   fi
 done
