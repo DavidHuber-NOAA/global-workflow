@@ -24,7 +24,7 @@ class AppConfigInit(ABCMeta):
 
 class AppConfig(ABC, metaclass=AppConfigInit):
 
-    VALID_MODES = ['cycled', 'forecast-only']
+    VALID_MODES = ['cycled', 'forecast-only', 'build']
 
     def __init__(self, conf: Configuration) -> None:
 
@@ -59,7 +59,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
 
         # Now configure the experiment for each valid run
         for run in self.runs:
-            self.configs[run] = self._source_configs(conf, run=run, log=False)
+            self.configs[run] = self._source_configs(conf, run=run, log=True)
 
     def _get_run_options(self, conf: Configuration) -> Dict[str, Any]:
         '''

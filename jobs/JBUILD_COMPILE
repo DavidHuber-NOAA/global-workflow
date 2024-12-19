@@ -1,0 +1,16 @@
+#! /usr/bin/env bash
+
+source "${HOMEgfs}/ush/preamble.sh"
+source "${EXPDIR}/config.base"
+source "${EXPDIR}/config.resources" "${BUILD}"
+
+###############
+# Run the build script
+
+# shellcheck disable=SC2086
+logfile="${HOMEgfs}/sorc/logs/${BUILD_SCRIPT/.sh/}.log"
+"${HOMEgfs}/sorc/${BUILD_SCRIPT}" ${BUILD_FLAGS:-} -j "${ntasks}" 2>&1 | tee "${logfile}"
+
+stat=$?
+
+exit "${stat}"

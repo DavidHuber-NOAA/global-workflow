@@ -15,7 +15,7 @@ function _usage() {
   cat << EOF
 Builds all of the global-workflow components by calling the individual build scripts in parallel.
 
-Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-j n][-v] [gfs] [gefs] [sfs] [gsi] [gdas]
+Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-j n][-v][-K] [gfs] [gefs] [sfs] [gsi] [gdas] [all]
   -a UFS_app:
     Build a specific UFS app instead of the default.  This will be applied to all UFS (GFS, GEFS, SFS) builds.
   -c:
@@ -33,6 +33,8 @@ Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-j n][-v] [gf
   -A:
     HPC account to use for the compute-node builds
     (default is \$HOMEgfs/ci/platforms/config.\$machine:\$HPC_ACCOUNT)
+  -K:
+    Keep temporary files (used for debugging this script)
 
   Specified systems (gfs, gefs, sfs, gsi, gdas) are non-exclusive, so they can be built together.
 EOF
@@ -50,42 +52,41 @@ _build_job_max=20
 _quick_kill="NO"
 _compute_build="NO"
 _hpc_account="default"
+_keep_files="NO"
 # Reset option counter in case this script is sourced
 OPTIND=1
-while getopts ":a:cdfhj:kA:v" option; do
+while getopts ":a:cdfhj:kA:vK" option; do
   case "${option}" in
     a) _build_ufs_opt+="-a ${OPTARG} ";;
     c) _compute_build="YES" ;;
     f) _build_ufs_opt+="-f ";;
     d) _build_debug="-d" ;;
     h) _usage;;
-    k) _quick_kill="YES" ;;
-    A) _hpc_account="${OPTARG}"
-    v) _verbose_opt="-v";;
+    k) _quick_kill="YES" && echo "here2" && exit 2 ;;
+    A) _hpc_account="${OPTARG}" ;;
+    v) _verbose_opt="-v" ;;
+    K) _keep_files="YES" ;;
     :)
       echo "[${BASH_SOURCE[0]}]: ${option} requires an argument"
       _usage
+      exit 1
       ;;
     *)
       echo "[${BASH_SOURCE[0]}]: Unrecognized option: ${option}"
       _usage
+      exit 1
       ;;
   esac
-  shift $((OPTIND-1))
 done
+shift $((OPTIND-1))
 
-supported_systems=("gfs" "gefs" "sfs" "gsi" "gdas")
-gfs_builds="gfs gfs_utils ufs_utils upp ww3_struct"
+supported_systems=("gfs" "gefs" "sfs" "gsi" "gdas" "all")
+gfs_builds="gfs gfs_utils ufs_utils upp ww3_unstruct"
 gefs_builds="gefs gfs_utils ufs_utils upp ww3_struct"
-sfs_builds="sfs gfs_utils ufs_utils upp ww3_unstruct"
+sfs_builds="sfs gfs_utils ufs_utils upp ww3_struct"
 gsi_builds="gsi_enkf gsi_monitor gsi_utils"
 gdas_builds="gdas gsi_monitor gsi_utils"
-
-# Builds that will use a whole compute node each
-compute_builds="gfs gefs sfs"
-# Service node builds
-# The GDASApp (for now) needs to be compiled on the service node
-service_builds="gdas gfs_utils ufs_utils upp ww3_struct ww3_unstruct gsi gsi_utils gsi_monitor"
+all_builds="gfs gfs_utils ufs_utils upp ww3_unstruct ww3_struct gdas gsi_enkf gsi_monitor gsi_monitor gsi_utils"
 
 # Jobs per build ("min max")
 declare -A build_jobs build_opts build_scripts
@@ -136,7 +137,7 @@ build_scripts["upp"]="build_upp.sh"
 declare -A builds
 system_count=0
 for system in ${@}; do
-   if [[ " ${supported_systems[*]} " =~ " ${system} " ]];
+   if [[ " ${supported_systems[*]} " =~ " ${system} " ]]; then
       (( system_count += 1 ))
       build_list_name="${system}_builds"
       for build in ${!build_list_name}; do
@@ -152,21 +153,10 @@ done
 if [[ ${system_count} -eq 0 ]]; then
    system_count=1
    builds["gfs"]="yes"
+   builds["gfs_utils"]="yes"
+   builds["ufs_utils"]="yes"
+   builds["upp"]="yes"
 fi
-
-# Create directories
-mkdir -p "${HOMEgfs}/sorc/logs" "${HOMEgfs}/exec"
-
-# If we are running this on compute nodes, then call compute_build.sh with the list of builds
-
-if [[ "${_compute_build}" == "YES" ]]; then 
-   #shellcheck disable=SC2086
-   compute_build.sh -a "${_hpc_account}" ${!builds[@]}
-   stat=$?
-   exit ${stat}
-fi
-
-# Otherwise, we are building locally
 
 #------------------------------------
 # GET MACHINE
@@ -178,6 +168,49 @@ if [[ -z "${MACHINE_ID}" ]]; then
   echo "FATAL: Unable to determine target machine"
   exit 1
 fi
+
+# Create directories
+mkdir -p "${HOMEgfs}/sorc/logs" "${HOMEgfs}/exec"
+
+# If we are running this on compute nodes, then call compute_build.sh with the list of builds
+if [[ "${_compute_build}" == "YES" ]]; then 
+   #####################################################################
+   # COMPUTE NODE BUILD
+   #####################################################################
+   # Load gwsetup module
+   module use "${HOMEgfs}/modulefiles"
+   module load "module_gwsetup.${MACHINE_ID}"
+
+   # Add the workflow to the PYTHONPATH
+   PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}${HOMEgfs}/workflow"
+   export PYTHONPATH
+
+   # Prep a build directory
+   build_dir="${HOMEgfs}/sorc/build"
+   rm -rf "${build_dir}"
+   mkdir -p "${build_dir}"
+   cd "${build_dir}"
+
+   # Write the build arrays to a YAML
+   rm -f build_opts.yaml && touch build_opts.yaml
+
+   echo "base:" >> build_opts.yaml
+
+   for build in "${!builds[@]}"; do
+      echo "  BUILD_${build}: YES" >> build_opts.yaml
+      echo "  ${build}_SCRIPT: ${build_scripts[${build}]}" >> build_opts.yaml
+      echo "  ${build}_FLAGS: ${build_opts[${build}]}" >> build_opts.yaml
+   done
+
+   "${HOMEgfs}/ush/compute_build.py" --account "${_hpc_account}" --yaml build_opts.yaml
+   stat=$?
+   if [[ ${stat} == 0 && ${_keep_files:-NO} == "NO" ]]; then
+      rm -rf "${build_dir}"
+   fi
+   exit ${stat}
+fi
+
+# Otherwise, we are building locally, continue in this script
 
 #------------------------------------
 # SOURCE BUILD VERSION FILES
