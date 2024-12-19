@@ -199,7 +199,7 @@ if [[ "${_compute_build}" == "YES" ]]; then
    build_yaml="${build_dir}/build_opts.yaml"
    rm -f "${build_yaml}" && touch "${build_yaml}"
 
-   echo "base:" >> ${build_yaml}
+   echo "base:" >> "${build_yaml}"
 
    for build in "${!builds[@]}"; do
       {
@@ -209,7 +209,7 @@ if [[ "${_compute_build}" == "YES" ]]; then
       } >> "${build_yaml}"
    done
 
-   "${HOMEgfs}/ush/compute_build.py" --account "${_hpc_account}" --yaml ${build_yaml}
+   "${HOMEgfs}/ush/compute_build.py" --account "${_hpc_account}" --yaml "${build_yaml}"
    stat=$?
    if [[ ${stat} == 0 && ${_keep_files:-NO} == "NO" ]]; then
       rm -rf "${build_dir}"
