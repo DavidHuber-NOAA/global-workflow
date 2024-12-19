@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.gsi_utils ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.gsi_utils"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "gsi_utils"
+echo "END: config.gsi_utils"

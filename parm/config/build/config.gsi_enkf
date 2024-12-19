@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.gsi_enkf ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.gsi_enkf"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "gsi_enkf"
+echo "END: config.gsi_enkf"

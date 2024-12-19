@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.upp ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.upp"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "upp"
+echo "END: config.upp"

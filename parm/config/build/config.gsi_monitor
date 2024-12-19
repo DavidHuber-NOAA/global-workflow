@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.gsi_monitor ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.gsi_monitor"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "gsi_monitor"
+echo "END: config.gsi_monitor"

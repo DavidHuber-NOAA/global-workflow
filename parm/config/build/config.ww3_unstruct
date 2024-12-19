@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.ww3_unstruct ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.ww3_unstruct"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "ww3"
+echo "END: config.ww3_unstruct"

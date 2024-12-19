@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.gfs ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.gfs"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "ufs"
+echo "END: config.gfs"

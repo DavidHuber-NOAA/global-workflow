@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.ufs_utils ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.ufs_utils"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "ufs_utils"
+echo "END: config.ufs_utils"

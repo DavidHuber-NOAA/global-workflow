@@ -18,7 +18,6 @@ nohup.out
 # Ignore folders
 #-------------------
 exec/
-build*/
 install*/
 
 # Ignore fix directory symlinks

@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.sfs ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.sfs"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "ufs"
+echo "END: config.sfs"

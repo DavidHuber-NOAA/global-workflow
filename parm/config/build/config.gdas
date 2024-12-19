@@ -1,0 +1,10 @@
+#!/bin/bash -x
+
+########## config.gdas ##########
+# Compilation-specific configuration
+
+echo "BEGIN: config.gdas"
+
+# Get task specific resources
+source "${EXPDIR}/config.resources" "gdas"
+echo "END: config.gdas"

@@ -1,0 +1,80 @@
+#! /usr/bin/env bash
+# shellcheck disable=SC2034
+
+########## config.resources ##########
+# Set resource information for job tasks
+# e.g. walltime, node, cores per node, memory etc.
+
+if (( $# != 1 )); then
+
+    echo "Must specify an input task argument to set resource variables!"
+    echo "argument can be any one of the following:"
+    echo "gfs gefs sfs upp ww3_struct ww3_unstruct gdas gsi"
+    echo "gsi_monitor gsi_utils gfs_utils ufs_utils"
+    exit 1
+
+fi
+
+step=$1
+
+echo "BEGIN: config.resources"
+
+case ${step} in
+  "ufs")
+    walltime='00:40:00'
+    ntasks=8
+    ;;
+
+  "gdas")
+    walltime='01:00:00'
+    ntasks=12
+    ;;
+
+  "gsi_enkf")
+    walltime='00:40:00'
+    ntasks=1
+    ;;
+
+  "gsi_monitor")
+    walltime='00:10:00'
+    ntasks=1
+    ;;
+
+  "gsi_utils")
+    walltime='00:10:00'
+    ntasks=1
+    ;;
+
+  "gfs_utils")
+    walltime='00:10:00'
+    ntasks=1
+    ;;
+
+  "upp")
+    walltime='00:15:00'
+    ntasks=1
+    ;;
+
+  "ufs_utils")
+    walltime='00:15:00'
+    ntasks=1
+    ;;
+
+  "ufs_utils")
+    walltime='00:15:00'
+    ntasks=1
+    ;;
+
+  "ww3")
+    walltime='00:15:00'
+    ntasks=1
+    ;;
+
+  *)
+    echo "FATAL ERROR: Invalid job ${step} passed to ${BASH_SOURCE[0]}"
+    exit 1
+    ;;
+
+esac
+
+echo "END: config.resources"

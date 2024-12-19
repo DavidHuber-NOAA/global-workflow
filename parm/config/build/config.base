@@ -1,0 +1,82 @@
+#! /usr/bin/env bash
+
+########## config.base ##########
+# Common to all steps
+
+echo "BEGIN: config.base"
+
+# Machine environment
+export machine="@MACHINE@"
+
+# Account, queue, etc.
+export ACCOUNT="@ACCOUNT@"
+export QUEUE="@QUEUE@"
+export QUEUE_SERVICE="@QUEUE_SERVICE@"
+export PARTITION_BATCH="@PARTITION_BATCH@"
+export PARTITION_SERVICE="@PARTITION_SERVICE@"
+export RESERVATION="@RESERVATION@"
+export CLUSTERS="@CLUSTERS@"
+export PSLOT="build"
+
+export HOMEgfs="@HOMEgfs@"
+export EXPDIR="@EXPDIR@"
+
+# Dates and assim_freq are required for rocoto
+export SDATE=1900010100
+export EDATE=1900010100
+export assim_freq=6
+
+# Some variables required by wxflow
+export NET=compute
+export MODE=build
+
+# Build options
+export BUILD_gfs=@BUILD_gfs@
+export gfs_SCRIPT=@gfs_SCRIPT@
+export gfs_FLAGS=@gfs_FLAGS@
+
+export BUILD_gefs=@BUILD_gefs@
+export gefs_SCRIPT=@gefs_SCRIPT@
+export gefs_FLAGS=@gefs_FLAGS@
+
+export BUILD_sfs=@BUILD_sfs@
+export sfs_SCRIPT=@sfs_SCRIPT@
+export sfs_FLAGS=@sfs_FLAGS@
+
+export BUILD_gfs_utils=@BUILD_gfs_utils@
+export gfs_utils_SCRIPT=@gfs_utils_SCRIPT@
+export gfs_utils_FLAGS=@gfs_utils_FLAGS@
+
+export BUILD_ufs_utils=@BUILD_ufs_utils@
+export ufs_utils_SCRIPT=@ufs_utils_SCRIPT@
+export ufs_utils_FLAGS=@ufs_utils_FLAGS@
+
+export BUILD_upp=@BUILD_upp@
+export upp_SCRIPT=@upp_SCRIPT@
+export upp_FLAGS=@upp_FLAGS@
+
+export BUILD_ww3_struct=@BUILD_ww3_struct@
+export ww3_struct_SCRIPT=@ww3_struct_SCRIPT@
+export ww3_struct_FLAGS=@ww3_struct_FLAGS@
+
+export BUILD_ww3_unstruct=@BUILD_ww3_unstruct@
+export ww3_unstruct_SCRIPT=@ww3_unstruct_SCRIPT@
+export ww3_unstruct_FLAGS=@ww3_unstruct_FLAGS@
+
+export BUILD_gdas=@BUILD_gdas@
+export gdas_SCRIPT=@gdas_SCRIPT@
+export gdas_FLAGS=@gdas_FLAGS@
+
+export BUILD_gsi_enkf=@BUILD_gsi_enkf@
+export gsi_enkf_SCRIPT=@gsi_enkf_SCRIPT@
+export gsi_enkf_FLAGS=@gsi_enkf_FLAGS@
+
+export BUILD_gsi_utils=@BUILD_gsi_utils@
+export gsi_utils_SCRIPT=@gsi_utils_SCRIPT@
+export gsi_utils_FLAGS=@gsi_utils_FLAGS@
+
+export BUILD_gsi_monitor=@BUILD_gsi_monitor@
+export gsi_monitor_SCRIPT=@gsi_monitor_SCRIPT@
+export gsi_monitor_FLAGS=@gsi_monitor_FLAGS@
+
+echo "END: config.base"
