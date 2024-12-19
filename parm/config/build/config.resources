@@ -60,11 +60,6 @@ case ${step} in
     ntasks=1
     ;;
 
-  "ufs_utils")
-    walltime='00:15:00'
-    ntasks=1
-    ;;
-
   "ww3")
     walltime='00:15:00'
     ntasks=1
