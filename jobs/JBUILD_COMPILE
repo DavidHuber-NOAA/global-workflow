@@ -7,8 +7,9 @@ source "${EXPDIR}/config.resources" "${BUILD}"
 ###############
 # Run the build script
 
-# shellcheck disable=SC2086
+# TODO redirect output to sorc/logs/BUILD_SCRIPT.log via rocoto
 logfile="${HOMEgfs}/sorc/logs/${BUILD_SCRIPT/.sh/}.log"
+# shellcheck disable=SC2086,SC2312
 "${HOMEgfs}/sorc/${BUILD_SCRIPT}" ${BUILD_FLAGS:-} -j "${ntasks}" 2>&1 | tee "${logfile}"
 
 stat=$?

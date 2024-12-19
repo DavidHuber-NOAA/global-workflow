@@ -15,7 +15,7 @@ function _usage() {
   cat << EOF
 Builds all of the global-workflow components by calling the individual build scripts in parallel.
 
-Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-j n][-v][-K] [gfs] [gefs] [sfs] [gsi] [gdas] [all]
+Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-v][-K] [gfs] [gefs] [sfs] [gsi] [gdas] [all]
   -a UFS_app:
     Build a specific UFS app instead of the default.  This will be applied to all UFS (GFS, GEFS, SFS) builds.
   -c:
@@ -67,28 +67,30 @@ while getopts ":a:cdfhj:kA:vK" option; do
     A) _hpc_account="${OPTARG}" ;;
     v) _verbose_opt="-v" ;;
     K) _keep_files="YES" ;;
-    k) _quick_kill="YES" ;;
-    v) _verbose_opt="-v";;
     :)
       echo "[${BASH_SOURCE[0]}]: ${option} requires an argument"
       _usage
-      exit 1
       ;;
     *)
       echo "[${BASH_SOURCE[0]}]: Unrecognized option: ${option}"
       _usage
-      exit 1
       ;;
   esac
 done
 shift $((OPTIND-1))
 
 supported_systems=("gfs" "gefs" "sfs" "gsi" "gdas" "all")
+# shellcheck disable=SC2034
 gfs_builds="gfs gfs_utils ufs_utils upp ww3_unstruct"
+# shellcheck disable=SC2034
 gefs_builds="gefs gfs_utils ufs_utils upp ww3_struct"
+# shellcheck disable=SC2034
 sfs_builds="sfs gfs_utils ufs_utils upp ww3_struct"
+# shellcheck disable=SC2034
 gsi_builds="gsi_enkf gsi_monitor gsi_utils"
+# shellcheck disable=SC2034
 gdas_builds="gdas gsi_monitor gsi_utils"
+# shellcheck disable=SC2034
 all_builds="gfs gfs_utils ufs_utils upp ww3_unstruct ww3_struct gdas gsi_enkf gsi_monitor gsi_monitor gsi_utils"
 
 # Jobs per build ("min max")
@@ -139,7 +141,8 @@ build_scripts["upp"]="build_upp.sh"
 # Check the requested systems to make sure we can build them
 declare -A builds
 system_count=0
-for system in ${@}; do
+for system in "${@}"; do
+   # shellcheck disable=SC2076
    if [[ " ${supported_systems[*]} " =~ " ${system} " ]]; then
       (( system_count += 1 ))
       build_list_name="${system}_builds"
@@ -191,26 +194,27 @@ if [[ "${_compute_build}" == "YES" ]]; then
    # Prep a build directory
    build_dir="${HOMEgfs}/sorc/build"
    rm -rf "${build_dir}"
-   mkdir -p "${build_dir}"
-   cd "${build_dir}"
 
    # Write the build arrays to a YAML
-   rm -f build_opts.yaml && touch build_opts.yaml
+   build_yaml="${build_dir}/build_opts.yaml"
+   rm -f "${build_yaml}" && touch "${build_yaml}"
 
-   echo "base:" >> build_opts.yaml
+   echo "base:" >> ${build_yaml}
 
    for build in "${!builds[@]}"; do
-      echo "  BUILD_${build}: YES" >> build_opts.yaml
-      echo "  ${build}_SCRIPT: ${build_scripts[${build}]}" >> build_opts.yaml
-      echo "  ${build}_FLAGS: ${build_opts[${build}]}" >> build_opts.yaml
+      {
+         echo "  BUILD_${build}: YES"
+         echo "  ${build}_SCRIPT: ${build_scripts[${build}]}"
+         echo "  ${build}_FLAGS: ${build_opts[${build}]}"
+      } >> "${build_yaml}"
    done
 
-   "${HOMEgfs}/ush/compute_build.py" --account "${_hpc_account}" --yaml build_opts.yaml
+   "${HOMEgfs}/ush/compute_build.py" --account "${_hpc_account}" --yaml ${build_yaml}
    stat=$?
    if [[ ${stat} == 0 && ${_keep_files:-NO} == "NO" ]]; then
       rm -rf "${build_dir}"
    fi
-   exit ${stat}
+   exit "${stat}"
 fi
 
 # Otherwise, we are building locally, continue in this script
