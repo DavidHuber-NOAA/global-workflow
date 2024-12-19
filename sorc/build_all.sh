@@ -53,6 +53,7 @@ _quick_kill="NO"
 _compute_build="NO"
 _hpc_account="default"
 _keep_files="NO"
+_ufs_exec="-e gfs_model.x"
 # Reset option counter in case this script is sourced
 OPTIND=1
 while getopts ":a:cdfhj:kA:vK" option; do
@@ -62,10 +63,12 @@ while getopts ":a:cdfhj:kA:vK" option; do
     f) _build_ufs_opt+="-f ";;
     d) _build_debug="-d" ;;
     h) _usage;;
-    k) _quick_kill="YES" && echo "here2" && exit 2 ;;
+    k) _quick_kill="YES" ;;
     A) _hpc_account="${OPTARG}" ;;
     v) _verbose_opt="-v" ;;
     K) _keep_files="YES" ;;
+    k) _quick_kill="YES" ;;
+    v) _verbose_opt="-v";;
     :)
       echo "[${BASH_SOURCE[0]}]: ${option} requires an argument"
       _usage
