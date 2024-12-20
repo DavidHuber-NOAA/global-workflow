@@ -18,8 +18,6 @@ Builds all of the global-workflow components by calling the individual build scr
 Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-v][-K] [gfs] [gefs] [sfs] [gsi] [gdas] [all]
   -a UFS_app:
     Build a specific UFS app instead of the default.  This will be applied to all UFS (GFS, GEFS, SFS) builds.
-  -c:
-    Submit the build jobs to compute nodes
   -d:
     Build in debug mode
   -f:
@@ -30,9 +28,6 @@ Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-v][-K] [gfs]
     Kill all builds if any build fails
   -v:
     Execute all build scripts with -v option to turn on verbose where supported
-  -A:
-    HPC account to use for the compute-node builds
-    (default is \$HOMEgfs/ci/platforms/config.\$machine:\$HPC_ACCOUNT)
   -K:
     Keep temporary files (used for debugging this script)
 
@@ -50,21 +45,17 @@ _build_debug=""
 _verbose_opt=""
 _build_job_max=20
 _quick_kill="NO"
-_compute_build="NO"
-_hpc_account="default"
 _keep_files="NO"
 _ufs_exec="-e gfs_model.x"
 # Reset option counter in case this script is sourced
 OPTIND=1
-while getopts ":a:cdfhj:kA:vK" option; do
+while getopts ":a:dfhj:kvK" option; do
   case "${option}" in
     a) _build_ufs_opt+="-a ${OPTARG} ";;
-    c) _compute_build="YES" ;;
     f) _build_ufs_opt+="-f ";;
     d) _build_debug="-d" ;;
     h) _usage;;
     k) _quick_kill="YES" ;;
-    A) _hpc_account="${OPTARG}" ;;
     v) _verbose_opt="-v" ;;
     K) _keep_files="YES" ;;
     :)
@@ -81,62 +72,57 @@ shift $((OPTIND-1))
 
 supported_systems=("gfs" "gefs" "sfs" "gsi" "gdas" "all")
 # shellcheck disable=SC2034
-gfs_builds="gfs gfs_utils ufs_utils upp ww3_unstruct"
+gfs_builds="gfs gfs_utils ufs_utils upp ww3_gfs"
 # shellcheck disable=SC2034
-gefs_builds="gefs gfs_utils ufs_utils upp ww3_struct"
+gefs_builds="gefs gfs_utils ufs_utils upp ww3_gefs"
 # shellcheck disable=SC2034
-sfs_builds="sfs gfs_utils ufs_utils upp ww3_struct"
+sfs_builds="sfs gfs_utils ufs_utils upp ww3_gefs"
 # shellcheck disable=SC2034
 gsi_builds="gsi_enkf gsi_monitor gsi_utils"
 # shellcheck disable=SC2034
 gdas_builds="gdas gsi_monitor gsi_utils"
 # shellcheck disable=SC2034
-all_builds="gfs gfs_utils ufs_utils upp ww3_unstruct ww3_struct gdas gsi_enkf gsi_monitor gsi_monitor gsi_utils"
+all_builds="gfs gfs_utils ufs_utils upp ww3_gfs ww3_gefs gdas gsi_enkf gsi_monitor gsi_monitor gsi_utils"
 
 # Jobs per build ("min max")
 declare -A build_jobs build_opts build_scripts
-build_jobs["gfs"]=8
-build_jobs["gefs"]=8
-build_jobs["sfs"]=8
-build_jobs["gdas"]=8
-build_jobs["gsi_enkf"]=2
-build_jobs["gfs_utils"]=1
-build_jobs["ufs_utils"]=1
-build_jobs["ww3_unstruct"]=1
-build_jobs["ww3_struct"]=1
-build_jobs["gsi_utils"]=1
-build_jobs["gsi_monitor"]=1
-build_jobs["gfs_utils"]=1
-build_jobs["upp"]=1
+build_jobs=(
+    ["gfs"]=8 ["gefs"]=8 ["sfs"]=8 ["gdas"]=8 ["gsi_enkf"]=2 ["gfs_utils"]=1 ["ufs_utils"]=1
+    ["ww3_gfs"]=1 ["ww3_gefs"]=1 ["gsi_utils"]=1 ["gsi_monitor"]=1 ["gfs_utils"]=1 ["upp"]=1
+)
 
 # Establish build options for each job
-build_opts["gfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_gfs_exec}"
-build_opts["gefs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_gefs_exec}"
-build_opts["sfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_sfs_exec}"
-build_opts["upp"]="${_build_debug}"
-build_opts["ww3_unstruct"]="${_verbose_opt} ${_build_debug}"
-build_opts["ww3_struct"]="-w ${_verbose_opt} ${_build_debug}"
-build_opts["gdas"]="${_verbose_opt} ${_build_debug}"
-build_opts["ufs_utils"]="${_verbose_opt} ${_build_debug}"
-build_opts["gfs_utils"]="${_verbose_opt} ${_build_debug}"
-build_opts["gsi_utils"]="${_verbose_opt} ${_build_debug}"
-build_opts["gsi_enkf"]="${_verbose_opt} ${_build_debug}"
-build_opts["gsi_monitor"]="${_verbose_opt} ${_build_debug}"
+build_opts=(
+    ["gfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_gfs_exec}"
+    ["gefs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_gefs_exec}"
+    ["sfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_sfs_exec}"
+    ["upp"]="${_build_debug}"
+    ["ww3_gfs"]="${_verbose_opt} ${_build_debug}"
+    ["ww3_gefs"]="-w ${_verbose_opt} ${_build_debug}"
+    ["gdas"]="${_verbose_opt} ${_build_debug}"
+    ["ufs_utils"]="${_verbose_opt} ${_build_debug}"
+    ["gfs_utils"]="${_verbose_opt} ${_build_debug}"
+    ["gsi_utils"]="${_verbose_opt} ${_build_debug}"
+    ["gsi_enkf"]="${_verbose_opt} ${_build_debug}"
+    ["gsi_monitor"]="${_verbose_opt} ${_build_debug}"
+)
 
 # Set the build script name for each build
-build_scripts["gfs"]="build_ufs.sh"
-build_scripts["gefs"]="build_ufs.sh"
-build_scripts["sfs"]="build_ufs.sh"
-build_scripts["gdas"]="build_gdas.sh"
-build_scripts["gsi_enkf"]="build_gsi_enkf.sh"
-build_scripts["gfs_utils"]="build_gfs_utils.sh"
-build_scripts["ufs_utils"]="build_ufs_utils.sh"
-build_scripts["ww3_unstruct"]="build_ww3_prepost.sh"
-build_scripts["ww3_struct"]="build_ww3_prepost.sh"
-build_scripts["gsi_utils"]="build_gsi_utils.sh"
-build_scripts["gsi_monitor"]="build_gsi_monitor.sh"
-build_scripts["gfs_utils"]="build_gfs_utils.sh"
-build_scripts["upp"]="build_upp.sh"
+build_scripts=(
+    ["gfs"]="build_ufs.sh"
+    ["gefs"]="build_ufs.sh"
+    ["sfs"]="build_ufs.sh"
+    ["gdas"]="build_gdas.sh"
+    ["gsi_enkf"]="build_gsi_enkf.sh"
+    ["gfs_utils"]="build_gfs_utils.sh"
+    ["ufs_utils"]="build_ufs_utils.sh"
+    ["ww3_gfs"]="build_ww3_prepost.sh"
+    ["ww3_gefs"]="build_ww3_prepost.sh"
+    ["gsi_utils"]="build_gsi_utils.sh"
+    ["gsi_monitor"]="build_gsi_monitor.sh"
+    ["gfs_utils"]="build_gfs_utils.sh"
+    ["upp"]="build_upp.sh"
+)
 
 # Check the requested systems to make sure we can build them
 declare -A builds
@@ -177,45 +163,6 @@ fi
 
 # Create directories
 mkdir -p "${HOMEgfs}/sorc/logs" "${HOMEgfs}/exec"
-
-# If we are running this on compute nodes, then call compute_build.sh with the list of builds
-if [[ "${_compute_build}" == "YES" ]]; then 
-   #####################################################################
-   # COMPUTE NODE BUILD
-   #####################################################################
-   # Load gwsetup module
-   module use "${HOMEgfs}/modulefiles"
-   module load "module_gwsetup.${MACHINE_ID}"
-
-   # Add the workflow to the PYTHONPATH
-   PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}${HOMEgfs}/workflow"
-   export PYTHONPATH
-
-   # Prep a build directory
-   build_dir="${HOMEgfs}/sorc/build"
-   rm -rf "${build_dir}"
-
-   # Write the build arrays to a YAML
-   build_yaml="${build_dir}/build_opts.yaml"
-   rm -f "${build_yaml}" && touch "${build_yaml}"
-
-   echo "base:" >> "${build_yaml}"
-
-   for build in "${!builds[@]}"; do
-      {
-         echo "  BUILD_${build}: YES"
-         echo "  ${build}_SCRIPT: ${build_scripts[${build}]}"
-         echo "  ${build}_FLAGS: ${build_opts[${build}]}"
-      } >> "${build_yaml}"
-   done
-
-   "${HOMEgfs}/ush/compute_build.py" --account "${_hpc_account}" --yaml "${build_yaml}"
-   stat=$?
-   if [[ ${stat} == 0 && ${_keep_files:-NO} == "NO" ]]; then
-      rm -rf "${build_dir}"
-   fi
-   exit "${stat}"
-fi
 
 # Otherwise, we are building locally, continue in this script
 
