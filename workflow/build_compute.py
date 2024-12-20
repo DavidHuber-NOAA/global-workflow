@@ -81,7 +81,7 @@ def get_task_spec(task_name: str, task_spec: Dict, host_spec: Dict) -> Dict:
     return task_dict
 
 
-def get_host_specs(host: Dict)-> Dict:
+def get_host_specs(host: Dict) -> Dict:
     """Generate host specs for the build.xml file based on Host() info
 
     Parameters
@@ -137,14 +137,13 @@ def main(*argv):
     for task_name, task_spec in build_specs.build.items():
         task_specs[task_name] = get_task_spec(task_name, task_spec, host_specs)
 
-
     # Start building the XML
     strings = ['<?xml version="1.0"?>',
-                '<!DOCTYPE workflow', '[', ']>',
-                f'<workflow realtime="F" scheduler="{host_specs.scheduler}" cyclethrottle="1" taskthrottle="25">',
-                f'\t<log verbosity="10">{HOMEgfs}/sorc/logs/build.log</log>',
-                '\t<cycledef>group="build">190001010000 190001010000 24:00:00</cycledef>',
-                '\n']
+               '<!DOCTYPE workflow', '[', ']>',
+               f'<workflow realtime="F" scheduler="{host_specs.scheduler}" cyclethrottle="1" taskthrottle="25">',
+               f'\t<log verbosity="10">{HOMEgfs}/sorc/logs/build.log</log>',
+               '\t<cycledef>group="build">190001010000 190001010000 24:00:00</cycledef>',
+               '\n']
     xml_header = '\n'.join(strings)
     xml_footer = '\n</workflow>\n'
 
