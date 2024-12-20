@@ -103,7 +103,4 @@ done
 
 echo "All builds completed successfully!"
 
-# Remove the database file
-rm -f "${build_db}"
-
 exit 0
