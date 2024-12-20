@@ -26,6 +26,8 @@ set -eu
 rocoto_verbose_opt=""
 verbose="NO"
 system="all"
+build_xml="build.xml"
+build_db="build.db"
 
 while getopts ":hA:vs:" option; do
   case "${option}" in
@@ -52,6 +54,9 @@ fi
 HOMEgfs=$(cd "$(dirname "$(readlink -f -n "${BASH_SOURCE[0]}" )" )/.." && pwd -P)
 cd "${HOMEgfs}/sorc" || exit 1
 
+# Delete the rocoto XML and database if they exist
+rm -f "${build_xml}" "${build_db}"
+
 echo "Sourcing global-workflow modules ..."
 source "${HOMEgfs}/workflow/gw_setup.sh"
 
@@ -66,7 +71,7 @@ if (( rc != 0 )); then
 fi
 
 echo "Launching builds in parallel on compute nodes ..."
-runcmd="rocotorun -w build.xml -d build.db ${rocoto_verbose_opt}"
+runcmd="rocotorun -w ${build_xml} -d ${build_db} ${rocoto_verbose_opt}"
 
 finished=false
 ${runcmd}
@@ -74,8 +79,13 @@ echo "Running builds on compute nodes"
 while [[ "${finished}" == "false" ]]; do
    sleep 3m
    ${runcmd}
-   state="$("${HOMEgfs}/ci/scripts/utils/rocotostat.py" -w build.xml -d build.db)"
-   echo "Rocoto is in state ${state}"
+   state="$("${HOMEgfs}/ci/scripts/utils/rocotostat.py" -w "${build_xml}" -d "${build_db}")"
+   if [[ "${verbose_opt}" == "true" ]]; then
+      echo "Rocoto is in state ${state}"
+   else
+      echo -n "."
+   fi
+
    if [[ "${state}" == "DONE" ]]; then
       finished=true
    elif [[ "${state}" == "RUNNING" ]]; then
@@ -88,9 +98,11 @@ while [[ "${finished}" == "false" ]]; do
       echo "FATAL ERROR: ${BASH_SOURCE[0]} rocoto failed with state '${state}'"
       exit 3
    fi
-   echo -n "."
 done
 
 echo "All builds completed successfully!"
+
+# Remove the database file
+rm -f "${build_db}"
 
 exit 0
