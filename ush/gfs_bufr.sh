@@ -21,11 +21,12 @@
 # 2024-08-08 Bo Cui: Update to handle one forecast at a time
 # echo "History: February 2003 - First implementation of this utility script"
 #
-fhr="$1"
-fhr_p="$2"
-FINT="$3"
-F00FLAG="$4"
-workdir="$5"
+set -x
+fhr="${1}"
+fhr_p="${2}"
+FINT="${3}"
+F00FLAG="${4}"
+workdir="${5}"
 
 cd "${workdir}" || exit 2
 
