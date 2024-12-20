@@ -3,6 +3,15 @@ systems:
     - "ufs_utils"
     - "gfs_utils"
     - "upp"
+  gfs_forecast_only:
+    - "gfs_model"
+    - "gfs_ww3prepost"
+  gfs_gsi:
+    - "gfs_model"
+    - "gfs_ww3prepost"
+    - "gsi_enkf"
+    - "gsi_utils"
+    - "gsi_monitor"
   gfs:
     - "gfs_model"
     - "gfs_ww3prepost"
@@ -42,7 +51,7 @@ build:
     walltime: "00:10:00"
 
   sfs_model:
-    command: "./build_ufs.sh -e sfs_model.x -j 12"
+    command: "./build_ufs.sh -h -e sfs_model.x -j 12"
     log: "build_ufs_sfs.log"
     cores: 12
     walltime: "00:30:00"

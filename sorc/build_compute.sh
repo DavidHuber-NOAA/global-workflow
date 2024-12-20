@@ -4,7 +4,7 @@ function _usage() {
   cat << EOF
 Builds all of the global-workflow components on compute nodes.
 
-Usage: ${BASH_SOURCE[0]} [-h][-v][-A <hpc-account>][-s gfs,gefs,sfs,all]
+Usage: ${BASH_SOURCE[0]} [-h][-v][-A <hpc-account>][-s gfs,gfs_forecast_only,gfs_gsi,gefs,sfs,all]
   -h:
     Print this help message and exit
   -v:
@@ -13,7 +13,8 @@ Usage: ${BASH_SOURCE[0]} [-h][-v][-A <hpc-account>][-s gfs,gefs,sfs,all]
     HPC account to use for the compute-node builds
     (default is \$HOMEgfs/ci/platforms/config.\$machine:\$HPC_ACCOUNT)
   -s:
-    Specify a system to build.  Valid options are "gfs", "gefs", "sfs", or "all".
+    Specify a system to build.  Valid options are
+      "gfs", "gefs", "sfs", "gfs_forecast_only", "gfs_gsi", or "all".
     (default is "all")
 EOF
   exit 1
