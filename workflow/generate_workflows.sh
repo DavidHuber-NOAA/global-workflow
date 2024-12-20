@@ -305,7 +305,6 @@ EOM
    fi
 }
 
-declare -a _yaml_list
 # Check if running all GEFS cases
 if [[ "${_run_all_gefs}" == "true" ]]; then
    # Append -w to build_all.sh flags if -E was specified
@@ -321,7 +320,7 @@ if [[ "${_run_all_gfs}" == "true" ]]; then
    _build_flags="${_build_flags} gfs "
 
    declare -a _gfs_yaml_list
-   select_all_yamls "gfs"
+   select_all_yamls "gfs" "_gfs_yaml_list"
    _yaml_list=("${_yaml_list[@]}" "${_gfs_yaml_list[@]}")
 fi
 
