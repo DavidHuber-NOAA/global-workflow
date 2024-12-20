@@ -46,7 +46,7 @@ _quick_kill="NO"
 _ufs_exec="-e gfs_model.x"
 # Reset option counter in case this script is sourced
 OPTIND=1
-while getopts ":a:dfhj:kv" option; do
+while getopts ":a:dfhkv" option; do
   case "${option}" in
     a) _build_ufs_opt+="-a ${OPTARG} ";;
     f) _build_ufs_opt+="-f ";;
