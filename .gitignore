@@ -85,6 +85,7 @@ parm/wafs
 
 # Ignore sorc and logs folders from externals
 #--------------------------------------------
+sorc/build.xml
 sorc/*log
 sorc/logs
 sorc/calc_analysis.fd
