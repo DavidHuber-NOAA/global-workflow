@@ -136,8 +136,7 @@ def main(*argv):
     # Determine systems to build
     builds = set()
     if user_inputs.system == "all":
-        for system, build_set in build_specs.systems.items():
-            builds.update(build_set)
+        builds = build_specs.build
     else:
         builds.update(build_specs.systems["common"])
         try:
