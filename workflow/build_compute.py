@@ -142,7 +142,7 @@ def main(*argv):
                '<!DOCTYPE workflow', '[', ']>',
                f'<workflow realtime="F" scheduler="{host_specs.scheduler}" cyclethrottle="1" taskthrottle="25">',
                f'\t<log verbosity="10">{HOMEgfs}/sorc/logs/build.log</log>',
-               '\t<cycledef>group="build">190001010000 190001010000 24:00:00</cycledef>',
+               '\t<cycledef group="build">190001010000 190001010000 24:00:00</cycledef>',
                '\n']
     xml_header = '\n'.join(strings)
     xml_footer = '\n</workflow>\n'
