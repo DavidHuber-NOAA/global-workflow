@@ -94,10 +94,13 @@ build_jobs=(
 )
 
 # Establish build options for each job
+_gfs_exec="gfs_model.x"
+_gefs_exec="gefs_model.x"
+_sfs_exec="sfs_model.x"
 build_opts=(
-    ["gfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_gfs_exec}"
-    ["gefs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_gefs_exec}"
-    ["sfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} ${_sfs_exec}"
+    ["gfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_gfs_exec}"
+    ["gefs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_gefs_exec}"
+    ["sfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_sfs_exec}"
     ["upp"]="${_build_debug}"
     ["ww3_gfs"]="${_verbose_opt} ${_build_debug}"
     ["ww3_gefs"]="-w ${_verbose_opt} ${_build_debug}"
@@ -118,8 +121,8 @@ build_scripts=(
     ["gsi_enkf"]="build_gsi_enkf.sh"
     ["gfs_utils"]="build_gfs_utils.sh"
     ["ufs_utils"]="build_ufs_utils.sh"
-    ["ww3_gfs"]="build_ww3_prepost.sh"
-    ["ww3_gefs"]="build_ww3_prepost.sh"
+    ["ww3_gfs"]="build_ww3prepost.sh"
+    ["ww3_gefs"]="build_ww3prepost.sh"
     ["gsi_utils"]="build_gsi_utils.sh"
     ["gsi_monitor"]="build_gsi_monitor.sh"
     ["gfs_utils"]="build_gfs_utils.sh"
@@ -227,7 +230,7 @@ while [[ ${builds_started} -lt ${#builds[@]} ]]; do
          if [[ ${_build_job_max} -ge $(( build_jobs[build] + procs_in_use )) ]]; then
             # double-quoting build_opts here will not work since it is a string of options
             #shellcheck disable=SC2086
-            "./build_${build}.sh" ${build_opts[${build}]:-} -j "${build_jobs[${build}]}" > \
+            "./${build_scripts[${build}]}" ${build_opts[${build}]:-} -j "${build_jobs[${build}]}" > \
                "${logs_dir}/build_${build}.log" 2>&1 &
             build_ids["${build}"]=$!
             echo "Starting build_${build}.sh"
@@ -247,7 +250,7 @@ while [[ ${builds_started} -lt ${#builds[@]} ]]; do
          # Calculate how many processors are in use
          # Is the build still running?
          if ps -p "${build_ids[${build}]}" > /dev/null; then
-            procs_in_use=$(( procs_in_use + builds["${build}"] ))
+            procs_in_use=$(( procs_in_use + build_jobs["${build}"] ))
          fi
       fi
    done
