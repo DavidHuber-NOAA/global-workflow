@@ -15,7 +15,7 @@ function _usage() {
   cat << EOF
 Builds all of the global-workflow components by calling the individual build scripts in parallel.
 
-Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-v][-K] [gfs] [gefs] [sfs] [gsi] [gdas] [all]
+Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-v] [gfs] [gefs] [sfs] [gsi] [gdas] [all]
   -a UFS_app:
     Build a specific UFS app instead of the default.  This will be applied to all UFS (GFS, GEFS, SFS) builds.
   -d:
@@ -28,8 +28,6 @@ Usage: ${BASH_SOURCE[0]} [-a UFS_app][-c build_config][-d][-f][-h][-v][-K] [gfs]
     Kill all builds if any build fails
   -v:
     Execute all build scripts with -v option to turn on verbose where supported
-  -K:
-    Keep temporary files (used for debugging this script)
 
   Specified systems (gfs, gefs, sfs, gsi, gdas) are non-exclusive, so they can be built together.
 EOF
@@ -45,11 +43,10 @@ _build_debug=""
 _verbose_opt=""
 _build_job_max=20
 _quick_kill="NO"
-_keep_files="NO"
 _ufs_exec="-e gfs_model.x"
 # Reset option counter in case this script is sourced
 OPTIND=1
-while getopts ":a:dfhj:kvK" option; do
+while getopts ":a:dfhj:kv" option; do
   case "${option}" in
     a) _build_ufs_opt+="-a ${OPTARG} ";;
     f) _build_ufs_opt+="-f ";;
@@ -57,7 +54,6 @@ while getopts ":a:dfhj:kvK" option; do
     h) _usage;;
     k) _quick_kill="YES" ;;
     v) _verbose_opt="-v" ;;
-    K) _keep_files="YES" ;;
     :)
       echo "[${BASH_SOURCE[0]}]: ${option} requires an argument"
       _usage
