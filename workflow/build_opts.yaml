@@ -1,3 +1,21 @@
+systems:
+  common:
+    - "ufs_utils"
+    - "gfs_utils"
+    - "upp"
+  gfs:
+    - "gfs_model"
+    - "gfs_ww3prepost"
+    - "gsi_enkf"
+    - "gdas"
+    - "gsi_utils"
+    - "gsi_monitor"
+  gefs:
+    - "gefs_model"
+    - "gefs_ww3_prepost"
+  sfs:
+    - "sfs_model"
+    - "gefs_ww3_prepost"
 build:
   gfs_model:
     command: "./build_ufs.sh -e gfs_model.x -j 12"
@@ -22,6 +40,12 @@ build:
     log: "build_ww3prepost_gefs.log"
     cores: 4
     walltime: "00:10:00"
+
+  sfs_model:
+    command: "./build_ufs.sh -e sfs_model.x -j 12"
+    log: "build_ufs_sfs.log"
+    cores: 12
+    walltime: "00:30:00"
 
   upp:
     command: "./build_upp.sh -j 8"
