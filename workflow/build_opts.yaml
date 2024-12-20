@@ -51,7 +51,7 @@ build:
     walltime: "00:10:00"
 
   sfs_model:
-    command: "./build_ufs.sh -h -e sfs_model.x -j 12"
+    command: "./build_ufs.sh -y -e sfs_model.x -j 12"
     log: "build_ufs_sfs.log"
     cores: 12
     walltime: "00:30:00"
