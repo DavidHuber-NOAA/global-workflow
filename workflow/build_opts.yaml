@@ -20,7 +20,6 @@ build:
   gefs_ww3_prepost:
     command: "./build_ww3prepost.sh -w -j 4"
     log: "build_ww3prepost_gefs.log"
-    nodes: 1
     cores: 4
     walltime: "00:10:00"
 
