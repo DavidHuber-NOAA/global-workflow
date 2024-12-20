@@ -30,37 +30,37 @@ build:
     walltime: "00:10:00"
 
   gsi_enkf:
-    command: "./build_gsi_enkf.sh"
+    command: "./build_gsi_enkf.sh -j 8"
     log: "build_gsi_enkf.log"
-    cores: 12
+    cores: 8
     walltime: "00:15:00"
 
   gsi_monitor:
-    command: "./build_gsi_monitor.sh"
+    command: "./build_gsi_monitor.sh -j 4"
     log: "build_gsi_monitor.log"
     cores: 4
     walltime: "00:10:00"
 
   gsi_utils:
-    command: "./build_gsi_utils.sh"
+    command: "./build_gsi_utils.sh -j 6"
     log: "build_gsi_utils.log"
-    cores: 4
+    cores: 6
     walltime: "00:10:00"
 
   ufs_utils:
-    command: "./build_ufs_utils.sh"
+    command: "./build_ufs_utils.sh -j 8"
     log: "build_ufs_utils.log"
     cores: 8
     walltime: "00:10:00"
 
   gfs_utils:
-    command: "./build_gfs_utils.sh"
+    command: "./build_gfs_utils.sh -j 6"
     log: "build_gfs_utils.log"
     cores: 6
     walltime: "00:10:00"
 
   gdas:
-    command: "./build_gdas.sh"
+    command: "./build_gdas.sh -j 12"
     log: "build_gdas.log"
     cores: 12
     walltime: "01:00:00"
