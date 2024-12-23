@@ -66,6 +66,13 @@ while getopts ":a:dfhkv" option; do
 done
 shift $((OPTIND-1))
 
+# If no build system was specified, build for gfs forecast-only
+if [[ $# -eq 0 ]]; then
+   selected_systems="gfs"
+else
+   selected_systems="$@"
+fi
+
 supported_systems=("gfs" "gefs" "sfs" "gsi" "gdas" "all")
 # shellcheck disable=SC2034
 gfs_builds="gfs gfs_utils ufs_utils upp ww3_gfs"
@@ -132,7 +139,7 @@ build_scripts=(
 # Check the requested systems to make sure we can build them
 declare -A builds
 system_count=0
-for system in "${@}"; do
+for system in ${selected_systems}; do
    # shellcheck disable=SC2076
    if [[ " ${supported_systems[*]} " =~ " ${system} " ]]; then
       (( system_count += 1 ))
@@ -145,15 +152,6 @@ for system in "${@}"; do
       _usage
    fi
 done
-
-# If no build systems were selected, build just the gfs
-if [[ ${system_count} -eq 0 ]]; then
-   system_count=1
-   builds["gfs"]="yes"
-   builds["gfs_utils"]="yes"
-   builds["ufs_utils"]="yes"
-   builds["upp"]="yes"
-fi
 
 #------------------------------------
 # GET MACHINE
