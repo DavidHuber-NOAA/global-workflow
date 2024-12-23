@@ -120,7 +120,7 @@ pipeline {
                             def error_logs_message = ""
                             dir("${HOMEgfs}/sorc") {
                                 try {
-                                    sh(script: './build_all.sh gfs gefs gsi gdas')  // build the global-workflow executables
+                                    sh(script: './build_all.sh -k gfs gefs gsi gdas')  // build the global-workflow executables
                                 } catch (Exception error_build) {
                                     echo "Failed to build global-workflow: ${error_build.getMessage()}"
                                     if ( fileExists("logs/error.logs") ) {
