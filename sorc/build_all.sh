@@ -70,7 +70,7 @@ shift $((OPTIND-1))
 if [[ $# -eq 0 ]]; then
    selected_systems="gfs"
 else
-   selected_systems="$@"
+   selected_systems="$*"
 fi
 
 supported_systems=("gfs" "gefs" "sfs" "gsi" "gdas" "all")
