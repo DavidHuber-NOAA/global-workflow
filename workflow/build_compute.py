@@ -33,7 +33,7 @@ def input_args(*argv):
     parser.add_argument('--yaml', help='Input YAML file',
                         type=str, required=False, default='build_opts.yaml')
     parser.add_argument('--account', help='HPC account to use; default is host-dependent', required=False, default=os.getenv('HPC_ACCOUNT'))
-    parser.add_argument('--system', help='System to build (options: gfs, gefs, sfs, or all)', required=False, default='all')
+    parser.add_argument('--systems', help='System(s) to build (options: gfs, gefs, sfs, gsi, gdas, or all)', required=False, default='gfs')
 
     inputs = parser.parse_args(list(*argv) if len(argv) else None)
 
@@ -133,16 +133,19 @@ def main(*argv):
 
     build_specs = AttrDict(parse_yaml(user_inputs.yaml))
 
+    systems = user_inputs.systems.split() if "all" not in user_inputs.systems else ["all"]
+
     # Determine systems to build
     builds = set()
-    if user_inputs.system == "all":
+    if systems[0] == "all":
         builds = build_specs.build
     else:
         builds.update(build_specs.systems["common"])
         try:
-            builds.update(build_specs.systems[user_inputs.system])
+            for system in systems:
+                builds.update(build_specs.systems[system])
         except KeyError as e:
-            raise KeyError(f"{user_inputs.system} is not a valid global-workflow system!") from e
+            raise KeyError(f"{system} is not a valid global-workflow system!") from e
 
     # Build the task specs from the build specs and host specs
     task_specs = AttrDict()

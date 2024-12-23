@@ -3,19 +3,14 @@ systems:
     - "ufs_utils"
     - "gfs_utils"
     - "upp"
-  gfs_forecast_only:
-    - "gfs_model"
-    - "gfs_ww3prepost"
-  gfs_gsi:
-    - "gfs_model"
-    - "gfs_ww3prepost"
-    - "gsi_enkf"
-    - "gsi_utils"
-    - "gsi_monitor"
   gfs:
     - "gfs_model"
     - "gfs_ww3prepost"
+  gsi:
     - "gsi_enkf"
+    - "gsi_utils"
+    - "gsi_monitor"
+  gdas:
     - "gdas"
     - "gsi_utils"
     - "gsi_monitor"

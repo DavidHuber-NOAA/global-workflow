@@ -4,7 +4,7 @@ function _usage() {
   cat << EOF
 Builds all of the global-workflow components on compute nodes.
 
-Usage: ${BASH_SOURCE[0]} [-h][-v][-A <hpc-account>][-s gfs,gfs_forecast_only,gfs_gsi,gefs,sfs,all]
+Usage: ${BASH_SOURCE[0]} [-h][-v][-A <hpc-account>] [ gfs gefs sfs gsi gdas all]
   -h:
     Print this help message and exit
   -v:
@@ -12,10 +12,11 @@ Usage: ${BASH_SOURCE[0]} [-h][-v][-A <hpc-account>][-s gfs,gfs_forecast_only,gfs
   -A:
     HPC account to use for the compute-node builds
     (default is \$HOMEgfs/ci/platforms/config.\$machine:\$HPC_ACCOUNT)
-  -s:
-    Specify a system to build.  Valid options are
-      "gfs", "gefs", "sfs", "gfs_forecast_only", "gfs_gsi", or "all".
-    (default is "all")
+
+  Input arguments are the system(s) to build.
+  Valid options are
+    "gfs", "gefs", "sfs", "gsi", "gdas", or "all".
+    (default is "gfs")
 EOF
   exit 1
 }
@@ -26,16 +27,16 @@ set -eu
 
 rocoto_verbose_opt=""
 verbose="NO"
-system="all"
+system="gfs"
 build_xml="build.xml"
 build_db="build.db"
 
-while getopts ":hA:vs:" option; do
+OPTIND=1
+while getopts ":hA:v" option; do
   case "${option}" in
     h) _usage;;
     A) export HPC_ACCOUNT="${OPTARG}" ;;
     v) verbose="YES" && rocoto_verbose_opt="-v10";;
-    s) system="${OPTARG}" ;;
     :)
       echo "[${BASH_SOURCE[0]}]: ${option} requires an argument"
       _usage
@@ -46,6 +47,14 @@ while getopts ":hA:vs:" option; do
       ;;
   esac
 done
+shift $((OPTIND-1))
+
+# Set build system to gfs if not specified
+if [[ $# -eq 0 ]]; then
+   systems="gfs"
+else
+   systems=$*
+fi
 
 if [[ "${verbose}" == "YES" ]]; then
    set -x
@@ -64,7 +73,7 @@ source "${HOMEgfs}/workflow/gw_setup.sh"
 echo "Generating build.xml for building global-workflow programs on compute nodes ..."
 # Catch errors manually from here out
 set +e
-"${HOMEgfs}/workflow/build_compute.py" --yaml "${HOMEgfs}/workflow/build_opts.yaml" --system "${system}"
+"${HOMEgfs}/workflow/build_compute.py" --yaml "${HOMEgfs}/workflow/build_opts.yaml" --systems "${systems}"
 rc=$?
 if (( rc != 0 )); then
   echo "FATAL ERROR: ${BASH_SOURCE[0]} failed to create 'build.xml' with error code ${rc}"
