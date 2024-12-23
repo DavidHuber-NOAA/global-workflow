@@ -85,7 +85,7 @@ gsi_builds="gsi_enkf gsi_monitor gsi_utils"
 # shellcheck disable=SC2034
 gdas_builds="gdas gsi_monitor gsi_utils"
 # shellcheck disable=SC2034
-all_builds="gfs gfs_utils ufs_utils upp ww3_gfs ww3_gefs gdas gsi_enkf gsi_monitor gsi_monitor gsi_utils"
+all_builds="gfs gfs_utils ufs_utils upp ww3_gfs gefs ww3_gefs gdas gsi_enkf gsi_monitor gsi_utils"
 
 logs_dir="${HOMEgfs}/sorc/logs"
 if [[ ! -d "${logs_dir}" ]]; then
