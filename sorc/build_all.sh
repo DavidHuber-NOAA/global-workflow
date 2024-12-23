@@ -166,10 +166,8 @@ if [[ -z "${MACHINE_ID}" ]]; then
   exit 1
 fi
 
-# Create directories
-mkdir -p "${HOMEgfs}/sorc/logs" "${HOMEgfs}/exec"
-
-# Otherwise, we are building locally, continue in this script
+# Create the log directory
+mkdir -p "${HOMEgfs}/sorc/logs"
 
 #------------------------------------
 # SOURCE BUILD VERSION FILES
