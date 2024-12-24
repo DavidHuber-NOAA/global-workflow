@@ -30,17 +30,21 @@ fi
 # Add cmake to the default modules if the command isn't found
 # TODO remove this workaround when issue NOAA-EMC/UPP#1106 is addressed.
 if ! command -v cmake >& /dev/null; then
-   set +x
-   module try-load cmake
+   export COMPILER="intel"
+   source "${HOMEgfs}/ush/detect_machine.sh"
+   if [[ "${MACHINE_ID}" == "wcoss2" ]]; then
+      set +x
+      module try-load cmake
 
-   if module is-loaded cmake; then
-      LMOD_SYSTEM_DEFAULT_MODULES="${LMOD_SYSTEM_DEFAULT_MODULES} cmake"
-      echo "Added cmake to the default modules"
-   else
-      echo "FATAL ERROR Could not find cmake or a cmake module!"
-      exit 2
+      if module is-loaded cmake; then
+         LMOD_SYSTEM_DEFAULT_MODULES="${LMOD_SYSTEM_DEFAULT_MODULES} cmake"
+         echo "Added cmake to the default modules"
+      else
+         echo "FATAL ERROR Could not find cmake or a cmake module!"
+         exit 2
+      fi
+      set -x
    fi
-   set -x
 fi
 
 cd ufs_model.fd/FV3/upp/tests
