@@ -27,7 +27,6 @@ set -eu
 
 rocoto_verbose_opt=""
 verbose="NO"
-system="gfs"
 build_xml="build.xml"
 build_db="build.db"
 
