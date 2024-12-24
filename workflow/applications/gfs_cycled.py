@@ -119,7 +119,7 @@ class GFSCycledAppConfig(AppConfig):
             configs += ['postsnd']
 
         if options['do_awips']:
-            configs += ['awips']
+            configs += ['awips', 'fbwind']
 
         if options['do_wave']:
             configs += ['waveinit', 'waveprep', 'wavepostsbs', 'wavepostpnt']

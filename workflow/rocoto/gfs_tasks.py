@@ -1410,7 +1410,7 @@ class GFSTasks(Tasks):
         deps.append(rocoto.add_dependency(dep_dict))
         dependencies = rocoto.create_dependency(dep=deps, dep_condition='and')
 
-        resources = self.get_resource('awips')
+        resources = self.get_resource('fbwind')
         # TODO: It would be better to use task dependencies on the
         # individual post jobs rather than data dependencies to avoid
         # prematurely starting with partial files. Unfortunately, the
