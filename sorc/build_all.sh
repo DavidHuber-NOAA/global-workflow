@@ -74,18 +74,16 @@ else
 fi
 
 supported_systems=("gfs" "gefs" "sfs" "gsi" "gdas" "all")
-# shellcheck disable=SC2034
-gfs_builds="gfs gfs_utils ufs_utils upp ww3_gfs"
-# shellcheck disable=SC2034
-gefs_builds="gefs gfs_utils ufs_utils upp ww3_gefs"
-# shellcheck disable=SC2034
-sfs_builds="sfs gfs_utils ufs_utils upp ww3_gefs"
-# shellcheck disable=SC2034
-gsi_builds="gsi_enkf gsi_monitor gsi_utils"
-# shellcheck disable=SC2034
-gdas_builds="gdas gsi_monitor gsi_utils"
-# shellcheck disable=SC2034
-all_builds="gfs gfs_utils ufs_utils upp ww3_gfs gefs ww3_gefs gdas gsi_enkf gsi_monitor gsi_utils"
+
+declare -A system_builds
+system_builds=(
+   ["gfs"]="ufs_gfs gfs_utils ufs_utils upp ww3_gfs"
+   ["gefs"]="ufs_gefs gfs_utils ufs_utils upp ww3_gefs"
+   ["sfs"]="ufs_sfs gfs_utils ufs_utils upp ww3_gefs"
+   ["gsi"]="gsi_enkf gsi_monitor gsi_utils"
+   ["gdas"]="gdas gsi_monitor gsi_utils"
+   ["all"]="ufs_gfs gfs_utils ufs_utils upp ww3_gfs ufs_gefs ufs_sfs ww3_gefs gdas gsi_enkf gsi_monitor gsi_utils"
+)
 
 logs_dir="${HOMEgfs}/sorc/logs"
 if [[ ! -d "${logs_dir}" ]]; then
@@ -96,7 +94,7 @@ fi
 # Jobs per build ("min max")
 declare -A build_jobs build_opts build_scripts
 build_jobs=(
-    ["gfs"]=8 ["gefs"]=8 ["sfs"]=8 ["gdas"]=8 ["gsi_enkf"]=2 ["gfs_utils"]=1 ["ufs_utils"]=1
+    ["ufs_gfs"]=8 ["ufs_gefs"]=8 ["ufs_sfs"]=8 ["gdas"]=8 ["gsi_enkf"]=2 ["gfs_utils"]=1 ["ufs_utils"]=1
     ["ww3_gfs"]=1 ["ww3_gefs"]=1 ["gsi_utils"]=1 ["gsi_monitor"]=1 ["gfs_utils"]=1 ["upp"]=1
 )
 
@@ -105,9 +103,9 @@ _gfs_exec="gfs_model.x"
 _gefs_exec="gefs_model.x"
 _sfs_exec="sfs_model.x"
 build_opts=(
-    ["gfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_gfs_exec}"
-    ["gefs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_gefs_exec}"
-    ["sfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_sfs_exec}"
+    ["ufs_gfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_gfs_exec}"
+    ["ufs_gefs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_gefs_exec}"
+    ["ufs_sfs"]="${wave_opt} ${_build_ufs_opt} ${_verbose_opt} ${_build_debug} -e ${_sfs_exec}"
     ["upp"]="${_build_debug}"
     ["ww3_gfs"]="${_verbose_opt} ${_build_debug}"
     ["ww3_gefs"]="-w ${_verbose_opt} ${_build_debug}"
@@ -121,9 +119,9 @@ build_opts=(
 
 # Set the build script name for each build
 build_scripts=(
-    ["gfs"]="build_ufs.sh"
-    ["gefs"]="build_ufs.sh"
-    ["sfs"]="build_ufs.sh"
+    ["ufs_gfs"]="build_ufs.sh"
+    ["ufs_gefs"]="build_ufs.sh"
+    ["ufs_sfs"]="build_ufs.sh"
     ["gdas"]="build_gdas.sh"
     ["gsi_enkf"]="build_gsi_enkf.sh"
     ["gfs_utils"]="build_gfs_utils.sh"
@@ -143,8 +141,7 @@ for system in ${selected_systems}; do
    # shellcheck disable=SC2076
    if [[ " ${supported_systems[*]} " =~ " ${system} " ]]; then
       (( system_count += 1 ))
-      build_list_name="${system}_builds"
-      for build in ${!build_list_name}; do
+      for build in ${system_builds[@]}; do
          builds["${build}"]="yes"
       done
    else
