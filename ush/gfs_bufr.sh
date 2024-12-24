@@ -21,7 +21,9 @@
 # 2024-08-08 Bo Cui: Update to handle one forecast at a time
 # echo "History: February 2003 - First implementation of this utility script"
 #
-set -x
+
+source "${USHgfs}/preamble.sh"
+
 fhr="${1}"
 fhr_p="${2}"
 FINT="${3}"
