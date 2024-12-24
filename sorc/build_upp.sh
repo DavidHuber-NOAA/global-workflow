@@ -32,6 +32,7 @@ fi
 if ! command -v cmake >& /dev/null; then
    export COMPILER="intel"
    if [[ -z ${HOMEgfs+x} ]]; then
+      # shellcheck disable=SC2155
       readonly HOMEgfs=$(cd "$(dirname "$(readlink -f -n "${BASH_SOURCE[0]}" )" )/.." && pwd -P)
    fi
    source "${HOMEgfs}/ush/detect_machine.sh"
