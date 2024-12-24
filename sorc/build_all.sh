@@ -141,7 +141,7 @@ for system in ${selected_systems}; do
    # shellcheck disable=SC2076
    if [[ " ${supported_systems[*]} " =~ " ${system} " ]]; then
       (( system_count += 1 ))
-      for build in ${system_builds[@]}; do
+      for build in ${system_builds["${system}"]}; do
          builds["${build}"]="yes"
       done
    else
