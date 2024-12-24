@@ -29,6 +29,7 @@ rocoto_verbose_opt=""
 verbose="NO"
 build_xml="build.xml"
 build_db="build.db"
+build_lock_db="build_lock.db"
 
 OPTIND=1
 while getopts ":hA:v" option; do
@@ -64,7 +65,7 @@ HOMEgfs=$(cd "$(dirname "$(readlink -f -n "${BASH_SOURCE[0]}" )" )/.." && pwd -P
 cd "${HOMEgfs}/sorc" || exit 1
 
 # Delete the rocoto XML and database if they exist
-rm -f "${build_xml}" "${build_db}"
+rm -f "${build_xml}" "${build_db}" "${build_lock_db}"
 
 echo "Sourcing global-workflow modules ..."
 source "${HOMEgfs}/workflow/gw_setup.sh"
