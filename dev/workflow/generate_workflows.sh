@@ -12,69 +12,90 @@ function _usage() {
           or
           RUNTESTS=/path/to/RUNTESTS generate_workflows.sh [OPTIONS]
 
-    -H Root directory of the global workflow.
+    -H, --home ROOT_DIR
+       Root directory of the global workflow.
        If not specified, then the directory is assumed to be one parent
        directory up from this script's residing directory.
 
-    -b Run build_all.sh with default flags
+    -b, --build
+       Run build_all.sh with default flags
        (build the UFS, UPP, UFS_Utils, and GFS-utils only)
 
-    -u Update submodules before building and/or generating experiments.
+    -B, --build-compute
+       Run build_compute.sh instead of build_all.sh
+       (build on compute nodes instead of login nodes)
 
-    -y "list of YAMLs to run"
+    -L, --skip-link
+       Skip running link_workflow.sh
+       (useful if workflow is already linked)
+
+    -u, --update-submods
+       Update submodules before building and/or generating experiments.
+
+    -y, --yaml "list of YAMLs to run"
        If this option is not specified, the default case (C48_ATM) will be
        run.  This option is incompatible with -G, -E, or -S.
        Example: -y "C48_ATM C48_S2SW C96C48_hybatmDA"
 
-    -D Delete the RUNTESTS and DATAROOT directories if they already exist
+    -D, --delete
+       Delete the RUNTESTS and DATAROOT directories if they already exist
 
-    -Y /path/to/directory/with/YAMLs
+    -Y, --yaml-dir /path/to/directory/with/YAMLs
        If this option is not specified, then the \${HOMEgfs}/dev/ci/cases/pr
        directory is used.
 
-    -G Run all valid GFS cases in the specified YAML directory.
+    -G, --gfs
+       Run all valid GFS cases in the specified YAML directory.
        If -b is specified, then the GSI and GDASApp will also be
        built via build_all.sh.
        Note that these builds are disabled on some systems, which
        will result in a warning from build_all.sh.
 
-    -E Run all valid GEFS cases in the specified YAML directory.
+    -E, --gefs
+       Run all valid GEFS cases in the specified YAML directory.
        If -b is specified, then "-w" will be passed to build_all.sh.
 
-    -S Run all valid SFS cases in the specified YAML directory.
+    -S, --sfs
+       Run all valid SFS cases in the specified YAML directory.
 
-    -C Run all valid GCAFS cases in the specified YAML directory.
+    -C, --gcafs
+       Run all valid GCAFS cases in the specified YAML directory.
 
     NOTES on -G, -E, -S and -C:
          - Valid cases are determined by the experiment:system key as
            well as the skip_ci_on_hosts list in each YAML.
 
-    -A "HPC account name"  Set the HPC account name.
-       If this is not set, the default in
-       \$HOMEgfs/dev/ci/platform/config.\$machine
-       will be used.
+    -A, --account "HPC account name" [REQUIRED]
+       Set the HPC account name.
 
-    -c Append the chosen set of tests to your existing crontab
+    -c, --cron
+       Append the chosen set of tests to your existing crontab
        If this option is not chosen, the new entries that would have been
        written to your crontab will be printed to stdout.
        NOTES:
           - For Orion/Hercules, this option will not work unless run on
             the [orion|hercules]-login-1 head node.
 
-    -e "your@email.com" Email address to place in the crontab.
+    -e, --email "your@email.com"
+       Email address to place in the crontab.
        If this option is not specified, then the existing email address in
        the crontab will be preserved.
 
-    -t Add a 'tag' to the end of the case names in the pslots to distinguish
+    -t, --tag TAG
+       Add a 'tag' to the end of the case names in the pslots to distinguish
        pslots between multiple sets of tests.
 
-    -v Verbose mode.  Prints output of all commands to stdout.
+    -v, --verbose
+       Verbose mode.  Prints output of all commands to stdout.
 
-    -V Very verbose mode.  Passes -v to all commands and prints to stdout.
+    -V, --very-verbose
+       Very verbose mode.  Passes -v to all commands and prints to stdout.
 
-    -d Debug mode.  Same as -V but also enables logging (set -x).
+    -d, --debug
+       Debug mode.  Same as -V but also enables logging (set -x).
 
-    -h Display this message.
+    -h, --help
+       Display this message.
 EOF
 }
 
@@ -84,6 +105,8 @@ set -eu
 HOMEgfs=""
 _specified_home=false
 _build=false
+_build_compute=false
+_skip_link_workflow=false
 _build_flags=""
 _update_submods=false
 declare -a _yaml_list=("C48_ATM")
@@ -109,69 +132,149 @@ _runtests="${RUNTESTS:-${_runtests:-}}"
 _auto_del=false
 _nonflag_option_count=0
 
-while [[ $# -gt 0 && "$1" != "--" ]]; do
-   while getopts ":H:bDuy:Y:GESCA:ce:t:vVdh" option; do
-      case "${option}" in
-        H)
-           HOMEgfs="${OPTARG}"
-           _specified_home=true
-           if [[ ! -d "${HOMEgfs}" ]]; then
-              echo "Specified HOMEgfs directory (${HOMEgfs}) does not exist"
-              exit 1
-           fi
-           ;;
-        b) _build=true ;;
-        D) _auto_del=true ;;
-        u) _update_submods=true ;;
-        y) # Start over with an empty _yaml_list
-           declare -a _yaml_list=()
-           for _yaml in ${OPTARG}; do
-              # Strip .yaml from the end of each and append to _yaml_list
-              _yaml_list+=("${_yaml//.yaml/}")
-           done
-           _specified_yaml_list=true
-           ;;
-        Y) _yaml_dir="${OPTARG}" && _specified_yaml_dir=true ;;
-        G) _run_all_gfs=true ;;
-        E) _run_all_gefs=true ;;
-        S) _run_all_sfs=true ;;
-        C) _run_all_gcafs=true ;;
-        c) _update_cron=true ;;
-        e) _email="${OPTARG}" && _set_email=true ;;
-        t) _tag="_${OPTARG}" ;;
-        v) _verbose=true ;;
-        V) _very_verbose=true && _verbose=true && _verbose_flag="-v" ;;
-        A) _set_account=true && _hpc_account="${OPTARG}" ;;
-        d) _debug=true && _very_verbose=true && _verbose=true && _verbose_flag="-v" && PS4='${LINENO}: ' ;;
-        h) _usage && exit 0 ;;
-        :)
-          echo "[${BASH_SOURCE[0]}]: ${option} requires an argument"
-          _usage
-          exit 1
-          ;;
+# Parse command line arguments using getopt for long option support
+TEMP=$(getopt -o 'H:bBLDuy:Y:GESCA:ce:t:vVdh' \
+       --long 'home:,build,build-compute,skip-link,delete,update-submods,yaml:,yaml-dir:,gfs,gefs,sfs,gcafs,account:,cron,email:,tag:,verbose,very-verbose,debug,help' \
+       -n 'generate_workflows.sh' -- "$@")
+
+if [[ $? != 0 ]]; then
+    echo "Failed to parse command line options" >&2
+    _usage
+    exit 1
+fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+
+while true; do
+    case "$1" in
+        -H|--home)
+            HOMEgfs="$2"
+            _specified_home=true
+            if [[ ! -d "${HOMEgfs}" ]]; then
+                echo "Specified HOMEgfs directory (${HOMEgfs}) does not exist"
+                exit 1
+            fi
+            shift 2
+            ;;
+        -b|--build)
+            _build=true
+            shift
+            ;;
+        -B|--build-compute)
+            _build_compute=true
+            shift
+            ;;
+        -L|--skip-link)
+            _skip_link_workflow=true
+            shift
+            ;;
+        -D|--delete)
+            _auto_del=true
+            shift
+            ;;
+        -u|--update-submods)
+            _update_submods=true
+            shift
+            ;;
+        -y|--yaml)
+            # Start over with an empty _yaml_list
+            declare -a _yaml_list=()
+            for _yaml in $2; do
+                # Strip .yaml from the end of each and append to _yaml_list
+                _yaml_list+=("${_yaml//.yaml/}")
+            done
+            _specified_yaml_list=true
+            shift 2
+            ;;
+        -Y|--yaml-dir)
+            _yaml_dir="$2"
+            _specified_yaml_dir=true
+            shift 2
+            ;;
+        -G|--gfs)
+            _run_all_gfs=true
+            shift
+            ;;
+        -E|--gefs)
+            _run_all_gefs=true
+            shift
+            ;;
+        -S|--sfs)
+            _run_all_sfs=true
+            shift
+            ;;
+        -C|--gcafs)
+            _run_all_gcafs=true
+            shift
+            ;;
+        -A|--account)
+            _set_account=true
+            _hpc_account="$2"
+            shift 2
+            ;;
+        -c|--cron)
+            _update_cron=true
+            shift
+            ;;
+        -e|--email)
+            _email="$2"
+            _set_email=true
+            shift 2
+            ;;
+        -t|--tag)
+            _tag="_$2"
+            shift 2
+            ;;
+        -v|--verbose)
+            _verbose=true
+            shift
+            ;;
+        -V|--very-verbose)
+            _very_verbose=true
+            _verbose=true
+            _verbose_flag="-v"
+            shift
+            ;;
+        -d|--debug)
+            _debug=true
+            _very_verbose=true
+            _verbose=true
+            _verbose_flag="-v"
+            PS4='${LINENO}: '
+            shift
+            ;;
+        -h|--help)
+            _usage
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
         *)
-          echo "[${BASH_SOURCE[0]}]: Unrecognized option: ${option}"
-          _usage
-          exit 1
-          ;;
-      esac
-   done
-
-   if [[ ${OPTIND:-0} -gt 0 ]]; then
-      shift $((OPTIND-1))
-   fi
-
-   while [[ $# -gt 0 && ! "$1" =~ ^- ]]; do
-      _runtests=${1}
-      (( _nonflag_option_count += 1 ))
-      if [[ ${_nonflag_option_count} -gt 1 ]]; then
-         echo "Too many arguments specified."
-         _usage
-         exit 2
-      fi
-      shift
-   done
+            echo "Internal error parsing options!" >&2
+            exit 1
+            ;;
+    esac
 done
+
+# Handle remaining positional arguments (RUNTESTS path)
+if [[ $# -gt 1 ]]; then
+    echo "Too many arguments specified."
+    _usage
+    exit 2
+elif [[ $# -eq 1 ]]; then
+    _runtests="$1"
+fi
+
+# Validate required options
+if [[ "${_set_account}" == "false" ]]; then
+   echo "ERROR: The -A (HPC account) option is required."
+   echo "Please specify an HPC account name with -A \"account_name\""
+   _usage
+   exit 1
+fi
 
 function send_email() {
    # Send an email to $_email.
@@ -440,28 +543,41 @@ EOM
 fi
 
 # Build the system if requested
-if [[ "${_build}" == "true" ]]; then
-   printf "Building via build_all.sh %s\n\n" "${_build_flags}"
-   # Let the output of build_all.sh go to stdout regardless of verbose options
-   #shellcheck disable=SC2086,SC2248
-   ${HOMEgfs}/sorc/build_all.sh ${_verbose_flag} ${_build_flags}
+if [[ "${_build}" == "true" || "${_build_compute}" == "true" ]]; then
+   if [[ "${_build_compute}" == "true" ]]; then
+      printf "Building via build_compute.sh %s\n\n" "${_build_flags}"
+      # build_compute.sh requires -A option, which we already validated above
+      #shellcheck disable=SC2086,SC2248
+      ${HOMEgfs}/sorc/build_compute.sh ${_verbose_flag} -A "${_hpc_account}" ${_build_flags}
+   else
+      printf "Building via build_all.sh %s\n\n" "${_build_flags}"
+      # Let the output of build_all.sh go to stdout regardless of verbose options
+      #shellcheck disable=SC2086,SC2248
+      ${HOMEgfs}/sorc/build_all.sh ${_verbose_flag} ${_build_flags}
+   fi
 fi
 
 # Link the workflow silently unless there's an error
-if [[ "${_verbose}" == true ]]; then
-    printf "Linking the workflow\n\n"
-fi
-if ! "${HOMEgfs}/sorc/link_workflow.sh" >& stdout; then
-   cat stdout
-   echo "link_workflow.sh failed!"
-   if [[ "${_set_email}" == true ]]; then
-      _stdout=$(cat stdout)
-      send_email "link_workflow.sh failed with the message"$'\n'"${_stdout}"
+if [[ "${_skip_link_workflow}" == "true" ]]; then
+   if [[ "${_verbose}" == true ]]; then
+      printf "Skipping link_workflow.sh (requested via -L option)\n\n"
+   fi
+else
+   if [[ "${_verbose}" == true ]]; then
+       printf "Linking the workflow\n\n"
+   fi
+   if ! "${HOMEgfs}/sorc/link_workflow.sh" >& stdout; then
+      cat stdout
+      echo "link_workflow.sh failed!"
+      if [[ "${_set_email}" == true ]]; then
+         _stdout=$(cat stdout)
+         send_email "link_workflow.sh failed with the message"$'\n'"${_stdout}"
+      fi
+      rm -f stdout
+      exit 9
    fi
    rm -f stdout
-   exit 9
 fi
-rm -f stdout
 
 # Configure the environment for running create_experiment.py
 if [[ "${_verbose}" == true ]]; then
@@ -553,6 +669,9 @@ for _case in "${_yaml_list[@]}"; do
       fi
 
       if [[ -d "${_dataroot}" ]]; then
+         echo "DATAROOT directory ${_dataroot} still exists and must be removed before continuing."
+         echo "Use the -D option to automatically delete RUNTESTS and DATAROOT directories,"
+         echo "or manually remove the directory and run the script again."
          echo "Exiting!"
          exit 16
       fi
