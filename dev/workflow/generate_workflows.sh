@@ -133,18 +133,16 @@ _auto_del=false
 _nonflag_option_count=0
 
 # Parse command line arguments using getopt for long option support
-TEMP=$(getopt -o 'H:bBLDuy:Y:GESCA:ce:t:vVdh' \
+if ! TEMP=$(getopt -o 'H:bBLDuy:Y:GESCA:ce:t:vVdh' \
        --long 'home:,build,build-compute,skip-link,delete,update-submods,yaml:,yaml-dir:,gfs,gefs,sfs,gcafs,account:,cron,email:,tag:,verbose,very-verbose,debug,help' \
-       -n 'generate_workflows.sh' -- "$@")
-
-if [[ $? != 0 ]]; then
+       -n 'generate_workflows.sh' -- "$@"); then
     echo "Failed to parse command line options" >&2
     _usage
     exit 1
 fi
 
 # Note the quotes around `$TEMP': they are essential!
-eval set -- "$TEMP"
+eval set -- "${TEMP}"
 
 while true; do
     case "$1" in

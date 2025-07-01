@@ -184,3 +184,4 @@ versions/run.ver
 
 # jcb checkout and symlinks
 ush/python/jcb
+stdout
