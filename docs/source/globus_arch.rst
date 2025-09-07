@@ -38,7 +38,8 @@ Note that the globus connection stays active for 7 days.  If your experiment fai
 
 For some users, the new system, Mercury, occassionally fails to add all necessary permissions necessary to run globus transfers.  If you receive an error about needing to add ``data_access`` in the logs, then login to Mercury and execute
 
-.. code-block::
+.. code-block:: bash
+
     module load globus-cli
     globus session update --all
     # Get the host UUID

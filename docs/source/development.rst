@@ -82,7 +82,7 @@ The commonly run tests are written in YAML format and can be found in the ``dev/
 
 ::
 
-    cd workflow
+    cd dev/workflow
     ./generate_workflows.sh -A "your_hpc_account" -b -G -c /path/to/root/directory
 
 where:

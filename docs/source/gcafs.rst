@@ -10,7 +10,7 @@ with interactive aerosol and atmospheric chemistry capabilities. It provides a u
 for predicting the evolution of atmospheric composition alongside traditional weather variables.
 
 Key Features
------------
+------------
 
 * Interactive GOCART aerosol module for forecasting dust, sea salt, sulfate, black carbon, and organic carbon
 * Optional full atmospheric chemistry with gas-phase and heterogeneous reactions
@@ -19,7 +19,7 @@ Key Features
 * Optional aerosol data assimilation
 
 Running GCAFS
-------------
+-------------
 
 GCAFS can be run using the global-workflow framework. To set up a free-forecast GCAFS experiment:
 
@@ -48,7 +48,7 @@ HPSS archive or a location stored on disk). The aerosol analysis is optional and
 `USE_AERO_ANL` to be "YES"
 
 GCAFS Workflow
--------------
+--------------
 
 The GCAFS workflow includes these main tasks:
 
@@ -79,41 +79,45 @@ This task performs several important functions:
 
 The task is implemented in ``ush/python/pygfs/task/aero_emissions.py`` as the ``AerosolEmissions`` class.
 
-### Detailed Workflow
+Detailed Workflow
+^^^^^^^^^^^^^^^^^
 
 When the ``prep_emissions`` task runs, it follows these steps:
 
 1. **Initialization**:
-   ```python
-   def initialize(self):
-       # Parse the YAML template for chemistry emissions
-       yaml_template = os.path.join(self.task_config.HOMEgfs, 'parm/chem/chem_emission.yaml.j2')
-       yamlvars = parse_j2yaml(path=yaml_template)
-       self.task_config.append(yamlvars)
-   ```
+
+   .. code-block:: python
+
+      def initialize(self):
+          # Parse the YAML template for chemistry emissions
+          yaml_template = os.path.join(self.task_config.HOMEgfs, 'parm/chem/chem_emission.yaml.j2')
+          yamlvars = parse_j2yaml(path=yaml_template)
+          self.task_config.append(yamlvars)
 
    This loads the base configuration template and merges it with the task configuration.
 
-
 2. **Historical Fire Emission Handling**:
-   ```python
-   if self.task_config.fire_emissions == 'historical':
-       # Handle historical fire emissions
-       self.task_config.fire_emissions = 'historical'
-       self.task_config.fire_emissions_file = os.path.join(self.task_config.HOMEgfs, 'parm/chem/historical_fire_emissions.txt')
-   ```
+
+   .. code-block:: python
+
+      if self.task_config.fire_emissions == 'historical':
+          # Handle historical fire emissions
+          self.task_config.fire_emissions = 'historical'
+          self.task_config.fire_emissions_file = os.path.join(self.task_config.HOMEgfs, 'parm/chem/historical_fire_emissions.txt')
 
    This sets up the task to use historical fire emissions data if specified.
 
 3. **Fire Emission Configuration**:
-   ```python
-   if self.task_config.fire_emissions == 'qfed':
-       # Configure QFED emissions
-       self.task_config.fire_emissions = 'qfed'
-       self.task_config.fire_emissions_file = os.path.join(self.task_config.HOMEgfs, 'parm/chem/qfed_fire_emissions.txt')
-   ```
+
+   .. code-block:: python
+
+      if self.task_config.fire_emissions == 'qfed':
+          # Configure QFED emissions
+          self.task_config.fire_emissions = 'qfed'
+          self.task_config.fire_emissions_file = os.path.join(self.task_config.HOMEgfs, 'parm/chem/qfed_fire_emissions.txt')
 
    This sets up the task to use QFED emissions data if specified.
+
 GOCART Configuration Files
 --------------------------
 
@@ -122,7 +126,7 @@ The GOCART aerosol module in GCAFS is configured through a set of resource (.rc)
 and diagnostics. The key configuration files include:
 
 Core Configuration
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 - **AERO.rc**: Core aerosol module configuration with grid resolution settings
 - **AGCM.rc**: Atmospheric model interface configuration
@@ -130,7 +134,7 @@ Core Configuration
 - **GOCART2G_GridComp.rc**: Defines active aerosol species instances (DU, SS, SU, CA, NI)
 
 Aerosol Species Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Each aerosol species has its own configuration file with specific parameters:
 
@@ -142,7 +146,7 @@ Each aerosol species has its own configuration file with specific parameters:
 - **NI2G_instance_NI.rc**: Nitrate aerosol specification (optional species)
 
 Output and Diagnostics
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 - **AERO_HISTORY.rc**: Controls aerosol output diagnostics including:
   - Aerosol concentrations (inst_du_ss, inst_ca, inst_ni, inst_su)
@@ -154,7 +158,7 @@ The frequency parameters for output are specified as variables (e.g., ``@[inst_a
 are replaced at runtime with values from the workflow configuration.
 
 Emissions Configuration
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 External data sources for emissions are configured in:
 
@@ -167,7 +171,7 @@ To modify the aerosol configuration, edit these files or create custom versions 
 directory. The file ``gocart_tracer.list`` defines the complete set of aerosol tracers used in the model.
 
 ExtData File Format Details
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ExtData configuration files specify how external data sources are imported into the model. Each entry follows this format:
 
@@ -205,7 +209,7 @@ This imports SO2 emissions from QFED into the SU_BIOMASS variable, using a scale
 
 
 AERO_HISTORY.rc File Details
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The AERO_HISTORY.rc file controls all diagnostic outputs from the aerosol module. It defines:
 
