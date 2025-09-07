@@ -78,19 +78,102 @@ Continuous Integration (CI)
 
 The global workflow comes fitted with a suite of system tests that run various types of workflow.  These tests are commonly run for pull requests before they may be merged into the develop branch.  At a minimum, developers are expected to run the CI test(s) that will be impacted by their changes on at least one platform.
 
-The commonly run tests are written in YAML format and can be found in the ``dev/ci/cases/pr`` directory.  The ``dev/workflow/generate_workflows.sh`` tool is available to aid running these cases.  See the help documentation by running ``./generate_workflows.sh -h``.  The script has the capability to prepare the EXPDIR and COMROOT directories for a specified or implied suite of CI tests (see :doc:`setup` for details on these directories).  The script also has options to automatically build and run all tests for a given system (i.e. GFS, GEFS or SFS).  For instance, to build the workflow and run all of the GFS tests, one would execute
+---------------------------
+Continuous Integration (CI)
+---------------------------
+
+The global workflow comes fitted with a suite of system tests that run various types of workflow.  These tests are commonly run for pull requests before they may be merged into the develop branch.  At a minimum, developers are expected to run the CI test(s) that will be impacted by their changes on at least one platform.
+
+Testing with generate_workflows.sh
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The commonly run tests are written in YAML format and can be found in the ``dev/ci/cases/pr`` directory.  The ``dev/workflow/generate_workflows.sh`` tool is available to aid running these cases.  See the help documentation by running ``./generate_workflows.sh -h``.  
+
+**Key Features:**
+
+* Automated experiment setup from YAML test cases
+* Support for building workflow components before testing  
+* Batch processing of multiple test configurations
+* Automatic crontab integration for continuous testing
+* System-specific test suites (GFS, GEFS, SFS, GCAFS)
+
+**Basic Usage:**
 
 ::
 
     cd dev/workflow
     ./generate_workflows.sh -A "your_hpc_account" -b -G -c /path/to/root/directory
 
-where:
+**Common Options:**
 
     * ``-A`` is used to specify the HPC (slurm or PBS) account to use
-    * ``-b`` indicates that the workflow should be built fresh
+    * ``-b`` indicates that the workflow should be built fresh (runs build_all.sh)
     * ``-G`` specifies that all of the GFS cases should be run (this also influences the build flags to use)
+    * ``-E`` specifies that all of the GEFS cases should be run
+    * ``-S`` specifies that all of the SFS cases should be run  
+    * ``-C`` specifies that all of the GCAFS cases should be run
     * ``-c`` tells the tool to append the rocotorun commands for each experiment to your crontab
+    * ``-y`` allows specification of individual YAML files to run
+    * ``-Y`` allows specification of a custom YAML directory
+    * ``-u`` updates submodules before building
+    * ``-t`` adds a tag to experiment names for identification
+
+**Environment Setup:**
+
+The script requires certain environment variables and uses the RUNTESTS directory structure:
+
+::
+
+    export RUNTESTS="/path/to/test/area"
+    source dev/ush/gw_setup.sh
+    cd dev/workflow
+
+**Examples:**
+
+Run all GFS tests with fresh build:
+
+::
+
+    ./generate_workflows.sh -A "my_account" -b -G -c ${RUNTESTS}
+
+Run specific test cases:
+
+::
+
+    ./generate_workflows.sh -A "my_account" -y "C48_ATM C96_ATM" -c ${RUNTESTS}
+
+Run tests from custom directory with tag:
+
+::
+
+    ./generate_workflows.sh -A "my_account" -Y "/path/to/custom/yamls" -t "mybranch" -c ${RUNTESTS}
+
+**Test Case Structure:**
+
+Test cases are defined in YAML files with the following typical structure:
+
+.. code-block:: yaml
+
+   experiment:
+     net: "gfs"
+     mode: "cycled"
+   
+   arguments:
+     pslot: "C48_ATM"  
+     idate: "2021032312"
+     edate: "2021032400"
+     resdetatmos: "C48"
+     
+**TODO Items:**
+
+.. note::
+   **TODO**: Additional documentation needed for:
+   
+   - Custom test case development and YAML syntax
+   - Integration with platform-specific testing requirements
+   - Debugging failed test cases and common troubleshooting steps
+   - Performance optimization for large test suites
+   - Advanced scripting with generate_workflows.sh options
 
 More details on how to use the tool are provided by running ``generate_workflows.sh -h``.
 

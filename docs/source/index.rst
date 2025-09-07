@@ -34,15 +34,15 @@ Table of Contents
    :numbered:
    :maxdepth: 3
 
+   run.rst
    development.rst
    components.rst
    jobs.rst
    hpc.rst
    output.rst
-   run.rst
    wave.rst
-   noaa_csp.rst
-   errors_faq.rst
-   globus_arch.rst
-   configure.rst
    gcafs.rst
+   noaa_csp.rst
+   globus_arch.rst
+   errors_faq.rst
+   configure.rst

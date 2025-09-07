@@ -1,4 +1,4 @@
-.. _experiment-setup:
+.. _globus-setup:
 
 =================================
 Setup Globus Connections for HPSS

@@ -29,8 +29,10 @@ GCAFS can be run using the global-workflow framework. To set up a free-forecast 
                 --idate 2023010100 --edate 2023010100 \
                 --resdetatmos 384 --comroot /path/to/com --expdir /path/to/exp
 
-Configuration is managed through the standard global-workflow configuration files. GCAFS-specific
-settings are documented in :doc:`gcafs_config`.
+Configuration is managed through the standard global-workflow configuration files. 
+
+.. note::
+   **TODO**: Add detailed documentation for GCAFS-specific configuration options and parameters.
 
 After setting up the experiment, build the workflow XML and launch it:
 
@@ -60,7 +62,7 @@ The GCAFS workflow includes these main tasks:
 6. **arch_vrfy** and **arch_tars** - Archive verification data and create tarballs
 
 The workflow is managed by the Rocoto workflow manager, with tasks defined in the
-``workflow/rocoto/gcafs_tasks.py`` file.
+``dev/workflow/rocoto/gcafs_tasks.py`` file.
 
 Emissions Preprocessing
 -----------------------

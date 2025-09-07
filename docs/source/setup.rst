@@ -4,9 +4,20 @@
 Experiment Setup
 ================
 
- Global workflow uses a set of scripts to help configure and set up the drivers (also referred to as Workflow Manager) that run the end-to-end system. While currently we use a `ROCOTO <https://github.com/christopherwharrop/rocoto/wiki/documentation>`__ based system and that is documented here, an `ecFlow <https://www.ecmwf.int/en/learning/training/introduction-ecmwf-job-scheduler-ecflow>`__ based systm is also under development and will be introduced to the Global Workflow when it is mature. To run the setup scripts, you need to have rocoto and a python3 environment with several specific libraries. The easiest way to guarantee this is to source the following script, which will load the necessary modules for your machine:
+Global workflow uses a set of scripts to help configure and set up the drivers (also referred to as Workflow Manager) that run the end-to-end system. While currently we use a `ROCOTO <https://github.com/christopherwharrop/rocoto/wiki/documentation>`__ based system and that is documented here, an `ecFlow <https://www.ecmwf.int/en/learning/training/introduction-ecmwf-job-scheduler-ecflow>`__ based system is also under development and will be introduced to the Global Workflow when it is mature. 
 
- ::
+This document covers two primary workflows:
+
+1. **User Workflow**: For operational users running experiments on tier 1 platforms
+2. **Developer Workflow**: For developers running tests and contributing to the codebase
+
+=============================
+Environment Setup (Required)
+=============================
+
+To run the setup scripts, you need to have rocoto and a python3 environment with several specific libraries. The easiest way to guarantee this is to source the following script, which will load the necessary modules for your machine:
+
+::
 
    source dev/ush/gw_setup.sh
 
@@ -16,10 +27,32 @@ Experiment Setup
 .. note::
    Bash shell is required to source gw_setup.sh
 
-Scripts that will be used:
+=======================
+User Workflow Overview
+=======================
 
-   * ``dev/workflow/setup_expt.py``
-   * ``dev/workflow/setup_xml.py``
+For operational users running experiments, the primary scripts are:
+
+   * ``dev/workflow/setup_expt.py`` - Creates experiment directory and configuration
+   * ``dev/workflow/setup_xml.py`` - Generates workflow XML files for Rocoto
+
+============================
+Developer Workflow Overview  
+============================
+
+For developers running tests and contributing code, additional tools are available:
+
+   * ``dev/workflow/generate_workflows.sh`` - Automated test suite runner and experiment generator
+   * ``dev/workflow/create_experiment.py`` - Programmatic experiment creation from YAML files
+
+.. note::
+   Developers should see :doc:`development` for detailed information on running tests with ``generate_workflows.sh``.
+
+.. _user-setup:
+
+=======================
+User Experiment Setup
+=======================
 
 ****************************************
 Step 1: Set user settings
@@ -167,3 +200,108 @@ Step 5: Confirm files from setup scripts
 ****************************************
 
 You will now have a rocoto xml file in your ``$EXPDIR`` (``$PSLOT.xml``) and a crontab file generated for your use. Rocoto uses CRON as the scheduler. If you do not have a crontab file you may not have had the rocoto module loaded. To fix this load a rocoto module and then rerun setup_xml.py script again. Follow directions for setting up the rocoto cron on the platform the experiment is going to run on.
+
+.. _developer-setup:
+
+===========================
+Developer Experiment Setup
+===========================
+
+For developers who need to run tests or create experiments programmatically, the global workflow provides additional tools beyond the basic user workflow.
+
+.. _create-experiment:
+
+**********************************
+Using create_experiment.py Script
+**********************************
+
+The ``dev/workflow/create_experiment.py`` script provides a programmatic way to create experiments from YAML configuration files. This script is particularly useful for:
+
+- Automated testing and CI/CD workflows
+- Batch creation of multiple experiments
+- Integration with other workflow management tools
+
+**Basic Usage:**
+
+::
+
+   cd dev/workflow
+   ./create_experiment.py --yaml /path/to/experiment.yaml [--overwrite]
+
+**Required Environment Variables:**
+
+The script requires the following environment variables to be set:
+
+- ``RUNTESTS``: Root directory where the test EXPDIR and COMROOT will be placed
+- ``HOMEgfs``: Path to the global-workflow repository (automatically detected from script location)
+
+**YAML Configuration Format:**
+
+The YAML configuration file should contain experiment parameters in the following structure:
+
+.. code-block:: yaml
+
+   experiment:
+     net: "gfs"  # or "gefs", "sfs", "gcafs"
+     mode: "cycled"  # or "forecast-only"
+   
+   arguments:
+     pslot: "test_experiment"
+     idate: "2023010100"
+     edate: "2023010200"
+     resdetatmos: "C48"
+     comroot: "${RUNTESTS}/COM"
+     expdir: "${RUNTESTS}/EXPDIR"
+
+**Options:**
+
+- ``--yaml``: Path to the YAML configuration file (required)
+- ``--overwrite``: Overwrite existing experiment directory if it exists
+- ``--help``: Display help information
+
+**Example:**
+
+::
+
+   # Set up environment
+   export RUNTESTS="/path/to/test/area"
+   source dev/ush/gw_setup.sh
+   
+   # Create experiment from YAML
+   cd dev/workflow
+   ./create_experiment.py --yaml ../ci/cases/pr/C48_ATM.yaml --overwrite
+
+The script automatically calls both ``setup_expt.py`` and ``setup_xml.py`` in sequence, creating a complete experiment setup ready for execution.
+
+.. _generate-workflows:
+
+******************************************
+Using generate_workflows.sh for Testing
+******************************************
+
+For running the complete test suite or generating multiple experiments, developers should use the ``generate_workflows.sh`` script. This is documented in detail in :doc:`development`, but key points include:
+
+- Automated building and testing of GFS, GEFS, SFS workflows
+- Support for CI test cases in ``dev/ci/cases/pr/`` directory  
+- Integration with crontab for automated test execution
+- Batch processing of multiple YAML test configurations
+
+**Quick Example:**
+
+::
+
+   cd dev/workflow
+   ./generate_workflows.sh -A "your_hpc_account" -b -G -c /path/to/test/area
+
+This will build the workflow, run all GFS tests, and set up crontab entries.
+
+**TODO Items for Developers:**
+
+.. note::
+   **TODO**: Add more detailed documentation on:
+   
+   - Custom YAML configuration options and templates
+   - Integration with continuous integration systems
+   - Advanced testing scenarios and edge cases
+   - Host-specific configuration requirements
+   - Performance tuning for large test suites
