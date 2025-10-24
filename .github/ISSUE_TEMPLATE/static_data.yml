@@ -71,7 +71,6 @@ body:
         - "Exp Data: GOCART emissions"
         - "Exp Data: JEDI obs"
         - "Exp Data: *NEW*"
-      multiple: true
     validations:
       required: true
 
