@@ -9,8 +9,8 @@ assignees:
 body:
   - type: markdown
     attributes:
-      description: |
-        Process:
+      value: |
+        **Process:**
         - Stage data on Ursa or WCOSS2
         - Make sure permissions are set properly (global read access)
         - CMs will push data and ask for verification
@@ -23,9 +23,9 @@ body:
         - Initial conditions: ICs needed to run one of global-workflow's included tests
         - Experimental data: Temporary datasets needed for development that will be replaced by other sources for operations (e.g. data that will be in DCOM)
       options:
-        - Fix
-        - Initial conditions
-        - Experimental data
+        - label: "Fix"
+        - label: "Initial conditions"
+        - label: "Experimental data"
     validations:
       required: true
 
@@ -92,10 +92,10 @@ body:
       description: |
         ANY fix or IC change other than adding files will require at least a new version.
       options:
-        - No change needed
-        - Fix/IC version update only
-        - Fix/IC version update + additional changes
-        - Non-version changes only
+        - label: "No change needed"
+        - label: "Fix/IC version update only"
+        - label: "Fix/IC version update + additional changes"
+        - label: "Non-version changes only"
     validations:
       required: true
 
