@@ -1234,6 +1234,40 @@ class GFSTasks(Tasks):
         max_tasks = self._configs[config]['MAX_TASKS']
         resources = self.get_resource(component_dict['config'])
 
+        # Check if we have cycle-specific FHMAX values for GFS
+        use_cycle_specific = False
+        cycles = []
+        if self.run in ['gfs']:
+            # Check if any cycle-specific FHMAX values are defined
+            cycle_fhmax_defined = any([f'FHMAX_GFS_{cyc}' in self._configs[config] for cyc in ['00', '06', '12', '18']])
+            if cycle_fhmax_defined:
+                # Check if they're different from each other
+                fhmax_values = set()
+                for cyc in ['00', '06', '12', '18']:
+                    fhmax = self._get_cycle_specific_fhmax(self._configs[config], cyc)
+                    fhmax_values.add(fhmax)
+                
+                # If there are different FHMAX values, use cycle-specific tasks
+                if len(fhmax_values) > 1:
+                    use_cycle_specific = True
+                    cycles = ['00', '06', '12', '18']
+
+        if use_cycle_specific:
+            # Create cycle-specific metatasks
+            return self._create_cycle_specific_prod_tasks(component, component_dict, cycles)
+        else:
+            # Create standard metatask for all cycles
+            return self._create_standard_prod_task(component, component_dict)
+
+    def _create_standard_prod_task(self, component: str, component_dict: dict):
+        """Create standard product task that works for all cycles."""
+        config = component_dict['config']
+        history_path_tmpl = component_dict['history_path_tmpl']
+        history_file_tmpl = component_dict['history_file_tmpl']
+
+        max_tasks = self._configs[config]['MAX_TASKS']
+        resources = self.get_resource(config)
+
         fhrs = self._get_forecast_hours(self.run, self._configs[config], component)
 
         # ocean/ice components do not have fhr 0 as they are averaged output
@@ -1288,6 +1322,80 @@ class GFSTasks(Tasks):
         task = rocoto.create_task(metatask_dict)
 
         return task
+
+    def _create_cycle_specific_prod_tasks(self, component: str, component_dict: dict, cycles: list):
+        """Create cycle-specific product tasks with different forecast lengths."""
+        config = component_dict['config']
+        history_path_tmpl = component_dict['history_path_tmpl']
+        history_file_tmpl = component_dict['history_file_tmpl']
+
+        max_tasks = self._configs[config]['MAX_TASKS']
+
+        # Create a metatask that contains cycle-specific tasks
+        all_tasks = []
+        
+        for cyc in cycles:
+            # Get cycle-specific forecast hours
+            fhrs = self._get_forecast_hours_for_cycle(self.run, self._configs[config], cyc, component)
+
+            # ocean/ice components do not have fhr 0 as they are averaged output
+            if component in ['ocean', 'ice'] and 0 in fhrs:
+                fhrs.remove(0)
+
+            # Skip if no forecast hours for this cycle
+            if not fhrs:
+                continue
+
+            fhr_var_dict = self.get_grouped_fhr_dict(fhrs=fhrs, ngroups=max_tasks)
+
+            # Delay triggering ocean products task to next next forecast hour to ensure all data is available
+            if component == 'ocean':
+                fhr3_next = fhr_var_dict['fhr3_next'].split(' ')
+                fhr3_nextp1 = fhr3_next[1:]
+                fhr3_nextp1.append(fhr3_next[-1])  # repeat last forecast hour to maintain same number of groups
+                fhr_var_dict['fhr3_nextp1'] = ' '.join(fhr3_nextp1)
+
+            # Adjust walltime based on the largest group
+            resources = self.get_resource(config).copy()
+            largest_group = max([len(grp.split(',')) for grp in fhr_var_dict['fhr_list'].split(' ')])
+            resources['walltime'] = Tasks.multiply_HMS(resources['walltime'], largest_group)
+
+            postenvars = self.envars.copy()
+            postenvar_dict = {'FHR_LIST': '#fhr_list#', 'COMPONENT': component}
+            for key, value in postenvar_dict.items():
+                postenvars.append(rocoto.create_envar(name=key, value=str(value)))
+
+            history_path = self._template_to_rocoto_cycstring(self._base[history_path_tmpl])
+            deps = []
+            data = f'{history_path}/{history_file_tmpl}'
+            dep_dict = {'type': 'data', 'data': data, 'age': 120}
+            deps.append(rocoto.add_dependency(dep_dict))
+            dep_dict = {'type': 'metatask', 'name': f'{self.run}_fcst'}
+            deps.append(rocoto.add_dependency(dep_dict))
+            dependencies = rocoto.create_dependency(dep=deps, dep_condition='or')
+
+            cycledef = f'{self.run}_{cyc}'
+
+            task_name = f'{self.run}_{component}_prod_{cyc}_#fhr_label#'
+            task_dict = {'task_name': task_name,
+                         'resources': resources,
+                         'dependency': dependencies,
+                         'envars': postenvars,
+                         'cycledef': cycledef,
+                         'command': f"{self.HOMEgfs}/dev/jobs/{config}.sh",
+                         'job_name': f'{self.pslot}_{task_name}_@H',
+                         'log': f'{self.rotdir}/logs/@Y@m@d@H/{task_name}.log',
+                         'maxtries': '&MAXTRIES;'
+                         }
+
+            metatask_dict = {'task_name': f'{self.run}_{component}_prod_{cyc}',
+                             'task_dict': task_dict,
+                             'var_dict': fhr_var_dict}
+
+            cycle_task = rocoto.create_task(metatask_dict)
+            all_tasks.extend(cycle_task)
+
+        return all_tasks
 
     def wavepostsbs(self):
 
