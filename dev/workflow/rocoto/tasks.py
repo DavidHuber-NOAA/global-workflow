@@ -171,6 +171,34 @@ class Tasks:
                                              rocoto_conversion_dict.get)
 
     @staticmethod
+    def _get_cycle_specific_fhmax(config, cyc=None):
+        """
+        Get cycle-specific FHMAX_GFS value if available.
+        
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary containing FHMAX parameters
+        cyc : str, optional
+            Cycle hour (00, 06, 12, 18). If None, returns default FHMAX_GFS
+        
+        Returns
+        -------
+        int
+            Maximum forecast hour for the specified cycle
+        """
+        if cyc is None:
+            return config.get('FHMAX_GFS', 120)
+        
+        # Check for cycle-specific FHMAX (e.g., FHMAX_GFS_00, FHMAX_GFS_12)
+        cycle_fhmax_key = f'FHMAX_GFS_{cyc}'
+        if cycle_fhmax_key in config:
+            return config[cycle_fhmax_key]
+        
+        # Fall back to default FHMAX_GFS
+        return config.get('FHMAX_GFS', 120)
+
+    @staticmethod
     def _get_forecast_hours(run, config, component='atmos') -> List[str]:
         # Make a local copy of the config to avoid modifying the original
         local_config = config.copy()
@@ -211,6 +239,38 @@ class Tasks:
             fhrs = list(fhrs_hf) + list(range(fhrs_hf[-1] + fhout, fhmax + fhout, fhout))
 
         return fhrs
+
+    @staticmethod
+    def _get_forecast_hours_for_cycle(run, config, cyc, component='atmos') -> List[str]:
+        """
+        Get forecast hours for a specific cycle, using cycle-specific FHMAX if available.
+        
+        Parameters
+        ----------
+        run : str
+            Run name (gfs, gdas, etc.)
+        config : dict
+            Configuration dictionary
+        cyc : str
+            Cycle hour (00, 06, 12, 18)
+        component : str, optional
+            Component name (atmos, ocean, ice, wave)
+        
+        Returns
+        -------
+        List[str]
+            List of forecast hours for the specified cycle
+        """
+        # Make a local copy of the config to avoid modifying the original
+        local_config = config.copy()
+        
+        # Get cycle-specific FHMAX if available
+        if run in ['gfs', 'gefs', 'sfs', 'gcafs']:
+            cycle_fhmax = Tasks._get_cycle_specific_fhmax(config, cyc)
+            local_config['FHMAX_GFS'] = cycle_fhmax
+        
+        # Use the standard method to get forecast hours with the updated config
+        return Tasks._get_forecast_hours(run, local_config, component)
 
     @staticmethod
     def get_job_groups(fhrs: List[int], ngroups: int, breakpoints: List[int] = None) -> List[dict]:

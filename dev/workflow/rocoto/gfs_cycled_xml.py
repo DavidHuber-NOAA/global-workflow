@@ -79,6 +79,28 @@ class GFSCycledRocotoXML(RocotoXML):
             interval_gfs_str = timedelta_to_HMS(interval_gfs)
             strings.append(f'\t<cycledef group="gfs">{sdate_gfs_str} {edate_gfs_str} {interval_gfs_str}</cycledef>')
 
+            # Create cycle-specific cycledefs for GFS (00z, 06z, 12z, 18z)
+            # This allows different forecast lengths for different cycles
+            if interval_gfs <= to_timedelta('6H'):
+                for cyc in ['00', '06', '12', '18']:
+                    # Find first occurrence of this cycle hour at or after sdate_gfs
+                    cyc_hour = int(cyc)
+                    sdate_cyc = sdate_gfs.replace(hour=cyc_hour)
+                    if sdate_cyc < sdate_gfs:
+                        # Move to next day if we're past this hour
+                        sdate_cyc = sdate_cyc + to_timedelta('24H')
+                    # Find last occurrence at or before edate_gfs
+                    edate_cyc = edate_gfs.replace(hour=cyc_hour)
+                    if edate_cyc > edate_gfs:
+                        # Move back a day if we're past the end date
+                        edate_cyc = edate_cyc - to_timedelta('24H')
+                    
+                    if sdate_cyc <= edate_cyc:
+                        sdate_cyc_str = sdate_cyc.strftime("%Y%m%d%H%M")
+                        edate_cyc_str = edate_cyc.strftime("%Y%m%d%H%M")
+                        interval_cyc_str = timedelta_to_HMS(to_timedelta('24H'))
+                        strings.append(f'\t<cycledef group="gfs_{cyc}">{sdate_cyc_str} {edate_cyc_str} {interval_cyc_str}</cycledef>')
+
             date2_gfs = sdate_gfs + interval_gfs
             date2_gfs_str = date2_gfs.strftime("%Y%m%d%H%M")
             if date2_gfs <= edate_gfs:
