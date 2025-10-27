@@ -1160,50 +1160,122 @@ class GFSTasks(Tasks):
         if upp_run not in VALID_UPP_RUN:
             raise KeyError(f"{upp_run} is invalid; UPP_RUN options are: {('|').join(VALID_UPP_RUN)}")
 
-        postenvars = self.envars.copy()
-        postenvar_dict = {'FHR3': '#fhr#',
-                          'UPP_RUN': upp_run}
-        for key, value in postenvar_dict.items():
-            postenvars.append(rocoto.create_envar(name=key, value=str(value)))
+        # Check if we have cycle-specific FHMAX values for GFS
+        use_cycle_specific = False
+        cycles = []
+        if self.run in ['gfs']:
+            # Check if any cycle-specific FHMAX values are defined
+            cycle_fhmax_defined = any([f'FHMAX_GFS_{cyc}' in self._configs['upp'] for cyc in ['00', '06', '12', '18']])
+            if cycle_fhmax_defined:
+                # Check if they're different from each other
+                fhmax_values = set()
+                for cyc in ['00', '06', '12', '18']:
+                    fhmax = self._get_cycle_specific_fhmax(self._configs['upp'], cyc)
+                    fhmax_values.add(fhmax)
+                
+                # If there are different FHMAX values, use cycle-specific tasks
+                if len(fhmax_values) > 1:
+                    use_cycle_specific = True
+                    cycles = ['00', '06', '12', '18']
 
-        atm_hist_path = self._template_to_rocoto_cycstring(self._base["COM_ATMOS_HISTORY_TMPL"])
-        deps = []
-        data = f'{atm_hist_path}/{self.run}.t@Hz.atmf#fhr#.nc'
-        dep_dict = {'type': 'data', 'data': data, 'age': 120}
-        deps.append(rocoto.add_dependency(dep_dict))
-        data = f'{atm_hist_path}/{self.run}.t@Hz.sfcf#fhr#.nc'
-        dep_dict = {'type': 'data', 'data': data, 'age': 120}
-        deps.append(rocoto.add_dependency(dep_dict))
-        data = f'{atm_hist_path}/{self.run}.t@Hz.atm.logf#fhr#.txt'
-        dep_dict = {'type': 'data', 'data': data, 'age': 60}
-        deps.append(rocoto.add_dependency(dep_dict))
-        dependencies = rocoto.create_dependency(dep=deps, dep_condition='and')
-        cycledef = 'gdas_half,gdas' if self.run in ['gdas'] else self.run
-        resources = self.get_resource('upp')
+        if use_cycle_specific:
+            # Create cycle-specific tasks
+            all_tasks = []
+            for cyc in cycles:
+                fhrs = self._get_forecast_hours_for_cycle(self.run, self._configs['upp'], cyc)
+                if not fhrs:
+                    continue
+                
+                postenvars = self.envars.copy()
+                postenvar_dict = {'FHR3': '#fhr#', 'UPP_RUN': upp_run}
+                for key, value in postenvar_dict.items():
+                    postenvars.append(rocoto.create_envar(name=key, value=str(value)))
 
-        task_name = f'{self.run}_{task_id}_f#fhr#'
-        task_dict = {'task_name': task_name,
-                     'resources': resources,
-                     'dependency': dependencies,
-                     'envars': postenvars,
-                     'cycledef': cycledef,
-                     'command': f'{self.HOMEgfs}/dev/jobs/upp.sh',
-                     'job_name': f'{self.pslot}_{task_name}_@H',
-                     'log': f'{self.rotdir}/logs/@Y@m@d@H/{task_name}.log',
-                     'maxtries': '&MAXTRIES;'
-                     }
+                atm_hist_path = self._template_to_rocoto_cycstring(self._base["COM_ATMOS_HISTORY_TMPL"])
+                deps = []
+                data = f'{atm_hist_path}/{self.run}.t@Hz.atmf#fhr#.nc'
+                dep_dict = {'type': 'data', 'data': data, 'age': 120}
+                deps.append(rocoto.add_dependency(dep_dict))
+                data = f'{atm_hist_path}/{self.run}.t@Hz.sfcf#fhr#.nc'
+                dep_dict = {'type': 'data', 'data': data, 'age': 120}
+                deps.append(rocoto.add_dependency(dep_dict))
+                data = f'{atm_hist_path}/{self.run}.t@Hz.atm.logf#fhr#.txt'
+                dep_dict = {'type': 'data', 'data': data, 'age': 60}
+                deps.append(rocoto.add_dependency(dep_dict))
+                dependencies = rocoto.create_dependency(dep=deps, dep_condition='and')
+                
+                cycledef = f'{self.run}_{cyc}'
+                resources = self.get_resource('upp')
 
-        fhrs = self._get_forecast_hours(self.run, self._configs['upp'])
-        fhr_var_dict = {'fhr': ' '.join([f"{fhr:03d}" for fhr in fhrs])}
+                task_name = f'{self.run}_{task_id}_{cyc}_f#fhr#'
+                task_dict = {'task_name': task_name,
+                             'resources': resources,
+                             'dependency': dependencies,
+                             'envars': postenvars,
+                             'cycledef': cycledef,
+                             'command': f'{self.HOMEgfs}/dev/jobs/upp.sh',
+                             'job_name': f'{self.pslot}_{task_name}_@H',
+                             'log': f'{self.rotdir}/logs/@Y@m@d@H/{task_name}.log',
+                             'maxtries': '&MAXTRIES;'
+                             }
 
-        metatask_dict = {'task_name': f'{self.run}_{task_id}',
-                         'task_dict': task_dict,
-                         'var_dict': fhr_var_dict
+                fhr_var_dict = {'fhr': ' '.join([f"{fhr:03d}" for fhr in fhrs])}
+
+                metatask_dict = {'task_name': f'{self.run}_{task_id}_{cyc}',
+                                 'task_dict': task_dict,
+                                 'var_dict': fhr_var_dict
+                                 }
+
+                cycle_task = rocoto.create_task(metatask_dict)
+                all_tasks.extend(cycle_task)
+            
+            return all_tasks
+        else:
+            # Standard implementation for all cycles
+            postenvars = self.envars.copy()
+            postenvar_dict = {'FHR3': '#fhr#',
+                              'UPP_RUN': upp_run}
+            for key, value in postenvar_dict.items():
+                postenvars.append(rocoto.create_envar(name=key, value=str(value)))
+
+            atm_hist_path = self._template_to_rocoto_cycstring(self._base["COM_ATMOS_HISTORY_TMPL"])
+            deps = []
+            data = f'{atm_hist_path}/{self.run}.t@Hz.atmf#fhr#.nc'
+            dep_dict = {'type': 'data', 'data': data, 'age': 120}
+            deps.append(rocoto.add_dependency(dep_dict))
+            data = f'{atm_hist_path}/{self.run}.t@Hz.sfcf#fhr#.nc'
+            dep_dict = {'type': 'data', 'data': data, 'age': 120}
+            deps.append(rocoto.add_dependency(dep_dict))
+            data = f'{atm_hist_path}/{self.run}.t@Hz.atm.logf#fhr#.txt'
+            dep_dict = {'type': 'data', 'data': data, 'age': 60}
+            deps.append(rocoto.add_dependency(dep_dict))
+            dependencies = rocoto.create_dependency(dep=deps, dep_condition='and')
+            cycledef = 'gdas_half,gdas' if self.run in ['gdas'] else self.run
+            resources = self.get_resource('upp')
+
+            task_name = f'{self.run}_{task_id}_f#fhr#'
+            task_dict = {'task_name': task_name,
+                         'resources': resources,
+                         'dependency': dependencies,
+                         'envars': postenvars,
+                         'cycledef': cycledef,
+                         'command': f'{self.HOMEgfs}/dev/jobs/upp.sh',
+                         'job_name': f'{self.pslot}_{task_name}_@H',
+                         'log': f'{self.rotdir}/logs/@Y@m@d@H/{task_name}.log',
+                         'maxtries': '&MAXTRIES;'
                          }
 
-        task = rocoto.create_task(metatask_dict)
+            fhrs = self._get_forecast_hours(self.run, self._configs['upp'])
+            fhr_var_dict = {'fhr': ' '.join([f"{fhr:03d}" for fhr in fhrs])}
 
-        return task
+            metatask_dict = {'task_name': f'{self.run}_{task_id}',
+                             'task_dict': task_dict,
+                             'var_dict': fhr_var_dict
+                             }
+
+            task = rocoto.create_task(metatask_dict)
+
+            return task
 
     def atmos_prod(self):
         return self._atmosoceaniceprod('atmos')
