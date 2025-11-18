@@ -12,9 +12,18 @@ export CLEANUP_COM="YES"   # NO=retain ROTDIR.  YES default in cleanup.sh
 export RMOLDSTD=144
 export RMOLDEND=24
 
+#--starting and ending hours for GEMPAK files when DO_GEMPAK=YES
+#  These define the extended retention period for GEMPAK 1.0 degree files only
+export RMOLDSTD_GEMPAK=346
+export RMOLDEND_GEMPAK=222
+
 if [[ "${DO_GEMPAK}" == "YES" && "${RUN}" == "gfs" ]]; then
-    export RMOLDSTD=346
-    export RMOLDEND=222
+    # When GEMPAK is enabled, we clean up in stages:
+    # 1. Standard cleanup (RMOLDEND to RMOLDEND_GEMPAK): Remove all non-GEMPAK data
+    # 2. GEMPAK cleanup (RMOLDEND_GEMPAK to RMOLDSTD_GEMPAK): Keep only GEMPAK files
+    # 3. Full cleanup (older than RMOLDSTD_GEMPAK): Remove everything
+    # Note: RMOLDSTD and RMOLDEND remain at standard values for non-GEMPAK data
+    :  # No action needed, variables are already set
 fi
 
 # Specify the list of files to exclude from the first stage of cleanup

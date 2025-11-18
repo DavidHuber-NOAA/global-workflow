@@ -21,9 +21,19 @@ fi
 # Step back every assim_freq hours and remove old rotating directories
 # for successful cycles (defaults from 24h to 120h).
 # Retain files needed by Fit2Obs
+# When GEMPAK is enabled, use extended retention for GEMPAK files only
 last_date=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${RMOLDEND:-24} hours")
 first_date=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${RMOLDSTD:-120} hours")
 last_rtofs=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${RMOLDRTOFS:-48} hours")
+
+# GEMPAK-specific time boundaries
+if [[ "${DO_GEMPAK:-NO}" == "YES" && "${RUN}" == "gfs" ]]; then
+    last_date_gempak=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${RMOLDEND_GEMPAK:-222} hours")
+    first_date_gempak=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${RMOLDSTD_GEMPAK:-346} hours")
+else
+    last_date_gempak=""
+    first_date_gempak=""
+fi
 function remove_files() {
     local directory=$1
     shift
@@ -61,6 +71,34 @@ function remove_files() {
     find "${directory}" -type d -empty -delete
 }
 
+function remove_non_gempak_files() {
+    # Remove all files and directories except those in products/atmos/gempak subdirectories
+    local directory=$1
+    if [[ ! -d ${directory} ]]; then
+        echo "No directory ${directory} to remove files from, skipping"
+        return
+    fi
+    
+    # Find all subdirectories that are NOT gempak directories and remove files from them
+    # The gempak files are in products/atmos/gempak/${GRID}/ subdirectories
+    find "${directory}" -type d -name "gempak" -prune -o -type f -print | while read -r file; do
+        # Check if this file is NOT in a gempak directory
+        if [[ ! "${file}" =~ /products/atmos/gempak/ ]]; then
+            rm -f "${file}"
+        fi
+    done
+    
+    # Remove symbolic links that are NOT in gempak directories
+    find "${directory}" -type d -name "gempak" -prune -o -type l -print | while read -r link; do
+        if [[ ! "${link}" =~ /products/atmos/gempak/ ]]; then
+            rm -f "${link}"
+        fi
+    done
+    
+    # Remove empty directories (but preserve the gempak directory structure)
+    find "${directory}" -type d -empty -delete
+}
+
 for (( current_date=first_date; current_date <= last_date; \
   current_date=$(date --utc +%Y%m%d%H -d "${current_date:0:8} ${current_date:8:2} +${assim_freq} hours") )); do
     current_PDY="${current_date:0:8}"
@@ -81,6 +119,29 @@ for (( current_date=first_date; current_date <= last_date; \
         fi
     fi
 done
+
+# Extended cleanup loop for GEMPAK files when GEMPAK is enabled
+# This handles the period from RMOLDEND_GEMPAK (222h) to RMOLDSTD_GEMPAK (346h)
+# where we want to keep only GEMPAK files and remove everything else
+if [[ "${DO_GEMPAK:-NO}" == "YES" && "${RUN}" == "gfs" && -n "${first_date_gempak}" ]]; then
+    for (( current_date=first_date_gempak; current_date <= last_date_gempak; \
+      current_date=$(date --utc +%Y%m%d%H -d "${current_date:0:8} ${current_date:8:2} +${assim_freq} hours") )); do
+        current_PDY="${current_date:0:8}"
+        current_cyc="${current_date:8:2}"
+        rocotolog="${EXPDIR}/logs/${current_date}.log"
+        if [[ -f "${rocotolog}" ]]; then
+            # shellcheck disable=SC2312
+            if [[ $(tail -n 1 "${rocotolog}") =~ "This cycle is complete: Success" ]]; then
+                YMD="${current_PDY}" HH="${current_cyc}" declare_from_tmpl \
+                    COMOUT_TOP:COM_TOP_TMPL
+                if [[ -d "${COMOUT_TOP}" ]]; then
+                    # This is the extended GEMPAK period (222h-346h): keep only GEMPAK files
+                    remove_non_gempak_files "${COMOUT_TOP}"
+                fi
+            fi
+        fi
+    done
+fi
 
 # Remove archived gaussian files used for Fit2Obs in $VFYARC that are
 # $FHMAX_FITS plus a delta before ${PDY}${cyc}. Touch existing archived
@@ -108,7 +169,12 @@ if [[ "${RUN}" == "gfs" ]]; then
 fi
 
 # Remove $RUN.$rPDY for the older of GDATE or RDATE
-GDATE=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${RMOLDSTD:-120} hours")
+# When GEMPAK is enabled, use the extended GEMPAK retention period
+if [[ "${DO_GEMPAK:-NO}" == "YES" && "${RUN}" == "gfs" ]]; then
+    GDATE=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${RMOLDSTD_GEMPAK:-346} hours")
+else
+    GDATE=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${RMOLDSTD:-120} hours")
+fi
 RDATE=$(date --utc +%Y%m%d%H -d "${PDY} ${cyc} -${FHMAX_GFS} hours")
 if (( GDATE < RDATE )); then
     RDATE=${GDATE}
