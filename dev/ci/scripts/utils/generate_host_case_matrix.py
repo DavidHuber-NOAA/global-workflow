@@ -35,24 +35,24 @@ def get_repo_root() -> Path:
 def get_case_skip_hosts(case_file: Path) -> Set[str]:
     """
     Extract skip_ci_on_hosts from a case YAML file.
-    
+
     Args:
         case_file: Path to case YAML file
-        
+
     Returns:
         Set of host names that should skip this case
     """
     with open(case_file, 'r') as f:
         content = f.read()
-    
+
     # Look for skip_ci_on_hosts section
     if 'skip_ci_on_hosts:' not in content:
         return set()
-    
+
     skip_hosts = []
     lines = content.split('\n')
     in_skip_section = False
-    
+
     for line in lines:
         if 'skip_ci_on_hosts:' in line:
             in_skip_section = True
@@ -65,24 +65,24 @@ def get_case_skip_hosts(case_file: Path) -> Set[str]:
             elif line.strip() and not line.startswith(' '):
                 # End of section
                 break
-    
+
     return set(skip_hosts)
 
 
 def generate_host_matrices(repo_root: Path, known_hosts: List[str] = None) -> Dict[str, List[str]]:
     """
     Generate host-to-cases mapping for all known hosts.
-    
+
     Args:
         repo_root: Path to repository root
         known_hosts: Optional list of hosts to generate matrices for.
                     If None, discovers hosts from existing gitlab-ci-hosts.yml.
-    
+
     Returns:
         Dictionary mapping host names to sorted lists of case names
     """
     cases_dir = repo_root / 'dev' / 'ci' / 'cases' / 'pr'
-    
+
     if known_hosts is None:
         # Get hosts from existing gitlab-ci-hosts.yml
         gitlab_config = repo_root / 'dev' / 'ci' / 'gitlab-ci-hosts.yml'
@@ -92,38 +92,38 @@ def generate_host_matrices(repo_root: Path, known_hosts: List[str] = None) -> Di
                 # Look for patterns like .hera_cases_matrix:
                 host_patterns = re.findall(r'\.(\w+)_cases_matrix:', content)
                 known_hosts = sorted(set(host_patterns))
-        
+
         if not known_hosts:
-            print("Error: Could not find any host case matrices in gitlab-ci-hosts.yml", 
+            print("Error: Could not find any host case matrices in gitlab-ci-hosts.yml",
                   file=sys.stderr)
             return {}
-    
+
     # Build matrices by checking each case against each host
     matrices = {host: [] for host in known_hosts}
-    
+
     for case_file in sorted(cases_dir.glob('*.yaml')):
         case_name = case_file.stem
         skip_hosts = get_case_skip_hosts(case_file)
-        
+
         # Add case to each host that doesn't skip it
         for host in known_hosts:
             if host not in skip_hosts:
                 matrices[host].append(case_name)
-    
+
     # Sort each host's case list
     for host in matrices:
         matrices[host] = sorted(matrices[host])
-    
+
     return matrices
 
 
 def format_yaml_matrix(matrices: Dict[str, List[str]]) -> str:
     """
     Format host matrices as YAML suitable for gitlab-ci-hosts.yml.
-    
+
     Args:
         matrices: Dictionary mapping host names to case lists
-        
+
     Returns:
         Formatted YAML string
     """
@@ -142,11 +142,11 @@ def format_yaml_matrix(matrices: Dict[str, List[str]]) -> str:
     output.append("# Cases are included unless they have the host in their skip_ci_on_hosts list.")
     output.append("#")
     output.append("")
-    
+
     for host in sorted(matrices.keys()):
         cases = matrices[host]
         output.append(f".{host}_cases_matrix: &{host}_cases")
-        
+
         if cases:
             # Format as a single-line array for readability when there are many cases
             cases_str = ', '.join(f'"{case}"' for case in cases)
@@ -154,53 +154,53 @@ def format_yaml_matrix(matrices: Dict[str, List[str]]) -> str:
         else:
             output.append("  - caseName: []")
         output.append("")
-    
+
     return '\n'.join(output)
 
 
-def update_gitlab_hosts_file(repo_root: Path, matrices: Dict[str, List[str]], 
+def update_gitlab_hosts_file(repo_root: Path, matrices: Dict[str, List[str]],
                              dry_run: bool = False) -> bool:
     """
     Update the gitlab-ci-hosts.yml file with new matrices.
-    
+
     Args:
         repo_root: Path to repository root
         matrices: Dictionary mapping host names to case lists
         dry_run: If True, only show what would be changed
-        
+
     Returns:
         True if file was updated (or would be updated in dry run)
     """
     gitlab_config = repo_root / 'dev' / 'ci' / 'gitlab-ci-hosts.yml'
-    
+
     if not gitlab_config.exists():
         print(f"Error: {gitlab_config} not found", file=sys.stderr)
         return False
-    
+
     with open(gitlab_config, 'r') as f:
         original_content = f.read()
-    
+
     # Find the section with case matrices
-    # Look for the comment line "# Template matrices for case lists" 
+    # Look for the comment line "# Template matrices for case lists"
     # and replace everything until "# Host: " section
     pattern = r'(# Template matrices for case lists\n)(.*?)((?=\n# Host: |$))'
-    
+
     match = re.search(pattern, original_content, re.DOTALL)
-    
+
     if not match:
-        print("Error: Could not find '# Template matrices for case lists' section in gitlab-ci-hosts.yml", 
+        print("Error: Could not find '# Template matrices for case lists' section in gitlab-ci-hosts.yml",
               file=sys.stderr)
         return False
-    
+
     # Generate new matrix section
     new_matrices = format_yaml_matrix(matrices)
-    
+
     # Replace the old matrices section with the new one
-    new_content = (original_content[:match.start()] + 
-                  match.group(1) + 
-                  new_matrices + "\n" + 
-                  original_content[match.end(2):])
-    
+    new_content = (original_content[:match.start()] +
+                   match.group(1) +
+                   new_matrices + "\n" +
+                   original_content[match.end(2):])
+
     if dry_run:
         print("=== Would update gitlab-ci-hosts.yml with: ===")
         print(new_matrices)
@@ -234,37 +234,37 @@ Examples:
         """
     )
     parser.add_argument('--output', '-o', type=str, metavar='FILE',
-                       help='Write output to FILE instead of stdout')
+                        help='Write output to FILE instead of stdout')
     parser.add_argument('--update', '-u', action='store_true',
-                       help='Update gitlab-ci-hosts.yml in place')
+                        help='Update gitlab-ci-hosts.yml in place')
     parser.add_argument('--dry-run', '-n', action='store_true',
-                       help='Show what would be updated without making changes')
+                        help='Show what would be updated without making changes')
     parser.add_argument('--hosts', '-H', type=str, nargs='+',
-                       help='Specific hosts to generate matrices for (default: auto-detect)')
-    
+                        help='Specific hosts to generate matrices for (default: auto-detect)')
+
     args = parser.parse_args()
-    
+
     try:
         repo_root = get_repo_root()
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
-    
+
     # Generate matrices
     matrices = generate_host_matrices(repo_root, args.hosts)
-    
+
     if not matrices:
         print("Warning: No host matrices generated", file=sys.stderr)
         return 1
-    
+
     # Handle update mode
     if args.update or args.dry_run:
         success = update_gitlab_hosts_file(repo_root, matrices, args.dry_run)
         return 0 if success else 1
-    
+
     # Generate formatted output
     output = format_yaml_matrix(matrices)
-    
+
     # Write to file or stdout
     if args.output:
         with open(args.output, 'w') as f:
@@ -272,7 +272,7 @@ Examples:
         print(f"Wrote matrices to {args.output}")
     else:
         print(output)
-    
+
     return 0
 
 
