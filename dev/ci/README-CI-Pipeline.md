@@ -2,6 +2,11 @@
 
 This document describes the GitLab CI/CD pipeline architecture for the global-workflow project, including the different testing modalities, configuration methods, and operational details.
 
+## Related Documentation
+
+- **[Case Configuration Guide](README-case-configuration.md)** - How to add and manage CI test cases
+- This document - Pipeline architecture and operational procedures
+
 ## Overview
 
 The CI/CD system supports multiple testing approaches across different computing platforms, with flexible triggering mechanisms from both GitHub Actions and GitLab scheduled pipelines. The architecture is designed to be easily extensible to new computing hosts and testing scenarios.
@@ -178,6 +183,35 @@ PR_NUMBER=1234  # Set via GitHub trigger
   - `PIPELINE_TYPE` (ctests vs pr_cases)
   - `RUN_ON_MACHINES` (machine selection)
   - `CI_PIPELINE_SOURCE` (trigger vs schedule)
+
+## Test Case Configuration
+
+Test cases are configured using a **single source of truth** approach:
+
+1. **Case YAML files** (`dev/ci/cases/pr/*.yaml`) define which hosts should skip each test
+2. **Host matrices** in `gitlab-ci-hosts.yml` are automatically generated from case configurations
+3. **Validation tests** ensure matrices stay synchronized with case files
+
+### Adding or Modifying Test Cases
+
+See the **[Case Configuration Guide](README-case-configuration.md)** for detailed instructions on:
+- Adding new test cases
+- Modifying host support for existing cases
+- Using the matrix generation script
+- Troubleshooting configuration issues
+
+### Quick Reference
+
+```bash
+# Generate host matrices from case configurations
+python dev/ci/scripts/utils/generate_host_case_matrix.py --update
+
+# Validate matrices are in sync
+pytest dev/ci/scripts/unittests/test_ci_matrix_validation.py -v
+
+# Test locally (respects skip_ci_on_hosts automatically)
+./dev/workflow/generate_workflows.sh -G /path/to/RUNTESTS
+```
 
 ## Security and Access Control
 
