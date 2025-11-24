@@ -62,8 +62,8 @@ def get_case_skip_hosts(case_file: Path) -> Set[str]:
             if line.strip().startswith('-'):
                 host = line.strip().lstrip('-').strip()
                 skip_hosts.append(host)
-            elif line.strip() and not line.startswith(' '):
-                # End of section
+            elif line.strip() and not line.startswith((' ', '\t')):
+                # End of section (non-whitespace at start of line)
                 break
 
     return set(skip_hosts)
@@ -89,8 +89,8 @@ def generate_host_matrices(repo_root: Path, known_hosts: List[str] = None) -> Di
         if gitlab_config.exists():
             with open(gitlab_config, 'r') as f:
                 content = f.read()
-                # Look for patterns like .hera_cases_matrix:
-                host_patterns = re.findall(r'\.(\w+)_cases_matrix:', content)
+                # Look for patterns like .hera_cases_matrix: (support hostnames with hyphens)
+                host_patterns = re.findall(r'\.([a-zA-Z0-9_-]+)_cases_matrix:', content)
                 known_hosts = sorted(set(host_patterns))
 
         if not known_hosts:
@@ -196,10 +196,11 @@ def update_gitlab_hosts_file(repo_root: Path, matrices: Dict[str, List[str]],
     new_matrices = format_yaml_matrix(matrices)
 
     # Replace the old matrices section with the new one
+    # Keep everything before the match, add the header comment, add new matrices, keep everything after
     new_content = (original_content[:match.start()] +
                    match.group(1) +
                    new_matrices + "\n" +
-                   original_content[match.end(2):])
+                   original_content[match.end():])
 
     if dry_run:
         print("=== Would update gitlab-ci-hosts.yml with: ===")
