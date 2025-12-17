@@ -6,7 +6,7 @@ import os
 from pygfs.jedi import Jedi
 from pygfs.task.analysis import Analysis
 from wxflow import (AttrDict, FileHandler,
-                    to_timedelta, to_fv3time,
+                    to_timedelta, to_fv3time, to_isotime,
                     parse_j2yaml,
                     logit)
 
@@ -130,7 +130,7 @@ class MarineAnalysis(Analysis):
         test_hist_date('./INPUT/MOM.res.nc', self.task_config.WINDOW_BEGIN)
         for state in self.task_config.marine_pseudo_model_states:
             test_hist_date(state['basename'] + state['ocn_filename'],
-                           to_isotime(state['date']))
+                           datetime.strptime(state['date'], '%Y-%m-%dT%H:%M:%SZ'))
 
         # initialize JEDI applications
         logger.info(f"Initializing JEDI applications")
