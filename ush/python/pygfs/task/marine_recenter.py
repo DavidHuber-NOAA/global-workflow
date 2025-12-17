@@ -7,7 +7,7 @@ from pygfs.jedi import Jedi
 from pygfs.task.analysis import Analysis
 from wxflow import (AttrDict, FileHandler,
                     add_to_datetime, to_timedelta, to_fv3time, to_isotime,
-                    parse_j2yaml,
+                    parse_j2yaml, parse_j2tmpl,
                     logit)
 
 logger = getLogger(__name__.split('.')[-1])

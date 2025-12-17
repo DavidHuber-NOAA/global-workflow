@@ -7,7 +7,7 @@ from pygfs.jedi import Jedi
 from pygfs.task.analysis import Analysis
 from wxflow import (AttrDict, FileHandler,
                     to_timedelta, to_fv3time, to_isotime,
-                    parse_j2yaml,
+                    parse_j2yaml, parse_j2tmpl,
                     logit)
 
 logger = getLogger(__name__.split('.')[-1])
@@ -59,7 +59,7 @@ class MarineAnalysis(Analysis):
             _rst_date = to_fv3time(self.task_config.current_cycle)
             _cice_rst_date = to_fv3time(self.task_config.current_cycle)
 
-        #
+        # Generate list of pseudo model states
         dt_pseudo = 3
         fcst_hour_list = list(range(6, 10, dt_pseudo))
         _marine_pseudo_model_states = []

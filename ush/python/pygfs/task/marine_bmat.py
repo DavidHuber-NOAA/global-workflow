@@ -7,7 +7,7 @@ from pygfs.task.analysis import Analysis
 from wxflow import (AttrDict, FileHandler, Executable,
                     add_to_datetime, to_timedelta, to_isotime,
                     chdir,
-                    parse_j2yaml, save_as_yaml,
+                    parse_j2yaml, parse_j2tmpl, save_as_yaml,
                     logit)
 
 from pygfs.jedi import Jedi

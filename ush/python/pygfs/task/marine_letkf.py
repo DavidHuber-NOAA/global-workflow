@@ -6,7 +6,7 @@ from pygfs.task.analysis import Analysis
 from pygfs.jedi import Jedi
 from typing import Dict
 from wxflow import (AttrDict, Executable, FileHandler,
-                    parse_j2yaml, save_as_yaml,
+                    parse_j2yaml, parse_j2tmpl, save_as_yaml,
                     to_timedelta, to_YMDH,
                     logit)
 
