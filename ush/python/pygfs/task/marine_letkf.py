@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import pygfs.utils.marine_da_utils as mdau
 from logging import getLogger
 from pygfs.task.analysis import Analysis
 from pygfs.jedi import Jedi
@@ -51,7 +50,6 @@ class MarineLETKF(Analysis):
                 'ENSPERT_RELPATH': _enspert_relpath,
                 'letkf_app': 'true',
                 'DIST_HALO_SIZE': 3500000,
-                'DOMAIN_STACK_SIZE': 116640000,  # TODO: Make the stack size resolution dependent
             }
         ))
 
@@ -86,7 +84,9 @@ class MarineLETKF(Analysis):
 
         # prepare the ensemble MOM6 input.nml
         logger.info(f"Preparing ensemble MOM6 input namelist")
-        mdau.prep_input_nml(self.task_config)
+        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input.nml.j2'),
+                     self.task_config,
+                     output_file="mom_input.nml")
 
         # initialize JEDI applications
         logger.info(f"Initializing JEDI applications")

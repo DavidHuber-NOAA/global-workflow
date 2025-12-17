@@ -3,7 +3,6 @@
 from datetime import datetime
 from logging import getLogger
 import os
-import pygfs.utils.marine_da_utils as mdau
 from pygfs.jedi import Jedi
 from pygfs.task.analysis import Analysis
 from wxflow import (AttrDict, FileHandler,
@@ -60,6 +59,17 @@ class MarineAnalysis(Analysis):
             _rst_date = to_fv3time(self.task_config.current_cycle)
             _cice_rst_date = to_fv3time(self.task_config.current_cycle)
 
+        #
+        dt_pseudo = 3
+        fcst_hour_list = list(range(6, 10, dt_pseudo))
+        _marine_pseudo_model_states = []
+        for fcst_hour in fcst_hour_list:
+            _marine_pseudo_model_states.append({'date': to_isotime(self.task_config.WINDOW_BEGIN + to_timedelta(hours=fcst_hour)),
+                                                'basename': './bkg/',
+                                                'ocn_filename': f"ocean.bkg.f{str(fcst_hour).zfill(3)}.nc"
+                                                'ice_filename': f"ice.bkg.f{str(fcst_hour).zfill(3)}.nc",
+                                                'read_from_file': 1})
+
         # Create a local dictionary that is repeatedly used across this class
         self.task_config.update(AttrDict(
             {
@@ -68,10 +78,7 @@ class MarineAnalysis(Analysis):
                 'berror_model': _berror_model,
                 'rst_date': _rst_date,
                 'cice_rst_date': _cice_rst_date,
-                'MOM6_LEVS': mdau.get_mom6_levels(str(self.task_config.OCNRES).zfill(3)),
-                'DOMAIN_STACK_SIZE': 116640000,  # TODO: Make the stack size resolution dependent
-                'marine_pseudo_model_states': mdau.gen_bkg_list(bkg_path='./bkg',
-                                                                window_begin=self.task_config.WINDOW_BEGIN)
+                'marine_pseudo_model_states': _marine_pseudo_model_states
             }
         ))
 
@@ -109,18 +116,21 @@ class MarineAnalysis(Analysis):
 
         # prepare the deterministic MOM6 input.nml
         logger.info(f"Preparing deterministic MOM6 input namelist")
-        mdau.prep_input_nml(self.task_config)
+        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input.nml.j2'),
+                     self.task_config,
+                     output_file="mom_input.nml")
 
         # prepare the input.nml for the analysis geometry
         logger.info(f"Preparing analysis geometry input namelist")
-        mdau.prep_input_nml(self.task_config, output_nml="./anl_geom/mom_input.nml",
-                            simple_geom=True, mom_input="./anl_geom/MOM_input")
+        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input_anlgeom.nml.j2'),
+                     self.task_config,
+                     output_file="./anl_geom/mom_input.nml")
 
         # assert that dates of the history files are correct
-        mdau.test_hist_date('./INPUT/MOM.res.nc', self.task_config.WINDOW_BEGIN)
+        test_hist_date('./INPUT/MOM.res.nc', self.task_config.WINDOW_BEGIN)
         for state in self.task_config.marine_pseudo_model_states:
-            mdau.test_hist_date(state['basename'] + state['ocn_filename'],
-                                datetime.strptime(state['date'], '%Y-%m-%dT%H:%M:%SZ'))
+            test_hist_date(state['basename'] + state['ocn_filename'],
+                           to_isotime(state['date']))
 
         # initialize JEDI applications
         logger.info(f"Initializing JEDI applications")
@@ -214,3 +224,18 @@ class MarineAnalysis(Analysis):
         # Initialize the observation statistics
         logger.info(f"Initializing JEDI SOCA observation statistics application")
         self.jedi_dict['soca_diag_stats'].initialize(self.task_config)
+
+@logit(logger)
+def test_hist_date(histfile: str, ref_date: datetime) -> None:
+    """
+    Check that the date in the MOM6 history file is the expected one for the cycle.
+    TODO: Implement the same for seaice
+    """
+
+    ncf = Dataset(histfile, 'r')
+    hist_date = dparser.parse(ncf.variables['time'].units, fuzzy=True) + timedelta(hours=int(ncf.variables['time'][0]))
+    ncf.close()
+    logger.info(f"*** history file date: {hist_date} expected date: {ref_date}")
+
+    if hist_date != ref_date:
+        raise ValueError(f"FATAL ERROR: Inconsistent bkg date'")
