@@ -65,6 +65,14 @@ class Analysis(Task):
         else:
             _da_prefix = 'gdas'
 
+        # Map ocean resolution to number of vertical levels
+        _ocnres_to_nlev = {
+                            '500': 25,
+                            '100': 75,
+                            '050': 75,
+                            '025': 75,
+                          }
+
         # Extend task_config with variables that are repeatedly used across this class
         self.task_config.update(AttrDict(
             {
@@ -78,10 +86,11 @@ class Analysis(Task):
                 'APREFIX_ENS': f"enkf{self.task_config.RUN.replace('enkf', '')}.t{self.task_config.cyc:02d}z.",
                 'GPREFIX': f"{_da_prefix}.t{self.task_config.previous_cycle.hour:02d}z.",
                 'GPREFIX_ENS': f"enkf{_da_prefix}.t{self.task_config.previous_cycle.hour:02d}z.",
-                'OCNRES': f"{self.task_config.OCNRES:03d}",
                 'iau_times_iso': _iau_times_iso,
                 'observations': _observations,
                 'bias_files': _bias_files,
+                'MOM6_LEVS': _ocnres_to_nlev[f"{self.task_config.OCNRES:03d}"],
+                'mom_domain_stack_size': 116640000,  # TODO: Make the stack size resolution dependent
             }
         ))
 
