@@ -229,6 +229,7 @@ class MarineAnalysis(Analysis):
         logger.info(f"Initializing JEDI SOCA observation statistics application")
         self.jedi_dict['soca_diag_stats'].initialize(self.task_config)
 
+
 @logit(logger)
 def test_hist_date(histfile: str, ref_date: datetime) -> None:
     """
