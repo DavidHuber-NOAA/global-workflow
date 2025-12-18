@@ -6,7 +6,7 @@ from logging import getLogger
 import os
 import tarfile
 from typing import Any, Dict
-from wxflow import (AttrDict, Task, WorkflowException,
+from wxflow import (AttrDict, Task, WorkflowException, Executable,
                     add_to_datetime, to_timedelta, to_isotime,
                     parse_j2yaml,
                     logit)
@@ -105,6 +105,26 @@ class Analysis(Task):
 
     def clean(self) -> None:
         super().clean()
+
+    @staticmethod
+    @logit(logger)
+    def run(exec_cmd: Executable) -> None:
+        """Run the executable command
+        This method will run the executable command
+        Parameters
+        ----------
+        exec_cmd: Executable
+            executable command to run
+        Returns
+        ----------
+        None
+        """
+
+        logger.info(f"Executing {exec_cmd}")
+        try:
+            exec_cmd()
+        except WorkflowException as e:
+            raise WorkflowException(f"An error occurred during execution of {exec_cmd}:\n{e}") from e
 
     @logit(logger)
     def untar_bias_corrections(self) -> None:
