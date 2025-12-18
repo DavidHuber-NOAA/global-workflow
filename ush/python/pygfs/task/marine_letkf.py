@@ -84,7 +84,7 @@ class MarineLETKF(Analysis):
 
         # prepare the ensemble MOM6 input.nml
         logger.info(f"Preparing ensemble MOM6 input namelist")
-        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input.nml.j2'),
+        parse_j2tmpl(os.path.join(self.task_config.PARMmarine, 'mom_input.nml.j2'),
                      self.task_config,
                      output_file="mom_input.nml")
 

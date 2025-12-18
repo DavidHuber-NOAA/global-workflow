@@ -88,12 +88,12 @@ class MarineBMat(Analysis):
         FileHandler(self.task_config.data_in).sync()
 
         # prepare the deterministic MOM6 input.nml
-        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input.nml.j2'),
+        parse_j2tmpl(os.path.join(self.task_config.PARMmarine, 'mom_input.nml.j2'),
                      self.task_config,
                      output_file="mom_input.nml")
 
         # prepare the input.nml for the analysis geometry
-        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input_anlgeom.nml.j2'),
+        parse_j2tmpl(os.path.join(self.task_config.PARMmarine, 'mom_input_anlgeom.nml.j2'),
                      self.task_config,
                      output_file="./anl_geom/mom_input.nml")
 
@@ -147,7 +147,7 @@ class MarineBMat(Analysis):
         exec_name = self.task_config.CALC_SCALE_EXEC
         exec_cmd.add_default_arg(exec_name)
         exec_cmd.add_default_arg('soca_vtscales.yaml')
-        exec_cmd()
+        self.run(exec_cmd)
 
         self.jedi_dict['soca_parameters_diffusion_vt'].execute()
 

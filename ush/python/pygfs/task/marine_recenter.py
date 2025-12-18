@@ -87,7 +87,7 @@ class MarineRecenter(Analysis):
         FileHandler(self.task_config.data_in).sync()
 
         # prepare the MOM6 input.nml
-        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input.nml.j2'),
+        parse_j2tmpl(os.path.join(self.task_config.PARMmarine, 'mom_input.nml.j2'),
                      self.task_config,
                      output_file="mom_input.nml")
 

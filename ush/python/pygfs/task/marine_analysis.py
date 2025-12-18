@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-from datetime import datetime
+from datetime import datetime, timedelta
+import dateutil.parser as dparser
+from netCDF4 import Dataset
 from logging import getLogger
 import os
 from pygfs.jedi import Jedi
@@ -63,10 +65,12 @@ class MarineAnalysis(Analysis):
         dt_pseudo = 3
         fcst_hour_list = list(range(6, 10, dt_pseudo))
         _marine_pseudo_model_states = []
+        bkg_date = self.task_config.WINDOW_BEGIN
         for fcst_hour in fcst_hour_list:
-            _marine_pseudo_model_states.append({'date': to_isotime(self.task_config.WINDOW_BEGIN + to_timedelta(hours=fcst_hour)),
+            bkg_date = bkg_date + timedelta(hours=dt_pseudo)
+            _marine_pseudo_model_states.append({'date': to_isotime(bkg_date),
                                                 'basename': './bkg/',
-                                                'ocn_filename': f"ocean.bkg.f{str(fcst_hour).zfill(3)}.nc"
+                                                'ocn_filename': f"ocean.bkg.f{str(fcst_hour).zfill(3)}.nc",
                                                 'ice_filename': f"ice.bkg.f{str(fcst_hour).zfill(3)}.nc",
                                                 'read_from_file': 1})
 
@@ -116,13 +120,13 @@ class MarineAnalysis(Analysis):
 
         # prepare the deterministic MOM6 input.nml
         logger.info(f"Preparing deterministic MOM6 input namelist")
-        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input.nml.j2'),
+        parse_j2tmpl(os.path.join(self.task_config.PARMmarine, 'mom_input.nml.j2'),
                      self.task_config,
                      output_file="mom_input.nml")
 
         # prepare the input.nml for the analysis geometry
         logger.info(f"Preparing analysis geometry input namelist")
-        parse_j2tmpl(os.path.join(task_config.PARMmarine, 'mom_input_anlgeom.nml.j2'),
+        parse_j2tmpl(os.path.join(self.task_config.PARMmarine, 'mom_input_anlgeom.nml.j2'),
                      self.task_config,
                      output_file="./anl_geom/mom_input.nml")
 
