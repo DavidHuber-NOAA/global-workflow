@@ -71,6 +71,8 @@ class Analysis(Task):
                 'GPREFIX_ENS': f"enkf{_da_prefix}.t{self.task_config.previous_cycle.hour:02d}z.",
                 'iau_times_iso': _iau_times_iso,
                 'snow_bkg_path': os.path.join('.', 'bkg/'),  # TODO: remove this line
+                'MOM6_LEVS': _ocnres_to_nlev[f"{self.task_config.OCNRES:03d}"],
+                'mom_domain_stack_size': 116640000,  # TODO: Make the stack size resolution dependent
             }
         ))
 
