@@ -254,4 +254,4 @@ def test_hist_date(histfile: str, ref_date: datetime) -> None:
     logger.info(f"*** history file date: {hist_date} expected date: {ref_date}")
 
     if hist_date != ref_date:
-        raise ValueError(f"FATAL ERROR: Inconsistent bkg date, Expected {ref_date}, {histfile} contains {hist_date}"
+        raise ValueError(f"FATAL ERROR: Inconsistent bkg date, Expected {ref_date}, {histfile} contains {hist_date}")
