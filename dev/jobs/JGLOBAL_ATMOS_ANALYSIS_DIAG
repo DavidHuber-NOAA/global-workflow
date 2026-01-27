@@ -26,6 +26,10 @@ YMD=${PDY} HH=${cyc} declare_from_tmpl -rx \
     COMOUT_ATMOS_ANALYSIS:COM_ATMOS_ANALYSIS_TMPL
 mkdir -m 775 -p "${COMOUT_ATMOS_ANALYSIS}"
 
+# Create pCOM_ATMOS_ANALYSIS in DATAROOT to access GSI diagnostic files
+# This points to the same location used by the analysis job
+export pCOM_ATMOS_ANALYSIS="${DATAROOT}/${RUN}.${PDY}${cyc}/analysis/atmos"
+
 ###############################################################
 # Run relevant script
 ${ANALDIAGSH:-${SCRgfs}/exglobal_diag.sh} && true

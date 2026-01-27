@@ -39,7 +39,6 @@ rm -f "${RADSTAT}" "${PCPSTAT}" "${CNVSTAT}" "${OZNSTAT}"
 
 # Obs diag
 GENDIAG=${GENDIAG:-"YES"}
-GSIDIAG=${GSIDIAG:-"${COMIN_ATMOS_ANALYSIS}/${APREFIX}gsidiags${DIAG_SUFFIX:-}.tar"}
 USE_BUILD_GSINFO=${USE_BUILD_GSINFO:-"NO"}
 DIAG_COMPRESS=${DIAG_COMPRESS:-"YES"}
 if [[ "${DIAG_COMPRESS:-}" == "YES" ]]; then
@@ -56,12 +55,22 @@ if [[ "${GENDIAG}" != "YES" ]]; then
 fi
 
 ################################################################################
-# Copy gsidiags.tar file from COMIN to DATA and untar
-cpreq "${GSIDIAG}" ./gsidiags.tar
-tar -xvf gsidiags.tar
-export err=$?
-if [[ ${err} -ne 0 ]]; then
-    err_exit "Unable to unpack gsidiags.tar file!"
+# Link GSI diagnostic directories from pCOM_ATMOS_ANALYSIS to DATA
+# The diagnostic files are now in pCOM_ATMOS_ANALYSIS/gsidiags instead of a tar file
+if [[ ! -d "${pCOM_ATMOS_ANALYSIS}/gsidiags" ]]; then
+    err_exit "GSI diagnostic directory ${pCOM_ATMOS_ANALYSIS}/gsidiags does not exist!"
+fi
+
+# Link each dir.???? directory into DATA
+for diagdir in "${pCOM_ATMOS_ANALYSIS}/gsidiags"/dir.????; do
+    if [[ -d "${diagdir}" ]]; then
+        ln -sf "${diagdir}" "${DATA}/"
+    fi
+done
+
+# Verify we have diagnostic directories
+if ! compgen -G "${DATA}/dir.????" > /dev/null; then
+    err_exit "No GSI diagnostic directories found in ${pCOM_ATMOS_ANALYSIS}/gsidiags!"
 fi
 
 # Set up lists and variables for various types of diagnostic files.

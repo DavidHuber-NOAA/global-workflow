@@ -896,14 +896,22 @@ if [[ "${SENDECF}" == "YES" && "${RUN}" != "enkf" ]]; then
 fi
 
 # Diagnostic files
-# if requested, GSI diagnostic file directories for use later
+# If requested, move GSI diagnostic file directories to pCOM_ATMOS_ANALYSIS for use later
 if [[ "${GENDIAG}" == "YES" ]]; then
-    tar -cvf gsidiags.tar dir.????
-    export err=$?
-    if [[ ${err} -ne 0 ]]; then
-        err_exit "Failed to tar GSI diagnostic directories!"
+    # Create gsidiags directory in pCOM_ATMOS_ANALYSIS
+    mkdir -p "${pCOM_ATMOS_ANALYSIS}/gsidiags"
+    
+    # Move dir.???? directories to pCOM_ATMOS_ANALYSIS/gsidiags
+    # This allows downstream jobs to access them directly without tarring/untarring
+    if compgen -G "dir.????" > /dev/null; then
+        mv dir.???? "${pCOM_ATMOS_ANALYSIS}/gsidiags/"
+        export err=$?
+        if [[ ${err} -ne 0 ]]; then
+            err_exit "Failed to move GSI diagnostic directories to ${pCOM_ATMOS_ANALYSIS}/gsidiags!"
+        fi
+    else
+        echo "WARNING: No GSI diagnostic directories (dir.????) found!"
     fi
-    cpfs gsidiags.tar "${COMOUT_ATMOS_ANALYSIS}/${APREFIX}gsidiags${DIAG_SUFFIX:-}.tar"
 fi
 
 echo "${rCDUMP} ${PDY}${cyc} atminc done at $(date)" > "${COMOUT_ATMOS_ANALYSIS}/${APREFIX}increment.done.txt"

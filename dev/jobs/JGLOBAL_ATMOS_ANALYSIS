@@ -38,6 +38,12 @@ MEMDIR='ensstat' RUN=${GDUMP_ENS} YMD=${gPDY} HH=${gcyc} declare_from_tmpl -rx \
 
 mkdir -p "${COMOUT_ATMOS_ANALYSIS}"
 
+# Create pCOM_ATMOS_ANALYSIS in DATAROOT for direct GSI diagnostic writes
+# This allows GSI to write diagnostic files directly to a persistent location
+# that can be accessed by downstream jobs without tarring/untarring
+export pCOM_ATMOS_ANALYSIS="${DATAROOT}/${RUN}.${PDY}${cyc}/analysis/atmos"
+mkdir -p "${pCOM_ATMOS_ANALYSIS}"
+
 export ATMGES="${COMIN_ATMOS_HISTORY_PREV}/${GPREFIX}atm.f006.nc"
 if [[ ! -f "${ATMGES}" ]]; then
 
