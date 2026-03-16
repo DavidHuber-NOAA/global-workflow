@@ -79,6 +79,8 @@ is_table_format() {
     # Detect if a command file uses the table format.
     # Table format lines start with a double quote.
     # Returns 0 (true) if table format, 1 (false) otherwise.
+    # Note: Detection is based on the first non-empty, non-comment line.
+    #       Mixed format files are not supported.
     local file="${1}"
     while IFS= read -r line; do
         # Skip empty lines and comments
@@ -258,6 +260,9 @@ run_table_mpmd() {
             if [[ ${chunk_tasks} -gt 0 && ${next_tasks} -gt ${total_allocated_tasks} ]]; then
                 break
             fi
+            if [[ ${task_counts[chunk_end]} -gt ${total_allocated_tasks} ]]; then
+                echo "WARNING: Entry $((chunk_end + 1)) requires ${task_counts[chunk_end]} tasks but only ${total_allocated_tasks} are allocated."
+            fi
             chunk_tasks=${next_tasks}
             ((chunk_end++))
         done
@@ -284,6 +289,8 @@ WRAP_EOF
             if [[ "${_mpmd_launcher}" == "srun" ]]; then
                 launch_args+=" -n ${task_counts[idx]} -c ${thread_counts[idx]} ${wrapper}"
             elif [[ "${_mpmd_launcher}" == "mpiexec" ]]; then
+                # --depth sets CPUs per rank (for thread placement), --cpu-bind depth
+                # binds each rank to its assigned CPUs based on the depth value.
                 launch_args+=" -np ${task_counts[idx]} --depth ${thread_counts[idx]} --cpu-bind depth ${wrapper}"
             fi
         done
