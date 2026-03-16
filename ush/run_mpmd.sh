@@ -15,11 +15,26 @@
 #           Parallelism) feature of the workflow. The script handles chunking of the
 #           commands to avoid oversubscription of resources.
 #
+#           The script supports two command file formats:
+#
+#           1. Simple format (default): One command per line, each assumed to be a
+#              single-core, single-threaded task.
+#                 ./command1 arg1 arg2
+#                 ./command2 arg1
+#
+#           2. Table format: Each line is a quoted table of command, number of MPI
+#              tasks, and number of threads per task. If the second or third column
+#              is missing, they default to 1. This enables multi-core and
+#              multi-threaded heterogeneous MPMD jobs.
+#                 "./gfs_model" "128" "2"
+#                 "${HOMEgfs}/ush/product_manager.sh ./file_list.txt" "1" "1"
+#
 # Environment variables:
 #           USE_CFP: If set to YES, run in MPMD mode, else run in serial mode. Default is 'NO'.
 #           launcher: Command to launch the MPMD job. Default is empty.
 #                     Supported launchers are 'srun' and 'mpiexec'.
 #           mpmd_opt: Additional options to pass to the launcher. Default is empty.
+#                     Only used for simple format command files.
 #                     Example:
 #                            srun: "--multi-prog --output=mpmd.%j.%t.out"
 #                         mpiexec: "--cpu-bind verbose,core cfp"
@@ -59,18 +74,62 @@ else
     USE_CFP="NO"
 fi
 
+# Functions to detect and parse table format command files.
+is_table_format() {
+    # Detect if a command file uses the table format.
+    # Table format lines start with a double quote.
+    # Returns 0 (true) if table format, 1 (false) otherwise.
+    local file="${1}"
+    while IFS= read -r line; do
+        # Skip empty lines and comments
+        [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]] && continue
+        if [[ "${line}" =~ ^[[:space:]]*\" ]]; then
+            return 0
+        else
+            return 1
+        fi
+    done < "${file}"
+    return 1
+}
+
+parse_table_line() {
+    # Parse a table format line into command, ntasks, and nthreads.
+    # Expected format: "command" ["ntasks"] ["nthreads"]
+    # Sets global variables: _tbl_cmd, _tbl_ntasks, _tbl_nthreads
+    local line="${1}"
+    local _raw
+    _raw=$(echo "${line}" | awk -F'"' '{
+        cmd = $2
+        ntasks = (NF >= 4 && $4 != "") ? $4 : 1
+        nthreads = (NF >= 6 && $6 != "") ? $6 : 1
+        printf "%s\t%s\t%s", cmd, ntasks, nthreads
+    }')
+    IFS=$'\t' read -r _tbl_cmd _tbl_ntasks _tbl_nthreads <<< "${_raw}"
+}
+
 # If USE_CFP is not set or is not YES, run in serial mode
 if [[ "${USE_CFP}" != "YES" ]]; then
     echo "INFO: Using serial mode for MPMD job"
-    chmod 755 "${cmdfile}"
-    bash +x "${cmdfile}" > mpmd.out 2>&1 && true
-    rc=$?
-    cat mpmd.out
+    rc=0
+    if is_table_format "${cmdfile}"; then
+        echo "INFO: Detected table format command file"
+        while IFS= read -r line; do
+            [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]] && continue
+            parse_table_line "${line}"
+            OMP_NUM_THREADS=${_tbl_nthreads} bash -c "${_tbl_cmd}" >> mpmd.out 2>&1 && true
+            rc=$?
+            if [[ ${rc} -ne 0 ]]; then break; fi
+        done < "${cmdfile}"
+    else
+        chmod 755 "${cmdfile}"
+        bash +x "${cmdfile}" > mpmd.out 2>&1 && true
+        rc=$?
+    fi
+    if [[ -s mpmd.out ]]; then
+        cat mpmd.out
+    fi
     exit "${rc}"
 fi
-
-# Set OMP_NUM_THREADS to 1 to avoid oversubscription when doing MPMD
-export OMP_NUM_THREADS=1
 
 # Establish the MPMD chunk file pattern.
 mpmd_cmdfile="${DATA:-}/mpmd_cmdfile"
@@ -157,6 +216,123 @@ cat_outputs() {
         rm -f "${file}"
     done
 }
+
+run_table_mpmd() {
+    # Run a table format MPMD command file using heterogeneous job steps.
+    # Each entry in the table specifies a command, the number of MPI tasks,
+    # and the number of threads. Entries are chunked based on the total
+    # available tasks (ntasks) to avoid oversubscription.
+    local cmdfile="${1}"
+
+    # Parse all table entries
+    local -a cmds=()
+    local -a task_counts=()
+    local -a thread_counts=()
+
+    while IFS= read -r line; do
+        [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]] && continue
+        parse_table_line "${line}"
+        cmds+=("${_tbl_cmd}")
+        task_counts+=("${_tbl_ntasks}")
+        thread_counts+=("${_tbl_nthreads}")
+    done < "${cmdfile}"
+
+    local n_entries=${#cmds[@]}
+    if [[ ${n_entries} -eq 0 ]]; then
+        echo "ERROR: No valid entries found in table format command file."
+        return 1
+    fi
+
+    # Process entries in chunks that fit within the total allocation
+    local err=0
+    local chunk_start=0
+    local total_allocated_tasks=${ntasks:-1}
+
+    while [[ ${chunk_start} -lt ${n_entries} ]]; do
+        local chunk_tasks=0
+        local chunk_end=${chunk_start}
+
+        # Accumulate entries until adding the next would exceed available tasks
+        while [[ ${chunk_end} -lt ${n_entries} ]]; do
+            local next_tasks=$((chunk_tasks + task_counts[chunk_end]))
+            if [[ ${chunk_tasks} -gt 0 && ${next_tasks} -gt ${total_allocated_tasks} ]]; then
+                break
+            fi
+            chunk_tasks=${next_tasks}
+            ((chunk_end++))
+        done
+
+        # Build the heterogeneous launch command for this chunk
+        local launch_args=""
+        local first=true
+
+        for ((idx = chunk_start; idx < chunk_end; idx++)); do
+            # Create a wrapper script that sets OMP_NUM_THREADS and runs the command
+            local wrapper="${mpmd_cmdfile}.wrapper.${idx}"
+            cat > "${wrapper}" << WRAP_EOF
+#!/bin/bash
+export OMP_NUM_THREADS=${thread_counts[idx]}
+exec ${cmds[idx]}
+WRAP_EOF
+            chmod 755 "${wrapper}"
+
+            if [[ "${first}" != "true" ]]; then
+                launch_args+=" :"
+            fi
+            first=false
+
+            if [[ "${_mpmd_launcher}" == "srun" ]]; then
+                launch_args+=" -n ${task_counts[idx]} -c ${thread_counts[idx]} ${wrapper}"
+            elif [[ "${_mpmd_launcher}" == "mpiexec" ]]; then
+                launch_args+=" -np ${task_counts[idx]} --depth ${thread_counts[idx]} --cpu-bind depth ${wrapper}"
+            fi
+        done
+
+        echo "INFO: Launching table MPMD chunk (entries $((chunk_start + 1))-${chunk_end} of ${n_entries}, total tasks: ${chunk_tasks})"
+
+        if [[ "${_mpmd_launcher}" == "srun" ]]; then
+            unset_strict
+            # shellcheck disable=SC2086
+            ${launcher:-} ${launch_args} >> mpmd.out 2>&1
+            set_strict
+        elif [[ "${_mpmd_launcher}" == "mpiexec" ]]; then
+            # shellcheck disable=SC2086
+            ${launcher:-} ${launch_args} >> mpmd.out 2>&1
+        fi
+        err=$?
+
+        if [[ ${err} -ne 0 ]]; then
+            echo "ERROR: Table MPMD job failed for entries $((chunk_start + 1))-${chunk_end}"
+            break
+        fi
+
+        chunk_start=${chunk_end}
+    done
+
+    # Cleanup wrapper scripts on success
+    if [[ ${err} -eq 0 ]]; then
+        rm -f "${mpmd_cmdfile}.wrapper."*
+    fi
+
+    return "${err}"
+}
+
+# Check for table format and run accordingly
+if is_table_format "${cmdfile}"; then
+    echo "INFO: Detected table format command file, using heterogeneous MPMD mode"
+    run_table_mpmd "${cmdfile}"
+    err=$?
+    if [[ -s mpmd.out ]]; then
+        cat mpmd.out
+    else
+        echo "WARNING: No output files found for MPMD job"
+    fi
+    exit "${err}"
+fi
+
+# Simple format MPMD execution (single-core, single-threaded tasks)
+# Set OMP_NUM_THREADS to 1 to avoid oversubscription
+export OMP_NUM_THREADS=1
 
 cat << EOF
 INFO: Executing MPMD job, STDOUT and STDERR redirected for each process separately
