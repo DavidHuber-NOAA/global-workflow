@@ -53,7 +53,6 @@ if [[ "${_mpmd_launcher}" == "srun" || "${_mpmd_launcher}" == "mpiexec" ]]; then
         USE_CFP=NO
     else
         USE_CFP=${USE_CFP:-"NO"}
-        max_tasks_per_node=$((ntasks < max_tasks_per_node ? ntasks : max_tasks_per_node))
     fi
 else
     USE_CFP="NO"
@@ -86,7 +85,7 @@ chunk_mpmd() {
     #   chunk_size: the number of lines to include in the chunk file
     #   chunk_num: the chunk number (used to determine which lines from the cmdfile to include in the chunk file)
     #   chunk_file: the name of the chunk file to create
-    # Use this function when the number of MPMD tasks is greater than the maximum tasks per node.
+    # Use this function when the number of MPMD tasks is greater than the total allocated tasks.
     local mpmd_file="${1}"
     local chunk_sz="${2}"
     local chunk_num="${3}"
@@ -167,15 +166,13 @@ EOF
 # Determine the number of MPMD processes from incoming ${cmdfile}
 nm=$(wc -l < "${cmdfile}")
 
-# Test if the number of lines in the cmdfile is greater than the number of tasks per node ($max_tasks_per_node).
+# Test if the number of lines in the cmdfile is greater than the total allocated tasks (${ntasks}).
 
-if [[ ${nm} -gt ${max_tasks_per_node:-1} ]]; then
-    # If needed, split the cmdfile and run it in chunks.
-    # For now, keep all MPMD tasks on one node.
-    # TODO: consider running the MPMD job across multiple nodes.
-    echo "INFO: Number of MPMD tasks (${nm}) is greater than the maximum tasks per node (${max_tasks_per_node:-1})."
-    echo "      Running MPMD job in chunks of ${max_tasks_per_node:-1} tasks per node."
-    chunk_size=${max_tasks_per_node:-1}
+if [[ ${nm} -gt ${ntasks} ]]; then
+    # If needed, split the cmdfile and run it in chunks across multiple nodes.
+    echo "INFO: Number of MPMD tasks (${nm}) is greater than the total allocated tasks (${ntasks})."
+    echo "      Running MPMD job in chunks of ${ntasks} tasks across all available nodes and cores."
+    chunk_size=${ntasks}
 else
     # Otherwise, we can run all MPMD tasks in one chunk.
     chunk_size=${nm}
