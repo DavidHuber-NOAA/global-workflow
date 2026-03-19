@@ -176,7 +176,11 @@ else
 fi
 
 cpreq "${EXECglobal}/${FCSTEXEC}" "${DATA}/"
-${APRUN_UFS} "${DATA}/${FCSTEXEC}" 1>&1 2>&2 && true
+echo "\"${DATA}/${FCSTEXEC}\"" '"128" "1"' > cmdfile
+echo "\"${HOMEglobal}/dev/scripts/run_date.sh\"" '"1"' '"1"' >> cmdfile
+
+${USHglobal}/run_mpmd.sh cmdfile
+
 export err=$?
 if [[ ${err} -ne 0 ]]; then
     err_exit "The forecast failed to run to completion!"

@@ -257,20 +257,21 @@ run_table_mpmd() {
         # Accumulate entries until adding the next would exceed available tasks
         while [[ ${chunk_end} -lt ${n_entries} ]]; do
             local next_tasks=$((chunk_tasks + task_counts[chunk_end]))
-            if [[ ${chunk_tasks} -gt 0 && ${next_tasks} -gt ${total_allocated_tasks} ]]; then
-                break
-            fi
+            #if [[ ${chunk_tasks} -gt 0 && ${next_tasks} -gt ${total_allocated_tasks} ]]; then
+            #    break
+            #fi
             if [[ ${task_counts[chunk_end]} -gt ${total_allocated_tasks} ]]; then
                 echo "WARNING: Entry $((chunk_end + 1)) requires ${task_counts[chunk_end]} tasks but only ${total_allocated_tasks} are allocated."
             fi
             chunk_tasks=${next_tasks}
-            ((chunk_end++))
+            chunk_end=$((chunk_end + 1))
         done
 
         # Build the heterogeneous launch command for this chunk
         local launch_args=""
         local first=true
 
+        cpu_list=
         for ((idx = chunk_start; idx < chunk_end; idx++)); do
             # Create a wrapper script that sets OMP_NUM_THREADS and runs the command
             local wrapper="${mpmd_cmdfile}.wrapper.${idx}"
@@ -291,7 +292,15 @@ WRAP_EOF
             elif [[ "${_mpmd_launcher}" == "mpiexec" ]]; then
                 # --depth sets CPUs per rank (for thread placement), --cpu-bind depth
                 # binds each rank to its assigned CPUs based on the depth value.
-                launch_args+=" -np ${task_counts[idx]} --depth ${thread_counts[idx]} --cpu-bind depth ${wrapper}"
+                # Almost works!! launch_args+=" -n ${task_counts[idx]} --env OMP_PLACES=threads --env OMP_PROC_BIND=spread --env OMP_NUM_THREADS=${thread_counts[idx]} --cpu-bind verbose,none ${cmds[idx]}"
+                # Test config
+                list=$(seq -s, 0 $((task_counts[idx] - 1)))
+                if [[ -z "${cpu_list}" ]]; then 
+                    cpu_list="${list}"
+                else
+                    cpu_list="${cpu_list},${list}"
+                fi
+                launch_args+=" -n ${task_counts[idx]} ${cmds[idx]}"
             fi
         done
 
@@ -304,7 +313,7 @@ WRAP_EOF
             set_strict
         elif [[ "${_mpmd_launcher}" == "mpiexec" ]]; then
             # shellcheck disable=SC2086
-            ${launcher:-} ${launch_args} >> mpmd.out 2>&1
+            ${launcher:-} --cpu-bind verbose,depth,list:${cpu_list} ${launch_args} >> mpmd.out 2>&1
         fi
         err=$?
 
