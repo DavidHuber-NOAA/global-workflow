@@ -313,7 +313,7 @@ WRAP_EOF
             set_strict
         elif [[ "${_mpmd_launcher}" == "mpiexec" ]]; then
             # shellcheck disable=SC2086
-            ${launcher:-} --cpu-bind verbose,depth,list:${cpu_list} ${launch_args} >> mpmd.out 2>&1
+            ${launcher:-} --cpu-bind verbose,list:${cpu_list} ${launch_args} >> mpmd.out 2>&1
         fi
         err=$?
 
