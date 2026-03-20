@@ -177,7 +177,7 @@ fi
 
 cpreq "${EXECglobal}/${FCSTEXEC}" "${DATA}/"
 echo "\"${DATA}/${FCSTEXEC}\"" '"128" "1"' > cmdfile
-echo "\"${HOMEglobal}/dev/scripts/run_date.sh\"" '"1"' '"1"' >> cmdfile
+echo "\"${HOMEglobal}/exec/mpiserial ${HOMEglobal}/dev/scripts/run_date.sh\"" '"1"' '"1"' >> cmdfile
 
 ${USHglobal}/run_mpmd.sh cmdfile
 
