@@ -26,7 +26,7 @@ declare -rx COMIN_ATMOS_GRIB_0p25="${ROTDIR}/${RUN}.${PDY}/${cyc}/products/atmos
 declare -rx COMOUT="${ROTDIR}/${RUN}.${PDY}/${cyc}/products/atmos/wmo"
 
 #### workaround for path assignment bug in declare_from_tmpl
-COMOUT=$(echo "$COMOUT" | tr -s '/')
+COMOUT=$(echo "${COMOUT}" | tr -s '/')
 if [[ ! -d "${COMOUT}" ]]; then
     mkdir -m 775 -p "${COMOUT}"
 fi
