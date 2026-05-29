@@ -14,12 +14,12 @@ NOTES:
 """
 
 import os
-import subprocess
 import yaml
 from logging import getLogger
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-from wxflow import Jinja, Logger, logit
+from wxflow import Executable, Jinja, Logger, logit
+from wxflow.executable import ProcessError
 
 _here = os.path.dirname(os.path.abspath(__file__))
 
@@ -50,13 +50,10 @@ def _get_HOMEglobal():
         If the git command fails
     """
     try:
-        result = subprocess.run(
-            ['git', 'rev-parse', '--show-toplevel'],
-            capture_output=True, text=True, check=True,
-            cwd=_here
-        )
-        return result.stdout.strip()
-    except subprocess.CalledProcessError as e:
+        git = Executable('git')
+        result = git('-C', _here, 'rev-parse', '--show-toplevel', output=str)
+        return result.strip()
+    except ProcessError as e:
         raise RuntimeError(f"Failed to determine HOMEglobal via git: {e}") from e
 
 
