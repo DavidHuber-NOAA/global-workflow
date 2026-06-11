@@ -235,7 +235,7 @@
 		<envar><name>COMROOT</name><value>&COM_aux;</value></envar>
 		<envar><name>DATAROOT</name><value>&DATAROOT_aux;/gfs.<cyclestr>@Y@m@d@H</cyclestr></value></envar>
 		<envar><name>TARBALL_TYPE</name><value>#tartype#</value></envar>
-      <envar><name>ARCH_LOGS</name><value>NO</value></envar>
+		<envar><name>ARCH_LOGS</name><value>{{ ARCH_LOGS | default("NO") }}</value></envar>
 
 		<dependency>
 			<and>
@@ -406,7 +406,7 @@
 		<envar><name>COMROOT</name><value>&COM_aux;</value></envar>
 		<envar><name>DATAROOT</name><value>&DATAROOT_aux;/gdas.<cyclestr>@Y@m@d@H</cyclestr></value></envar>
 		<envar><name>TARBALL_TYPE</name><value>#tartype#</value></envar>
-      <envar><name>ARCH_LOGS</name><value>NO</value></envar>
+		<envar><name>ARCH_LOGS</name><value>{{ ARCH_LOGS | default("NO") }}</value></envar>
 
 		<dependency>
 			<and>
@@ -515,7 +515,7 @@
 		<envar><name>COMROOT</name><value>&COM_aux;</value></envar>
 		<envar><name>DATAROOT</name><value>&DATAROOT_aux;/enkfgdas.<cyclestr>@Y@m@d@H</cyclestr></value></envar>
 		<envar><name>ENSGRP</name><value>#grp#</value></envar>
-      <envar><name>ARCH_LOGS</name><value>NO</value></envar>
+		<envar><name>ARCH_LOGS</name><value>{{ ARCH_LOGS | default("NO") }}</value></envar>
 
 		<dependency>
 		  <datadep><cyclestr offset="06:00:00">&ECF_OUT_gfs;/@Y@m@d@H</cyclestr></datadep>
