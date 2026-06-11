@@ -1,0 +1,46 @@
+# Configuration file for setup_aux.py
+#
+# This is a Jinja2 template. When rendered with setup_aux.py using --config-base,
+# variables are substituted from the experiment's config.base automatically.
+#
+# To use: Pass this file to setup_aux.py with:
+#   python setup_aux.py --config /path/to/aux.yaml.j2 --config-base /path/to/config.base
+#
+# To override a value, copy this file and replace the Jinja2 expression with
+# the desired value, then pass the copy via --config.
+
+# Start date for workflow cycles in YYYYMMDDHH00 format
+# Defaults to SDATE from config.base
+start_date: "{{ SDATE }}00"
+
+# End date for workflow cycles in YYYYMMDDHH00 format
+# Defaults to SDATE (same as start_date) for testing; set further into the future as needed
+end_date: "{{ SDATE }}00"
+
+# Full path to the global workflow home directory
+# Defaults to HOMEglobal from config.base
+# Uncomment and set a custom path only if the workflow should point to an external installation
+# HOMEglobal: "/path/to/external/global-workflow"
+HOMEglobal: "{{ HOMEglobal }}"
+
+# Full path to the auxiliary experiment directory
+# Defaults to EXPDIR from config.base (can be the same as the main GFS experiment directory)
+EXP_aux: "{{ EXPDIR }}"
+
+# Full path to the GFS ecFlow output directory; used as cycle trigger datadep
+# (e.g., /lfs/h2/emc/gfstemp/emc.global/ecflow/output/today)
+# REQUIRED: This cannot be derived from config.base and must be set manually
+ECF_OUT_gfs: ""
+
+# Full path to the auxiliary COM directory
+# Defaults to ROTDIR from config.base
+# ONLY set this to COM_gfs when going live, not for testing
+COM_aux: "{{ ROTDIR }}"
+
+# Full path to the auxiliary DATAROOT directory
+# Defaults to STMP/RUNDIRS/PSLOT from config.base (matches the pattern used in the main workflow)
+DATAROOT_aux: "{{ STMP }}/RUNDIRS/{{ PSLOT }}"
+
+# Output path for the rendered XML
+# Defaults to EXP_aux/aux.xml; uncomment and set to override
+# output: "{{ EXPDIR }}/aux.xml"
