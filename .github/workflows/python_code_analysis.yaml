@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-22.04
     name: Check Python coding norms with pycodestyle
 
+    env:
+      # Forwarded to the reporting workflow; only ever an integer, safe to write.
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
