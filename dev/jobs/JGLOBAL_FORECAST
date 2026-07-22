@@ -5,7 +5,7 @@ set -x
 if [[ 10#${ENSMEM:--1} -ge 0 ]]; then
     export DATAjob="${DATAROOT}/${RUN}efcs${ENSMEM}.${PDY:-}${cyc}"
     export DATA="${DATAjob}/${jobid}"
-  source "${HOMEglobal}/ush/jjob_header.sh" -e "efcs" -c "base fcst efcs"
+    source "${HOMEglobal}/ush/jjob_header.sh" -e "efcs" -c "base fcst efcs"
 else
     export DATAjob="${DATAROOT}/${RUN}fcst.${PDY:-}${cyc}"
     export DATA="${DATAjob}/${jobid}"
@@ -13,7 +13,7 @@ else
 fi
 
 # Intentionally cause a shellcheck error
-if [ $DATA = "" ]; then
+if [[ -z "${DATA:-}" ]]; then
     echo "DATA is not set. Exiting."
     exit 1
 fi
