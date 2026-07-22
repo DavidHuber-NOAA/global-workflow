@@ -51,7 +51,7 @@ class Archive(Task):
         """
 
         if not os.path.isdir(arch_dict.ROTDIR):
-            raise FileNotFoundError(f"FATAL ERROR: The ROTDIR ({arch_dict.ROTDIR}) does not exist!")
+           raise FileNotFoundError(f"FATAL ERROR: The ROTDIR ({arch_dict.ROTDIR}) does not exist!")
 
         if arch_dict.RUN in ["gdas", "gfs"]:
 
