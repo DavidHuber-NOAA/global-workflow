@@ -262,7 +262,7 @@ export INTERVAL_GFS="6" # Frequency of GFS forecast
 
 # GFS output and frequency
 export FHMIN_GFS=0
-export FHMAX_GFS="384"
+export FHMAX_GFS="24"
 # Intermediate times to stop forecast when running in segments
 breakpnts=""
 export FCST_SEGMENTS="${FHMIN_GFS},${breakpnts:+${breakpnts},}${FHMAX_GFS}"
