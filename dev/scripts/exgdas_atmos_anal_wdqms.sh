@@ -55,12 +55,7 @@ cd "${DATA}" || (
 #-------------------------------------------------------------------------------
 # Copy cnvstat file from COMIN to DATA, untar and gunzip input files for wdqms.py
 # These should always be available
-cp "${COMIN}/${CNVSTAT}" .
-export err=$?
-((err != 0)) && (
-    msg="FATAL ERROR: Unable to copy '${CNVSTAT}' from '${COMIN}', ABORT!"
-    err_exit "${msg}"
-)
+cpreq "${COMIN}/${CNVSTAT}" .
 for diagfile in "${INPUT_LIST[@]}"; do
     tar -xvf "${CNVSTAT}" "${diagfile}.gz"
     export err=$?
@@ -107,9 +102,9 @@ for otype in "${OTYPES[@]}"; do
                      /^#/{print; next}
                      { id=$1; gsub(/^[ \t]+|[ \t]+$/,"",id); if (!(id in drop)) print }' \
                 "${REJECTLIST}" "${csvfile}" > "${csvfileout}"
-            cp "./${csvfileout}" "${COMOUT}/${csvfileout}" || (echo "WARNING: Unable to copy '${csvfile}' to '${COMOUT}/${csvfileout}'")
+            cpreq "./${csvfileout}" "${COMOUT}/${csvfileout}"
         else
-            cp "./${csvfile}" "${COMOUT}/${csvfileout}" || (echo "WARNING: Unable to copy '${csvfile}' to '${COMOUT}/${csvfileout}'")
+            cpreq "./${csvfile}" "${COMOUT}/${csvfileout}"
         fi
     else
         echo "WARNING: wdqms.py failed to create csvfile '${csvfile}'"
