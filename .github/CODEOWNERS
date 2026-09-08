@@ -162,6 +162,7 @@ ush/gsi_utils.py @CoryMartin-NOAA
 ush/interp_atmos_master.sh @WenMeng-NOAA
 ush/interp_atmos_sflux.sh @WenMeng-NOAA
 dev/ush/load_modules.sh @TravisElless-NOAA @DavidHuber-NOAA @RussTreadon-NOAA @JessicaMeixner-NOAA
+ush/make_ntc_file.pl @BenjaminBlake-NOAA @WenMeng-NOAA @JesseMeng-NOAA
 ush/merge_fv3_aerosol_tile.py @CoryMartin-NOAA
 ush/minmon_xtrct_*.pl @EdwardSafford-NOAA
 ush/module-setup.sh @DavidHuber-NOAA
