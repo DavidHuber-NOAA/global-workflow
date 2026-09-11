@@ -76,8 +76,8 @@ for dir_to_remove in $(find ./* -maxdepth 0 -type d -mmin +1440 | grep -v "${PDY
         if [[ ! -f "${aux_log}" ]]; then
             echo "WARNING: The auxiliary log file ${aux_log} does not exist."
             echo "         Skipping deletion of ${COMROOT}/${dir_to_remove}."
-            # Raise an error if this is more than 3 days old
-            if [[ "${gdas_date}" -lt $(date +%Y%m%d --date="3 days ago") ]]; then
+            # Raise an error if this is more than 3 days prior to PDY
+            if [[ "${gdas_date}" -lt $(date +%Y%m%d --date="${PDY} - 3 days") ]]; then
                 echo "ERROR: The auxiliary log file ${aux_log} is missing and the date is more than 3 days old."
                 exit 1
             fi
@@ -85,8 +85,8 @@ for dir_to_remove in $(find ./* -maxdepth 0 -type d -mmin +1440 | grep -v "${PDY
         fi
         if ! grep -q "This cycle is complete: Success" "${aux_log}"; then
             echo "WARNING: The fit2obs job for ${gdas_datem1} has not completed successfully. Skipping deletion of ${COMROOT}/${dir_to_remove}."
-            # Raise an error if this is more than 3 days old
-            if [[ "${gdas_date}" -lt $(date +%Y%m%d --date="3 days ago") ]]; then
+            # Raise an error if this is more than 3 days prior to PDY.
+            if [[ "${gdas_date}" -lt $(date +%Y%m%d --date="${PDY} - 3 days") ]]; then
                 echo "ERROR: The fit2obs job has not run successfully and ${dir_to_remove} is more than 3 days old."
                 exit 1
             fi
