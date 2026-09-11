@@ -69,24 +69,25 @@ cd "${COMROOT}"
 for dir_to_remove in $(find ./* -maxdepth 0 -type d -mmin +1440 | grep -v "${PDY}" | grep -v "${PDYm1}" | grep -v "fix" | grep -v "syndat" | grep -v "sdm_rtdm" | grep -v vrfyarch); do
     # Check if the auxiliary workflow is far enough along to delete the COM directory
     # The fit2obs job needs the gdas directory from the previous day. Use the aux logs to determine if it's safe to delete.
-    if [[ "${dir_to_remove}" =~ gdas.20 ]]; then
-        gdas_date=${dir_to_remove#gdas.}
+    if [[ "${dir_to_remove}" == "./gdas.20"* ]]; then
+        gdas_date=${dir_to_remove#./gdas.}
         gdas_datem1=$(date +%Y%m%d --date="${gdas_date} - 1 day")
         aux_log="${aux_EXPDIR}/logs/${gdas_datem1}18.log"
-        if [[ ! -f "${aux_log_file}" ]]; then
-            echo "WARNING: The auxiliary log file ${aux_log_file} does not exist. Skipping deletion of ${dir_to_remove}."
+        if [[ ! -f "${aux_log}" ]]; then
+            echo "WARNING: The auxiliary log file ${aux_log} does not exist."
+            echo "         Skipping deletion of ${COMROOT}/${dir_to_remove}."
             # Raise an error if this is more than 3 days old
             if [[ "${gdas_date}" -lt $(date +%Y%m%d --date="3 days ago") ]]; then
-                echo "ERROR: The auxiliary log file ${aux_log_file} is missing and the date is more than 3 days old."
+                echo "ERROR: The auxiliary log file ${aux_log} is missing and the date is more than 3 days old."
                 exit 1
             fi
             continue
         fi
-        if ! grep -q "This cycle is complete: Success" "${aux_log_file}"; then
-            echo "WARNING: The fit2obs job for ${gdas_datem1} has not completed successfully. Skipping deletion of ${dir_to_remove}."
+        if ! grep -q "This cycle is complete: Success" "${aux_log}"; then
+            echo "WARNING: The fit2obs job for ${gdas_datem1} has not completed successfully. Skipping deletion of ${COMROOT}/${dir_to_remove}."
             # Raise an error if this is more than 3 days old
             if [[ "${gdas_date}" -lt $(date +%Y%m%d --date="3 days ago") ]]; then
-                echo "ERROR: The fit2obs job has not run successfully and $dir_to_remove} is more than 3 days old."
+                echo "ERROR: The fit2obs job has not run successfully and ${dir_to_remove} is more than 3 days old."
                 exit 1
             fi
             continue
