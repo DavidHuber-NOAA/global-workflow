@@ -1,7 +1,6 @@
 #! /usr/bin/env bash
 set -x
-
-source "${HOMEglobal}/ush/jjob_header.sh" -e "epos" -c "base epos"
+source "${HOMEglobal}/ush/jjob_header.sh" -e "sfcanl_gcycle" -c "base sfcanl_gcycle"
 
 #{% if false %}
 source "${HOMEglobal}/ush/jjob_standard_vars.sh"
@@ -15,29 +14,39 @@ source "${USHglobal}/jjob_shell_setup.sh"
 source "${USHglobal}/set_strict.sh"
 
 ##############################################
-# Set variables used in the script
-##############################################
-
-##############################################
 # Begin JOB SPECIFIC work
 ##############################################
-export GFS_NCIO=${GFS_NCIO:-"YES"}
+# Ignore possible spelling error (nothing is misspelled)
+# shellcheck disable=SC2153
+GDATE=$(date --utc -d "${PDY} ${cyc} - ${assim_freq} hours" +%Y%m%d%H)
+export GDATE
 
-export PREFIX="${RUN}.t${cyc}z."
+BKG_RUN="gdas"
+if [[ "${RUN}" == "gcafs" || "${RUN}" == "gcdas" ]]; then
+    BKG_RUN="gcdas"
+fi
 
-export LEVS=$((LEVS - 1))
+declare -rx COMIN_OBS_PREV="${ROTDIR}/${BKG_RUN}.${GDATE:0:8}/${GDATE:8:2}/obs"
+declare -rx COMIN_ATMOS_RESTART_PREV="${ROTDIR}/${BKG_RUN}.${GDATE:0:8}/${GDATE:8:2}/model/atmos/restart"
 
-# Additional variables are set in scripts/exgdas_enkf_post.sh:
-#  COMIN_ATMOS_HISTORY, set in a loop over ensemble members
-#  COMOUT_ATMOS_HISTORY_STAT
+declare -rx COMIN_OBS="${ROTDIR}/${RUN}.${PDY}/${cyc}/obs"
+declare -rx COMIN_ATMOS_ANALYSIS="${ROTDIR}/${RUN}.${PDY}/${cyc}/analysis/atmos"
+declare -rx COMIN_SNOW_ANALYSIS="${ROTDIR}/${RUN}.${PDY}/${cyc}/analysis/snow"
+
+declare -rx COMOUT_ATMOS_RESTART="${ROTDIR}/${RUN}.${PDY}/${cyc}/model/atmos/restart"
+
+declare -rx COMIN_ATMOS_ENKF_ANALYSIS_STAT="${ROTDIR}/enkfgdas.${PDY}/${cyc}/ensstat/analysis/atmos"
+
+# Use CFP to stage and save files in parallel
+export USE_CFP=YES
 
 ###############################################################
 # Run relevant script
 
-${ENKFPOSTSH:-${SCRglobal}/exgdas_enkf_post.sh} && true
+${SFCANALSH:-${SCRglobal}/exglobal_atmos_anal_sfc_gcycle.sh} && true
 export err=$?
 if [[ ${err} -ne 0 ]]; then
-    err_exit "Failed to run ensemble post processing"
+    err_exit "Failed to calculate the surface analysis"
 fi
 
 ##############################################
