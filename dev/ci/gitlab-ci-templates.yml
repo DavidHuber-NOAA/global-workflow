@@ -1,0 +1,249 @@
+# ==========================================================================
+# Shared Templates for the global-workflow GitLab CI Pipeline
+# ==========================================================================
+#
+# This file defines the base job configuration shared by every job in the
+# pipeline (.base_config), the common build template (.build_template), and
+# the shared failure-cleanup/reporting template (.failure_cleanup_template).
+#
+# These templates are included both by the top-level .gitlab-ci.yml and by
+# the dynamically generated per-host case pipelines (see
+# dev/ci/scripts/utils/generate_case_pipeline.py), so that a host's set of
+# test cases can be resolved and fanned out into a GitLab child pipeline
+# without duplicating any of this shared job configuration.
+
+.base_config:
+  variables:
+    badge_GIST_ID: "66059582886cb5c2485ff64bf24e7f93"
+    GIT_STRATEGY: none
+  before_script:
+    - |
+      echo "Starting GitLab CI pipeline for global-workflow project"
+      PR_NUMBER=${PR_NUMBER:-0}
+      if [[ "${PIPELINE_TYPE}" == "ctests" ]]; then
+        GFS_CI_RUN_TYPE="ctests"
+        WORKSPACE_ID="${GFS_CI_RUN_TYPE}_${PR_NUMBER}_${CI_COMMIT_SHORT_SHA}_${CI_PIPELINE_ID}"
+      fi
+
+      export GW_RUN_PATH="${CI_BUILDS_DIR}/${WORKSPACE_ID}"
+      export GW_HOMEgfs="${GIT_CLONE_PATH}"  # This is set by GitLab for initial clone
+      export RUNTESTS_DIR="${GW_RUN_PATH}/RUNTESTS"
+
+      echo "WORKSPACE_ID: ${WORKSPACE_ID}"
+      echo "GW_RUN_PATH: ${GW_RUN_PATH}"
+      echo "GIT_CLONE_PATH: ${GIT_CLONE_PATH}"
+      echo "GW_HOMEgfs: ${GW_HOMEgfs}"
+      echo "PIPELINE_TYPE: ${PIPELINE_TYPE}"
+      echo "RUN_ON_MACHINES: ${RUN_ON_MACHINES}"
+
+      # TODO We need to add local python env to support PyGitHub not being in Spack-Stack 1.9
+      # this should be part of the spack environment setup in Spack-Stack 2.x
+      PYTHONPATH=${PYTHONPATH}:$HOME/.local/lib/python3.11/site-packages
+      echo "Updated PYTHONPATH: $PYTHONPATH"
+
+      # Make sure GW_HOMEgfs is properly set and the directory exists
+      if [ ! -d "${GW_HOMEgfs}" ]; then
+        echo "ERROR: GW_HOMEgfs directory does not exist: ${GW_HOMEgfs}"
+        exit 1
+      fi
+
+      # Setup GitHub CLI for use throughout the pipeline
+      if [[ -x "${HOME}/bin/gh" ]]; then
+        export GH="${HOME}/bin/gh"
+      else
+        export GH="$(command -v gh 2>/dev/null)"
+      fi
+      if [[ ! -x "${GH}" ]]; then
+        echo "ERROR: GitHub CLI (gh) not found or not executable. Please install it."
+        exit 1
+      else
+        echo "GitHub CLI (gh) binary resolved to: ${GH}"
+        echo "Found via PATH lookup (command -v): $(command -v gh 2>/dev/null || echo 'not in PATH')"
+        echo "And PATH has been set as: ${PATH}"
+      fi
+
+      # Configure GitLab native GitHub integration
+      if [[ -n "${GITHUB_COMMIT_SHA:-}" && ${PR_NUMBER} -ne 0 ]]; then
+        echo "Configuring GitLab native GitHub integration for commit: ${GITHUB_COMMIT_SHA}"
+        export CI_COMMIT_SHA="${GITHUB_COMMIT_SHA}"
+        echo "GitLab will report status to GitHub for this commit"
+      else
+        echo "Using GitLab default commit SHA for status reporting"
+      fi
+
+# Common build template for all modalities
+.build_template:
+  extends:
+    - .base_config
+    - .failure_cleanup_template
+  variables:
+    GIT_STRATEGY: clone
+    GIT_SUBMODULE_STRATEGY: recursive
+    GIT_SSL_NO_VERIFY: "true"  # Address potential certificate verification issues
+  stage: build
+  script:
+    - |
+      # ====================================================================
+      # MAIN BUILD TEMPLATE SECTION
+      # ====================================================================
+      # This is the core build template that serves as the foundation for
+      # all Global Workflow CI/CD build processes across different machines
+      # and modalities (GFS, GEFS, SFS, GCAFS). This template provides:
+      #   - Environment setup and validation
+      #   - Git submodule management and PR checkout logic
+      #   - Build execution via ci_utils.sh
+      #   - Error handling and status reporting
+      #   - Artifact archival and cleanup procedures
+      # All machine-specific build jobs inherit from this template and
+      # customize behavior through variables and job-specific overrides.
+      # ====================================================================
+
+      echo "Setting up build environment for ${machine^}..."
+      echo "Using build directory ${GW_HOMEgfs}"
+
+      # Load custom Rocoto path if specified for user control of Rocoto version
+      # This allows testing with different Rocoto builds without changing system Rocoto
+      source "${GW_HOMEgfs}/dev/ci/platforms/config.${MACHINE_ID}"
+      if [[ -n "${GFS_CI_ROCOTO_PATH:-}" && -d "${GFS_CI_ROCOTO_PATH}" ]]; then
+        export PATH="${GFS_CI_ROCOTO_PATH}:${PATH}"
+        echo "Using custom Rocoto build at: $(which rocotorun 2>/dev/null || echo 'NOT FOUND')"
+      else
+        echo "GFS_CI_ROCOTO_PATH not set or directory not found, using system Rocoto"
+      fi
+
+      git submodule status
+      # When GFS_CI_RUN_TYPE is set to "nightly", we use the develop branch
+      # It should be set when configuring the scheculed nightly pipeline
+      if [[ ${GFS_CI_RUN_TYPE} != "nightly" && ${PR_NUMBER} != 0 ]]; then
+        echo "pipeline is set to checkout PR_NUMBER=${PR_NUMBER} from ${GW_REPO_URL} on machine ${machine^}"
+        ${GH} pr edit ${PR_NUMBER} --repo ${GW_REPO_URL} --add-label "CI-${machine^}-Building" --remove-label "CI-${machine^}-Ready"
+        git remote add github "${GW_REPO_URL}"
+        git fetch github
+        ${GH} pr checkout "${PR_NUMBER}"
+        # Re-pin branch upstream to NOAA-EMC after `gh pr checkout` (which points it
+        # at the author's fork). Fixes submodule "not our ref" on git <= 2.45.
+        # Remove once Gaea ships git >= 2.47.
+        git remote set-url origin "${GW_REPO_URL}"
+        _br=$(git branch --show-current)
+        git config "branch.${_br}.remote"     origin
+        git config "branch.${_br}.pushRemote" origin
+        unset _br
+        git submodule update --init --recursive -j 8
+        # ── Commit-hash validation (mirror-lag race detection) ──────
+        # GITHUB_COMMIT_SHA is the PR HEAD SHA at trigger time, passed
+        # by trigger-gitlab-pipelines.yml.  If the GitLab mirror hasn't
+        # synced that commit yet, gh pr checkout lands on a stale ref.
+        # Detect and fail fast rather than testing wrong code.
+        if [[ -n "${GITHUB_COMMIT_SHA:-}" ]]; then
+          _actual_sha=$(git rev-parse HEAD)
+          if [[ "${_actual_sha}" == "${GITHUB_COMMIT_SHA}" ]]; then
+            echo "Commit hash verified: ${_actual_sha} matches expected PR HEAD"
+          else
+            echo "[ERROR] Commit hash mismatch detected — mirror-lag race condition" >&2
+            echo "[ERROR] Expected (GitHub PR HEAD): ${GITHUB_COMMIT_SHA}" >&2
+            echo "[ERROR] Actual   (checked out):    ${_actual_sha}" >&2
+            echo "[ERROR]" >&2
+            echo "[ERROR] The GitLab mirror has not yet synced the latest commit from GitHub." >&2
+            echo "[ERROR] This means the pipeline would build/test stale code." >&2
+            echo "[ERROR]" >&2
+            echo "[ERROR] Action: wait 2-5 minutes for the mirror to sync, then re-trigger" >&2
+            echo "[ERROR]         the pipeline from GitHub Actions." >&2
+            # Post a PR comment so the user sees the cause without digging
+            # into GitLab job logs.  Dedup on pipeline ID so that when all
+            # machines hit the same mirror-lag failure only the first posts.
+            _already_posted=$("${GH}" pr view "${PR_NUMBER}" --repo "${GW_REPO_URL}" \
+              --json comments --jq ".comments[].body" 2>/dev/null \
+              | grep -c "Mirror Sync.*pipeline ID: ${CI_PIPELINE_ID}" || true)
+            if [[ "${_already_posted}" -eq 0 ]]; then
+              _comment_body=$(printf '**CI Mirror Sync Failure** on %s (pipeline ID: %s)\n\nGitLab mirror has not synced the latest commit from GitHub — pipeline aborted to prevent testing stale code.\n\nExpected (GitHub PR HEAD): `%s`\nActual   (checked out):    `%s`\n\nWait 2-5 minutes for the mirror to sync, then re-trigger the pipeline from GitHub Actions.\n\n_This failure was detected automatically by global-workflow'\''s CI/CD Pipeline_' \
+                "${machine^}" "${CI_PIPELINE_ID}" "${GITHUB_COMMIT_SHA}" "${_actual_sha}")
+              "${GH}" pr comment "${PR_NUMBER}" --repo "${GW_REPO_URL}" --body "${_comment_body}" || true
+            else
+              echo "Mirror-lag comment already posted for pipeline ${CI_PIPELINE_ID}, skipping duplicate"
+            fi
+            exit 1
+          fi
+          unset _actual_sha
+        fi
+      fi
+
+      dev/ci/scripts/utils/ci_utils.sh build
+      build_status=$?
+
+      if [[ ${build_status} -ne 0 || -f logs/error.logs ]]; then
+        echo "Build failed with exit code ${build_status}"
+        # Mark the build as failed, but don't update labels here - let after_script handle it
+        exit 1
+      elif [[ ${GFS_CI_RUN_TYPE} == "pr_cases" && ${PR_NUMBER} != 0 ]]; then
+        ${GH} pr edit ${PR_NUMBER} --repo ${GW_REPO_URL} --add-label "CI-${machine^}-Running" --remove-label "CI-${machine^}-Building"
+      fi
+
+      sorc/link_workflow.sh
+      mkdir -p ${RUNTESTS_DIR}
+
+# Reusable template for failure cleanup in after_script
+.failure_cleanup_template:
+  after_script:
+    - |
+      echo "After script is running for job ${CI_JOB_NAME} on ${machine} with status ${CI_JOB_STATUS}"
+      export GW_HOMEgfs="${GIT_CLONE_PATH}"
+      if [[ ${CI_JOB_STATUS} == "failed" ]]; then
+        Machine="${machine^}"
+        echo "Job failed, performing cleanup actions for ${Machine}"
+
+        # TODO We need to add local python env to support PyGitHub not being in Spack-Stack 1.9
+        # this should be part of the spack environment setup in Spack-Stack 2.x
+        PYTHONPATH=${PYTHONPATH}:$HOME/.local/lib/python3.11/site-packages
+        echo "Updated PYTHONPATH: $PYTHONPATH"       
+
+        # Re-setup GH if needed
+        export GH=$(which gh 2>/dev/null || echo "${HOME}/bin/gh")
+        if [ ! -x "${GH}" ]; then
+          echo "WARNING: GitHub CLI (gh) not found in after_script, trying to continue anyway"
+        fi
+
+        error_log_file="sorc/logs/error.logs"
+        if [[ "${GFS_CI_RUN_TYPE}" == "pr_cases" && "${PR_NUMBER}" != 0 ]]; then
+          if [[ -f "${error_log_file}" ]]; then
+            pr_error_log_links=$(dev/ci/scripts/utils/ci_utils.sh publish_logs_from_file "PR_${PR_NUMBER}" "${error_log_file}")
+          else
+            pr_error_log_links="(no error.logs file found)"
+          fi
+
+          if [[ -s "${error_log_file}" ]]; then
+            error_logs_for_gist=""
+            error_logs_markdown=""
+
+            while IFS= read -r full_log_path; do
+              [[ -n "${full_log_path}" ]] || continue
+
+              if [[ -f "${full_log_path}" && -s "${full_log_path}" ]]; then
+                error_logs_for_gist="${error_logs_for_gist} ${full_log_path}"
+                error_logs_markdown=$(echo -e "${error_logs_markdown}\n${full_log_path}")
+              fi
+            done < "${error_log_file}"
+
+            comment_body=$(printf "**BUILD FAILED** on %s (pipeline ID: %s)\n\nIn directory: \`%s/sorc\`\n\n**Error log files:**\n\`\`\`\n%s\n\`\`\`\n\n [View Error Logs](%s)\n\n_This failure was detected automatically by global-workflow's CI/CD Pipeline_" "${Machine}" "${CI_PIPELINE_ID}" "${GW_HOMEgfs}" "${error_logs_markdown}" "${pr_error_log_links}")
+        
+            "${GH}" pr comment "${PR_NUMBER}" --repo "${GW_REPO_URL}" --body "${comment_body}" || true
+          fi
+
+          echo "Updating GitHub labels for PR ${PR_NUMBER} failure on ${Machine}"
+          ${GH} pr edit ${PR_NUMBER} --repo ${GW_REPO_URL} \
+            --add-label "CI-${Machine}-Failed" \
+            --remove-label "CI-${Machine}-Building" \
+            --remove-label "CI-${Machine}-Running" || true
+
+        elif [[ "${GFS_CI_RUN_TYPE}" == "nightly" && "${CI_PIPELINE_SOURCE}" == "schedule" ]]; then
+          echo "Updating nightly badge for ${Machine} failure with GIST ID ${badge_GIST_ID}"
+          badge_img_file="${TMPDIR:-/tmp}/$(uuidgen)/${machine}_pipeline_badge.svg"
+          mkdir -p "$(dirname "${badge_img_file}")"
+          curl -sSL "https://img.shields.io/badge/${machine}_nightly-failed-red?style=flat-round&logo=gitlab" -o "${badge_img_file}"
+          ${GH} gist edit "${badge_GIST_ID}" --add "${badge_img_file}" || true
+
+        else
+          echo "No cleanup actions needed for GFS_CI_RUN_TYPE=${GFS_CI_RUN_TYPE}, CI_PIPELINE_SOURCE=${CI_PIPELINE_SOURCE}"
+        fi
+      else
+        echo "Job status: ${CI_JOB_STATUS}, no failure cleanup needed"
+      fi

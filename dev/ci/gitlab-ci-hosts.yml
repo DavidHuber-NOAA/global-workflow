@@ -7,7 +7,7 @@
 # to be easily extendable with new computing platforms.
 #
 # Key features:
-# - Per-host test case matrices that define which tests run on which hosts
+# - Per-host jobs that dynamically resolve and run the PR case matrix
 # - Includes two sections supporting the standard PR Cases and CTests
 # - Host-specific tags and variables for job routing to the correct runners
 # - Conditional rules based on trigger type (PR vs trigger)
@@ -15,270 +15,259 @@
 # The CI_PIPELINE_SOURCE variable (set by GitLab) is when the pipeline is triggered
 # by a GitHub action. This is used to determine whether to run CTests (trigger) or
 # standard cases (!trigger).
+#
+# IMPORTANT: which PR cases run on which host is *not* listed anywhere in this
+# file. Each host's "generate_cases-<host>" job runs
+# dev/ci/scripts/utils/generate_case_pipeline.py on that host, which shells
+# out to `dev/workflow/generate_workflows.sh -L` to resolve the current,
+# host-filtered case list (based solely on each case YAML's `skip_ci_on_hosts`
+# key) and emits it as a small GitLab child pipeline. The "run_cases-<host>"
+# job then triggers that generated child pipeline to actually set up and run
+# the resolved cases. Adding or removing a case from a host only ever
+# requires editing that case's YAML under dev/ci/cases/pr/.
 
 # =======================================
 # Standard Cases configurations by host
 # =======================================
 
-# Template matrices for case lists
-.hera_cases_matrix: &hera_cases
-  - caseName: ["C48_ATM", "C48_S2SW", "C48_S2SWA_gefs", "C48mx500_3DVarAOWCDA", "C48mx500_hybAOWCDA", "C96C48_hybatmDA", "C96C48_hybatmsnowDA", "C96C48_hybatmsoilDA", "C96C48_ufsgsi_hybatmDA", "C96C48_ufs_hybatmDA", "C96C48mx500_S2SW_cyc_gfs", "C96_atm3DVar", "C96_gcafs_cycled", "C96_gcafs_cycled_noDA", "C96mx100_S2S", "C48_gsienkf_atmDA", "C48_ufsenkf_atmDA"]
+# Template for the job that resolves this host's supported PR case list
+# (via generate_workflows.sh -L) and emits it as a child pipeline.
+.generate_case_pipeline_template:
+  extends: .base_config
+  stage: generate_matrix
+  script:
+    - |
+      source "${GW_HOMEgfs}/dev/ush/gw_setup.sh"
+      python3 "${GW_HOMEgfs}/dev/ci/scripts/utils/generate_case_pipeline.py" \
+        --host "${machine}" \
+        --homeglobal "${GW_HOMEgfs}" \
+        --output "case-pipeline-${machine}.yml"
+      cat "case-pipeline-${machine}.yml"
+  artifacts:
+    paths:
+      - case-pipeline-${machine}.yml
 
-.gaeac6_cases_matrix: &gaeac6_cases
-  - caseName: ["C48_ATM", "C48_S2SW", "C48_S2SWA_gefs", "C48mx500_3DVarAOWCDA", "C48mx500_hybAOWCDA", "C96C48_hybatmDA", "C96C48_hybatmsnowDA", "C96C48_hybatmsoilDA", "C96C48mx500_S2SW_cyc_gfs", "C96_atm3DVar", "C96_gcafs_cycled", "C96_gcafs_cycled_noDA", "C96mx100_S2S", "C48_gsienkf_atmDA", "C48_ufsenkf_atmDA"]
-
-.orion_cases_matrix: &orion_cases
-  - caseName: ["C48_ATM", "C48_S2SW", "C48_S2SWA_gefs", "C96C48_hybatmDA", "C96C48mx500_S2SW_cyc_gfs", "C96_atm3DVar", "C96mx100_S2S", "C96_gcafs_cycled"]
-
-.hercules_cases_matrix: &hercules_cases
-  - caseName: ["C48_ATM", "C48_S2SW", "C48_S2SWA_gefs", "C48mx500_3DVarAOWCDA", "C48mx500_hybAOWCDA", "C96C48_hybatmDA", "C96C48mx500_S2SW_cyc_gfs", "C96_atm3DVar", "C96mx100_S2S", "C96_gcafs_cycled"]
-
-.ursa_cases_matrix: &ursa_cases
-  - caseName: ["C48_ATM", "C48_S2SW", "C48_S2SWA_gefs", "C48mx500_3DVarAOWCDA", "C48mx500_hybAOWCDA", "C96C48_hybatmDA", "C96C48_hybatmsnowDA", "C96C48_hybatmsoilDA", "C96C48_ufsgsi_hybatmDA", "C96C48_ufs_hybatmDA", "C96C48mx500_S2SW_cyc_gfs", "C96_atm3DVar", "C96mx100_S2S", "C96_gcafs_cycled", "C96_gcafs_cycled_noDA", "C48_gsienkf_atmDA", "C48_ufsenkf_atmDA"]
-
-.derecho_cases_matrix: &derecho_cases
-  - caseName: ["C48_ATM", "C48_S2SW", "C48_S2SWA_gefs", "C48mx500_3DVarAOWCDA", "C48mx500_hybAOWCDA", "C96C48_hybatmDA", "C96C48_hybatmsnowDA", "C96C48_hybatmsoilDA", "C96C48_ufsgsi_hybatmDA", "C96C48_ufs_hybatmDA", "C96C48mx500_S2SW_cyc_gfs", "C96_atm3DVar", "C96mx100_S2S", "C96_gcafs_cycled", "C96_gcafs_cycled_noDA"]
-
-
-# Host: Hera - Standard Cases
-setup_experiments-hera:
-  extends: .setup_experiment_template
+# Host: Hera - Generate and run PR Cases
+generate_cases-hera:
+  extends: .generate_case_pipeline_template
   variables:
     machine: hera
   tags:
-      - hera
-  parallel:
-    matrix: *hera_cases
+    - hera
   needs:
     - build-hera
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bhera\b|all/)
 
-run_experiments-hera:
-  extends: .run_experiments_template
-  variables:
-    machine: hera
-  tags:
-    - hera
-  parallel:
-    matrix: *hera_cases
+run_cases-hera:
+  stage: setup_tests
   needs:
-    - setup_experiments-hera
+    - generate_cases-hera
+  variables:
+    # Explicitly forward the parent pipeline context to the generated child
+    # pipeline (same-project child pipelines inherit predefined CI/CD
+    # variables, but forwarding these explicitly keeps behavior consistent
+    # regardless of GitLab version/config).
+    PIPELINE_TYPE: ${PIPELINE_TYPE}
+    RUN_ON_MACHINES: ${RUN_ON_MACHINES}
+    GFS_CI_RUN_TYPE: ${GFS_CI_RUN_TYPE}
+    PR_NUMBER: ${PR_NUMBER}
+    GITHUB_COMMIT_SHA: ${GITHUB_COMMIT_SHA}
+    GW_REPO_URL: ${GW_REPO_URL}
+    WORKSPACE_ID: ${WORKSPACE_ID}
+    GIT_CLONE_PATH: ${GIT_CLONE_PATH}
+  trigger:
+    include:
+      - artifact: case-pipeline-hera.yml
+        job: generate_cases-hera
+    strategy: depend
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bhera\b|all/)
 
-# Host: GAEAC6 - Standard Cases
-setup_experiments-gaeac6:
-  extends: .setup_experiment_template
+# Host: GAEAC6 - Generate and run PR Cases
+generate_cases-gaeac6:
+  extends: .generate_case_pipeline_template
   variables:
     machine: gaeac6
   tags:
     - gaeac6
-  parallel:
-    matrix: *gaeac6_cases
   needs:
     - build-gaeac6
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bgaeac6\b|all/)
 
-run_experiments-gaeac6:
-  extends: .run_experiments_template
-  variables:
-    machine: gaeac6
-  tags:
-    - gaeac6
-  parallel:
-    matrix: *gaeac6_cases
+run_cases-gaeac6:
+  stage: setup_tests
   needs:
-    - setup_experiments-gaeac6
+    - generate_cases-gaeac6
+  variables:
+    # Explicitly forward the parent pipeline context to the generated child
+    # pipeline (same-project child pipelines inherit predefined CI/CD
+    # variables, but forwarding these explicitly keeps behavior consistent
+    # regardless of GitLab version/config).
+    PIPELINE_TYPE: ${PIPELINE_TYPE}
+    RUN_ON_MACHINES: ${RUN_ON_MACHINES}
+    GFS_CI_RUN_TYPE: ${GFS_CI_RUN_TYPE}
+    PR_NUMBER: ${PR_NUMBER}
+    GITHUB_COMMIT_SHA: ${GITHUB_COMMIT_SHA}
+    GW_REPO_URL: ${GW_REPO_URL}
+    WORKSPACE_ID: ${WORKSPACE_ID}
+    GIT_CLONE_PATH: ${GIT_CLONE_PATH}
+  trigger:
+    include:
+      - artifact: case-pipeline-gaeac6.yml
+        job: generate_cases-gaeac6
+    strategy: depend
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bgaeac6\b|all/)
 
-# Host: Orion - Standard Cases
-setup_experiments-orion:
-  extends: .setup_experiment_template
+# Host: Orion - Generate and run PR Cases
+generate_cases-orion:
+  extends: .generate_case_pipeline_template
   variables:
     machine: orion
   tags:
     - orion
-  parallel:
-    matrix: *orion_cases
   needs:
     - build-orion
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\borion\b|all/)
 
-run_experiments-orion:
-  extends: .run_experiments_template
-  variables:
-    machine: orion
-  tags:
-    - orion
-  parallel:
-    matrix: *orion_cases
+run_cases-orion:
+  stage: setup_tests
   needs:
-    - setup_experiments-orion
+    - generate_cases-orion
+  variables:
+    # Explicitly forward the parent pipeline context to the generated child
+    # pipeline (same-project child pipelines inherit predefined CI/CD
+    # variables, but forwarding these explicitly keeps behavior consistent
+    # regardless of GitLab version/config).
+    PIPELINE_TYPE: ${PIPELINE_TYPE}
+    RUN_ON_MACHINES: ${RUN_ON_MACHINES}
+    GFS_CI_RUN_TYPE: ${GFS_CI_RUN_TYPE}
+    PR_NUMBER: ${PR_NUMBER}
+    GITHUB_COMMIT_SHA: ${GITHUB_COMMIT_SHA}
+    GW_REPO_URL: ${GW_REPO_URL}
+    WORKSPACE_ID: ${WORKSPACE_ID}
+    GIT_CLONE_PATH: ${GIT_CLONE_PATH}
+  trigger:
+    include:
+      - artifact: case-pipeline-orion.yml
+        job: generate_cases-orion
+    strategy: depend
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\borion\b|all/)
 
-# Host: Hercules - Standard Cases
-setup_experiments-hercules:
-  extends: .setup_experiment_template
+# Host: Hercules - Generate and run PR Cases
+generate_cases-hercules:
+  extends: .generate_case_pipeline_template
   variables:
     machine: hercules
   tags:
     - hercules
-  parallel:
-    matrix: *hercules_cases
   needs:
     - build-hercules
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bhercules\b|all/)
 
-run_experiments-hercules:
-  extends: .run_experiments_template
-  variables:
-    machine: hercules
-  tags:
-    - hercules
-  parallel:
-    matrix: *hercules_cases
+run_cases-hercules:
+  stage: setup_tests
   needs:
-    - setup_experiments-hercules
+    - generate_cases-hercules
+  variables:
+    # Explicitly forward the parent pipeline context to the generated child
+    # pipeline (same-project child pipelines inherit predefined CI/CD
+    # variables, but forwarding these explicitly keeps behavior consistent
+    # regardless of GitLab version/config).
+    PIPELINE_TYPE: ${PIPELINE_TYPE}
+    RUN_ON_MACHINES: ${RUN_ON_MACHINES}
+    GFS_CI_RUN_TYPE: ${GFS_CI_RUN_TYPE}
+    PR_NUMBER: ${PR_NUMBER}
+    GITHUB_COMMIT_SHA: ${GITHUB_COMMIT_SHA}
+    GW_REPO_URL: ${GW_REPO_URL}
+    WORKSPACE_ID: ${WORKSPACE_ID}
+    GIT_CLONE_PATH: ${GIT_CLONE_PATH}
+  trigger:
+    include:
+      - artifact: case-pipeline-hercules.yml
+        job: generate_cases-hercules
+    strategy: depend
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bhercules\b|all/)
 
-# Host: Ursa - Standard Cases
-setup_experiments-ursa:
-  extends: .setup_experiment_template
+# Host: Ursa - Generate and run PR Cases
+generate_cases-ursa:
+  extends: .generate_case_pipeline_template
   variables:
     machine: ursa
   tags:
     - ursa
-  parallel:
-    matrix: *ursa_cases
   needs:
     - build-ursa
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bursa\b|all/)
 
-run_experiments-ursa:
-  extends: .run_experiments_template
-  variables:
-    machine: ursa
-  tags:
-    - ursa
-  parallel:
-    matrix: *ursa_cases
+run_cases-ursa:
+  stage: setup_tests
   needs:
-    - setup_experiments-ursa
+    - generate_cases-ursa
+  variables:
+    # Explicitly forward the parent pipeline context to the generated child
+    # pipeline (same-project child pipelines inherit predefined CI/CD
+    # variables, but forwarding these explicitly keeps behavior consistent
+    # regardless of GitLab version/config).
+    PIPELINE_TYPE: ${PIPELINE_TYPE}
+    RUN_ON_MACHINES: ${RUN_ON_MACHINES}
+    GFS_CI_RUN_TYPE: ${GFS_CI_RUN_TYPE}
+    PR_NUMBER: ${PR_NUMBER}
+    GITHUB_COMMIT_SHA: ${GITHUB_COMMIT_SHA}
+    GW_REPO_URL: ${GW_REPO_URL}
+    WORKSPACE_ID: ${WORKSPACE_ID}
+    GIT_CLONE_PATH: ${GIT_CLONE_PATH}
+  trigger:
+    include:
+      - artifact: case-pipeline-ursa.yml
+        job: generate_cases-ursa
+    strategy: depend
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bursa\b|all/)
 
-# Host: Ursa - Standard Cases
-setup_experiments-derecho:
-  extends: .setup_experiment_template
+# Host: Derecho - Generate and run PR Cases
+generate_cases-derecho:
+  extends: .generate_case_pipeline_template
   variables:
     machine: derecho
   tags:
     - derecho
-  parallel:
-    matrix: *derecho_cases
   needs:
     - build-derecho
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bderecho\b|all/)
 
-run_experiments-derecho:
-  extends: .run_experiments_template
-  variables:
-    machine: derecho
-  tags:
-    - derecho
-  parallel:
-    matrix: *derecho_cases
+run_cases-derecho:
+  stage: setup_tests
   needs:
-    - setup_experiments-derecho
+    - generate_cases-derecho
+  variables:
+    # Explicitly forward the parent pipeline context to the generated child
+    # pipeline (same-project child pipelines inherit predefined CI/CD
+    # variables, but forwarding these explicitly keeps behavior consistent
+    # regardless of GitLab version/config).
+    PIPELINE_TYPE: ${PIPELINE_TYPE}
+    RUN_ON_MACHINES: ${RUN_ON_MACHINES}
+    GFS_CI_RUN_TYPE: ${GFS_CI_RUN_TYPE}
+    PR_NUMBER: ${PR_NUMBER}
+    GITHUB_COMMIT_SHA: ${GITHUB_COMMIT_SHA}
+    GW_REPO_URL: ${GW_REPO_URL}
+    WORKSPACE_ID: ${WORKSPACE_ID}
+    GIT_CLONE_PATH: ${GIT_CLONE_PATH}
+  trigger:
+    include:
+      - artifact: case-pipeline-derecho.yml
+        job: generate_cases-derecho
+    strategy: depend
   rules:
     - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bderecho\b|all/)
-
-finalize_success-hera:
-  extends: .finalize_success_template
-  variables:
-    machine: hera
-  tags:
-    - hera
-  needs:
-    - job: run_experiments-hera
-      optional: true
-  when: on_success
-  rules:
-    - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bhera\b|all/)
-
-finalize_success-gaeac6:
-  extends: .finalize_success_template
-  variables:
-    machine: gaeac6
-  tags:
-    - gaeac6
-  needs:
-    - job: run_experiments-gaeac6
-      optional: true
-  when: on_success
-  rules:
-    - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bgaeac6\b|all/)
-
-finalize_success-orion:
-  extends: .finalize_success_template
-  variables:
-    machine: orion
-  tags:
-    - orion
-  needs:
-    - job: run_experiments-orion
-      optional: true
-  when: on_success
-  rules:
-    - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\borion\b|all/)
-
-finalize_success-hercules:
-  extends: .finalize_success_template
-  variables:
-    machine: hercules
-  tags:
-    - hercules
-  needs:
-    - job: run_experiments-hercules
-      optional: true
-  when: on_success
-  rules:
-    - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bhercules\b|all/)
-
-finalize_success-ursa:
-  extends: .finalize_success_template
-  variables:
-    machine: ursa
-  tags:
-    - ursa
-  needs:
-    - job: run_experiments-ursa
-      optional: true
-  when: on_success
-  rules:
-    - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\bursa\b|all/)
-
-finalize_success-derecho:
-  extends: .finalize_success_template
-  variables:
-    machine: derecho
-  tags:
-    - derecho
-  needs:
-    - job: run_experiments-derecho
-      optional: true
-  when: on_success
-  rules:
-    - if: $PIPELINE_TYPE == "pr_cases" && ($CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule") && ($RUN_ON_MACHINES =~ /\derecho\b|all/)
 
 # =======================================
 

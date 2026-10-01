@@ -108,14 +108,42 @@ ${CI_BUILDS_DIR}/
 ### Supported Platforms
 - **Hera**: NOAA HPC system
 - **Gaea C6**: NOAA/NASA supercomputer
+- **Orion / Hercules**: MSU HPC systems
+- **Ursa**: NOAA HPC system
+- **Derecho**: NCAR HPC system
+
+### Which cases run on which host?
+
+This is **not** encoded anywhere in the GitLab CI YAML files. It is determined
+entirely by `dev/workflow/generate_workflows.sh` -- the same script developers
+use to stand up experiments locally -- via each case YAML's `skip_ci_on_hosts`
+key (`dev/ci/cases/pr/*.yaml`). For every pipeline run, each host's
+`generate_cases-<host>` job invokes `generate_workflows.sh -L` (a lightweight,
+list-only mode that resolves the case list without building or creating
+experiment directories) to compute the current, host-filtered case list, and
+emits it as a small GitLab child pipeline
+(`dev/ci/scripts/utils/generate_case_pipeline.py`). The corresponding
+`run_cases-<host>` job then triggers that generated child pipeline to set up
+and run the resolved cases.
+
+To exclude a case from running on a particular host (or to add it back),
+simply edit that case's `skip_ci_on_hosts` list in its YAML file under
+`dev/ci/cases/pr/`. No GitLab CI configuration changes are required.
 
 ### Extending to New Hosts
-To add a new computing platform:
 
-1. **Add to GitHub Actions**: Add new boolean input in `.github/workflows/trigger-gitlab-piplines.yml`
-2. **Create Host Section**: Add configuration block in `dev/ci/gitlab-ci-hosts.yml`
-3. **Define Test Matrix**: Specify which test cases run on the new host
-4. **Set Runner Tags**: Configure GitLab runner tags for job routing
+To add a new computing platform to the pipeline:
+
+1. **Add to GitHub Actions**: Add new boolean input in `.github/workflows/trigger-gitlab-pipelines.yml`
+2. **Add to `generate_workflows.sh`**: Ensure the host is supported by `dev/workflow/generate_workflows.sh`
+   and `ush/detect_machine.sh` (this is required regardless of CI).
+3. **Create Host Section**: Add a `build-<host>`, `generate_cases-<host>`, and `run_cases-<host>`
+   job block in `dev/ci/gitlab-ci-hosts.yml` (copy an existing host's block and rename).
+4. **Set Runner Tags**: Configure GitLab runner tags for job routing.
+
+Note that step 3 does **not** involve specifying which test cases run on the
+new host -- that is resolved automatically from each case's `skip_ci_on_hosts`
+key, exactly as it is for every other host.
 
 ## File Architecture
 
@@ -123,10 +151,14 @@ To add a new computing platform:
 ```
 .gitlab-ci.yml                    # Main pipeline orchestration
 dev/ci/
-├── gitlab-ci-hosts.yml          # Host-specific configurations and test matrices
-├── gitlab-ci-cases.yml          # Templates for standard experiment cases  
+├── gitlab-ci-templates.yml      # Shared base/build/cleanup templates
+├── gitlab-ci-hosts.yml          # Per-host build/generate/trigger job definitions
+├── gitlab-ci-cases.yml          # Templates for standard experiment cases
 ├── gitlab-ci-ctests.yml         # CTest framework configuration
-└── cases/pr/                    # Individual test case definitions
+├── scripts/utils/
+│   ├── get_host_case_list.py    # Resolves a host's case list via generate_workflows.sh -L
+│   └── generate_case_pipeline.py # Emits a host's GitLab CI child pipeline YAML
+└── cases/pr/                    # Individual test case definitions (skip_ci_on_hosts lives here)
     ├── C48_ATM.yaml
     ├── C96_atm3DVar.yaml
     └── ...
@@ -169,9 +201,11 @@ PR_NUMBER=1234  # Set via GitHub trigger
 
 ### Standard Flow
 1. **Build Stage**: Compile and setup on selected machines
-2. **Setup Tests**: Prepare experiment directories or CTest environment
-3. **Run Tests**: Execute test cases or CTests
-4. **Finalize**: Cleanup and directory management (nightly only)
+2. **Generate Matrix**: Resolve each host's supported case list via `generate_workflows.sh -L`
+   and emit it as a GitLab child pipeline (PR Cases only; skipped for CTests)
+3. **Setup Tests**: Prepare experiment directories or CTest environment
+4. **Run Tests**: Execute test cases or CTests
+5. **Finalize**: Cleanup and directory management (nightly only)
 
 ### Conditional Execution
 - Pipeline jobs use GitLab rules to conditionally execute based on:
