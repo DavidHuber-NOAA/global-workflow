@@ -96,11 +96,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--host', required=True, help='Host/machine name (e.g. hera)')
     parser.add_argument('--homeglobal', default=None,
-                         help='Path to the global-workflow repository root (default: auto-detected)')
+                        help='Path to the global-workflow repository root (default: auto-detected)')
     parser.add_argument('--cases-dir', default=None,
-                         help='Path to the directory of case YAMLs (default: {homeglobal}/dev/ci/cases/pr)')
+                        help='Path to the directory of case YAMLs (default: {homeglobal}/dev/ci/cases/pr)')
     parser.add_argument('--output', default=None,
-                         help='Output file for the generated pipeline YAML (default: stdout)')
+                        help='Output file for the generated pipeline YAML (default: stdout)')
     args = parser.parse_args()
 
     cases = get_host_cases(args.host, HOMEglobal=args.homeglobal, cases_dir=args.cases_dir)
