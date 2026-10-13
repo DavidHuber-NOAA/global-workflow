@@ -29,7 +29,9 @@ josh-filter "$(./make_filter.sh gcafs 2)" HEAD
 ```
 
 The lists are plain text: one repository-relative path per line, `#` starts a comment. Directories
-are written without a trailing slash; `make_filter.sh` adds it.
+are written without a trailing slash; `make_filter.sh` adds it. Trailing-`*` globs (e.g.
+`dev/jobs/JGLOBAL_MARINE_*`) are used where a pattern matches only files that belong in the same
+list. When editing, keep globs narrow: a glob must never match a file that a lower tier still needs.
 
 ## Pending lists
 
