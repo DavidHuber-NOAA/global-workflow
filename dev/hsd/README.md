@@ -45,6 +45,26 @@ the filtered tree because shared Python code imports every system unconditionall
 Make those imports lazy (or registered per system), then pass `-p` to `make_filter.sh` to apply the pending
 lists too.
 
+## Files that are created by `sorc/link_workflow.sh`
+
+Several directories GCAFS needs are not tracked in this repository; `sorc/link_workflow.sh` creates
+them as (git-ignored) symlinks into submodules, so they are available as long as the submodule is kept:
+
+* `parm/gdas/{aero,atm,io,ioda,anlstat,analcalc,jcb-gdas,jcb-algorithms,spoc}` and `ush/python/jcb`
+  come from `sorc/gdas.cd`, which is therefore kept at Tiers 1 and 1.5 (the tracked `parm/gdas/staging`
+  only holds snow analysis templates and is the only part of `parm/gdas` removed).
+* `parm/post/*`, `parm/ufs/*` templates and CCPP suites come from `sorc/upp.fd` and `sorc/ufs_model.fd`.
+* `parm/chem/nexus` comes from `sorc/nexus.fd`.
+
+At Tier 2 `sorc/gdas.cd` is removed, but `link_workflow.sh` links `jcb` from it unconditionally; guard that
+link with a directory check before using a Tier 2 tree.
+
+Files that looked removable but are required by kept code were retained: `dev/workflow/aux`,
+`ush/cpfsd.sh` and `ush/getdump.sh` (Tier 2 only), `ush/parse-storm-type.pl` (Tier 2 only),
+`ush/wave_domain_grid.sh`, `ush/wave_extractvars.sh`, `ush/ocnice_extractvars.sh` (used by the
+`extractvars` and archive jobs), and `dev/parm/config/gcafs/config.nsst` and `config.efcs`
+(sourced by `config.fcst.j2`).
+
 ## Known limitations
 
 * JOSH filters whole files and directories; it does not edit file contents. References to removed

@@ -155,27 +155,25 @@ dev/ctests/cases
 dev/ush/get_warm_s2sw_restart_tarballs.sh
 dev/ush/getgfsnctime.py
 dev/ush/setup_gfs_for_nco.py
-dev/workflow/aux
 
 # Shell and Python utilities (ush) not used by GCAFS
 ush/calc_*
-ush/cpfsd.sh
 ush/create_gsi_info.sh
-ush/getdump.sh
 ush/gfs_*
 ush/global_savefits.sh
 ush/link_crtm_fix.sh
 ush/make_*
 ush/minmon_xtrct_*
-ush/ocnice_extractvars.sh
 ush/ozn_xtrct.sh
-ush/parse-storm-type.pl
 ush/prep_sfc_ice_blend.sh
 ush/prep_sfc_snow.sh
 ush/process_ocean_*
 ush/radmon_*
 ush/regrid_gsi_sfc_incr_to_tile.sh
-ush/wave_*
+ush/wave_grib2.sh
+ush/wave_grid_interp.sh
+ush/wave_grid_moddef.sh
+ush/wave_tar.sh
 ush/wdqms.py
 
 # Parameter files (parm) not used by GCAFS
@@ -192,7 +190,7 @@ parm/archive/master_gfs.yaml.j2
 parm/archive/master_sfs.yaml.j2
 parm/archive/ocean_*
 parm/fetch/gfs_*
-parm/gdas
+parm/gdas/staging
 parm/post/oceanice_products_*
 parm/prep_sfc
 parm/product/SMINIT.CTL
