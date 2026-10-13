@@ -37,11 +37,9 @@ dev/parm/config/gcafs/config.aeroanl*
 dev/parm/config/gcafs/config.an*
 dev/parm/config/gcafs/config.atmanl*
 dev/parm/config/gcafs/config.atmensanl*
-dev/parm/config/gcafs/config.efcs
 dev/parm/config/gcafs/config.epos
 dev/parm/config/gcafs/config.fetch.j2
 dev/parm/config/gcafs/config.metp
-dev/parm/config/gcafs/config.nsst
 dev/parm/config/gcafs/config.offlineanl
 dev/parm/config/gcafs/config.prep.j2
 dev/parm/config/gcafs/config.sfcanl_gcycle
@@ -59,6 +57,9 @@ parm/relo
 sorc/gdas.cd
 sorc/verif-global.fd
 ush/calcanl_gcafs.py
+ush/cpfsd.sh
+ush/getdump.sh
+ush/parse-storm-type.pl
 ush/getges.sh
 ush/syndat_getjtbul.sh
 ush/syndat_qctropcy.sh
