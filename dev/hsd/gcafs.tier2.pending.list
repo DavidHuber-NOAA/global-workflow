@@ -1,0 +1,14 @@
+# GCAFS Tier 2 (pending): data assimilation removals that need code refactoring
+# One repository-relative path per line; "#" starts a comment. Paths are excluded from the filtered history.
+
+# Cycled application and XML (remove with workflow-factory refactor)
+dev/workflow/applications/gcafs_cycled.py
+dev/workflow/rocoto/gcafs_cycled_xml.py
+
+# Data assimilation python task modules (remove with pygfs lazy-import refactor)
+ush/python/pygfs/task/aero_analysis.py
+ush/python/pygfs/task/aero_bmatrix.py
+ush/python/pygfs/task/offline_analysis.py
+ush/python/pygfs/task/analysis_stats.py
+ush/python/pygfs/task/fv3_analysis_calc.py
+ush/python/pygfs/task/fetch.py

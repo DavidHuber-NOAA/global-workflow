@@ -1,0 +1,95 @@
+# GCAFS Tier 2: additionally remove data assimilation (forecast-only)
+# One repository-relative path per line; "#" starts a comment. Paths are excluded from the filtered history.
+
+# Data assimilation jobs
+dev/jobs/JGDAS_AERO_ANALYSIS_GENERATE_BMATRIX
+dev/jobs/JGFS_ATMOS_VERIFICATION
+dev/jobs/JGLOBAL_AERO_ANALYSIS_FINALIZE
+dev/jobs/JGLOBAL_AERO_ANALYSIS_INITIALIZE
+dev/jobs/JGLOBAL_AERO_ANALYSIS_VARIATIONAL
+dev/jobs/JGLOBAL_ANALYSIS_STATS
+dev/jobs/JGLOBAL_ATMOS_ANAL_CALC
+dev/jobs/JGLOBAL_ATMOS_ANAL_SFC_GCYCLE
+dev/jobs/JGLOBAL_ATMOS_TROPCY_QC
+dev/jobs/JGLOBAL_FETCH
+dev/jobs/JGLOBAL_OFFLINE_ATMOS_ANALYSIS
+
+# Data assimilation execution scripts
+dev/scripts/exgdas_aero_analysis_generate_bmatrix.py
+dev/scripts/exglobal_aero_analysis_finalize.py
+dev/scripts/exglobal_aero_analysis_initialize.py
+dev/scripts/exglobal_aero_analysis_variational.py
+dev/scripts/exglobal_analysis_stats.py
+dev/scripts/exglobal_atmos_anal_calc.sh
+dev/scripts/exglobal_atmos_anal_sfc_gcycle.sh
+dev/scripts/exglobal_atmos_tropcy_qc.sh
+dev/scripts/exglobal_fetch.py
+dev/scripts/exglobal_offline_atmos_analysis.py
+
+# Data assimilation job cards
+dev/job_cards/rocoto/aeroanlfinal.sh
+dev/job_cards/rocoto/aeroanlgenb.sh
+dev/job_cards/rocoto/aeroanlinit.sh
+dev/job_cards/rocoto/aeroanlvar.sh
+dev/job_cards/rocoto/analcalc.sh
+dev/job_cards/rocoto/anlstat.sh
+dev/job_cards/rocoto/fetch.sh
+dev/job_cards/rocoto/metp.sh
+dev/job_cards/rocoto/offlineanl.sh
+dev/job_cards/rocoto/prep.sh
+dev/job_cards/rocoto/sfcanl_gcycle.sh
+
+# Data assimilation configuration
+dev/parm/config/gcafs/config.aeroanl.j2
+dev/parm/config/gcafs/config.aeroanlfinal
+dev/parm/config/gcafs/config.aeroanlgenb
+dev/parm/config/gcafs/config.aeroanlinit
+dev/parm/config/gcafs/config.aeroanlvar
+dev/parm/config/gcafs/config.anal
+dev/parm/config/gcafs/config.analcalc
+dev/parm/config/gcafs/config.analcalc_fv3jedi
+dev/parm/config/gcafs/config.anlstat
+dev/parm/config/gcafs/config.atmanl.j2
+dev/parm/config/gcafs/config.atmanlfinal
+dev/parm/config/gcafs/config.atmanlfv3inc
+dev/parm/config/gcafs/config.atmanlinit
+dev/parm/config/gcafs/config.atmanlvar
+dev/parm/config/gcafs/config.atmensanl.j2
+dev/parm/config/gcafs/config.atmensanlfinal
+dev/parm/config/gcafs/config.atmensanlfv3inc
+dev/parm/config/gcafs/config.atmensanlinit
+dev/parm/config/gcafs/config.atmensanlletkf
+dev/parm/config/gcafs/config.atmensanlobs
+dev/parm/config/gcafs/config.atmensanlsol
+dev/parm/config/gcafs/config.efcs
+dev/parm/config/gcafs/config.epos
+dev/parm/config/gcafs/config.fetch.j2
+dev/parm/config/gcafs/config.metp
+dev/parm/config/gcafs/config.nsst
+dev/parm/config/gcafs/config.offlineanl
+dev/parm/config/gcafs/config.prep.j2
+dev/parm/config/gcafs/config.sfcanl_gcycle
+
+# Cycled CI cases
+dev/ci/cases/gcafsv1/C384_gcafs_cycled.yaml
+dev/ci/cases/gcafsv1/C384_gcafs_cycled_noDA.yaml
+dev/ci/cases/gcafsv1/C384_gcafs_cycled_noDA_dev.yaml
+dev/ci/cases/gcafsv1/C96_gcafs_cycled.yaml
+dev/ci/cases/gcafsv1/C96_gcafs_cycled_noDA.yaml
+dev/ci/cases/gcafsv1/C96_gcafs_cycled_noDA_dev.yaml
+dev/ci/cases/pr/C96_gcafs_cycled.yaml
+dev/ci/cases/pr/C96_gcafs_cycled_noDA.yaml
+dev/ci/cases/yamls/gcafs_cycled_defaults_ci.yaml
+dev/ci/cases/yamls/gcafs_cycled_noDA_defaults_ci.yaml
+dev/ci/cases/yamls/gcafs_cycled_noDA_defaults_dev.yaml
+
+# Data assimilation utilities and submodules
+sorc/gdas.cd
+sorc/verif-global.fd
+ush/calcanl_gcafs.py
+ush/syndat_getjtbul.sh
+ush/syndat_qctropcy.sh
+ush/getges.sh
+parm/relo
+parm/fetch
+docs/source/systems/gcafs/cycled
