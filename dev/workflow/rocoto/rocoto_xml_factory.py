@@ -6,7 +6,9 @@ for different types of workflows (GFS, GEFS, SFS, GCAFS).
 """
 from wxflow import Factory
 import pkgutil
+from rocoto.rocoto_xml import RocotoXML
 from importlib import import_module
+import inspect
 
 # Create a factory for Rocoto XML generator objects
 rocoto_xml_factory = Factory('RocotoXML')
@@ -18,7 +20,10 @@ for loader, module_name, is_pkg in pkgutil.iter_modules(['rocoto']):
         continue
     # Get the list of importable classes with RocotoXML in their name
     module = import_module(f"rocoto.{module_name}")
-    class_names = [name for name in dir(module) if "RocotoXML" in name and name != "RocotoXML"]
+    class_names = [name for name in dir(module)
+                   if inspect.isclass(getattr(module, name)) and
+                   issubclass(getattr(module, name), RocotoXML) and
+                   name != "RocotoXML"]
     for class_name in class_names:
         app_class = getattr(module, class_name)
         # Register XML configuration
@@ -33,8 +38,9 @@ for loader, module_name, is_pkg in pkgutil.iter_modules(['rocoto']):
             mode = 'forecast-only'
             _class_mode = 'forecastonly'
         else:
-            # This is most likely a parent class or method. Skip.
-            continue
+            # This is a RocotoXML class with only one mode (e.g. GEFS): forecast-only
+            mode = 'forecast-only'
+            _class_mode = 'null'
 
         app = class_name.lower().split('rocotoxml')[0].split(_class_mode)[0]
 

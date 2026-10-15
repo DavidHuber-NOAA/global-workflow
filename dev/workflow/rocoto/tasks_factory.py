@@ -24,18 +24,22 @@ Examples
 
 from wxflow import Factory
 import pkgutil
+from rocoto.tasks import Tasks
 from importlib import import_module
+import inspect
 
 # Initialize the tasks factory
 tasks_factory = Factory('Tasks')
 
 for loader, module_name, is_pkg in pkgutil.iter_modules(['rocoto']):
-    # Only include modules with 'tasks' in their name
-    if 'tasks' not in module_name.lower() or module_name.lower() == 'tasks':
-        continue
     # Get the list of importable classes with Tasks in their name
+    if not module_name.endswith('tasks'):
+        continue
     module = import_module(f"rocoto.{module_name}")
-    class_names = [name for name in dir(module) if "Tasks" in name and name != "Tasks"]
+    class_names = [name for name in dir(module)
+                   if inspect.isclass(getattr(module, name)) and
+                   issubclass(getattr(module, name), Tasks) and
+                   name != "Tasks"]
     for class_name in class_names:
         task_class = getattr(module, class_name)
         # Register task configuration
