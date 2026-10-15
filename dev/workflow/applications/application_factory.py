@@ -15,7 +15,9 @@ Each application has its own configuration class that inherits from AppConfig.
 
 from wxflow import Factory
 import pkgutil
+from applications.applications import AppConfig
 from importlib import import_module
+import inspect
 
 # Initialize the application configuration factory
 app_config_factory = Factory('AppConfig')
@@ -24,8 +26,13 @@ app_config_factory = Factory('AppConfig')
 for loader, module_name, is_pkg in pkgutil.iter_modules(['applications']):
     # Get the list of importable classes with AppConfig in their name
     module = import_module(f"applications.{module_name}")
-    class_names = [name for name in dir(module) if "AppConfig" in name]
+    class_names = [name for name in dir(module)
+                   if inspect.isclass(getattr(module, name)) and
+                   issubclass(getattr(module, name), AppConfig) and
+                   name != "AppConfig"]
+    print("Found classes in module:", module_name, class_names)
     for class_name in class_names:
+        print(f"Registering application configuration: {class_name} from module: {module_name}")
         app_class = getattr(module, class_name)
         # Register application configuration
         # AppConfig classes are expected to be named as <AppName>AppConfig, e.g.,
@@ -39,8 +46,9 @@ for loader, module_name, is_pkg in pkgutil.iter_modules(['applications']):
             mode = 'forecast-only'
             _class_mode = 'forecastonly'
         else:
-            # This is most likely a parent class or method. Skip.
-            continue
+            # GEFS and SFS only have one mode (forecast-only)
+            mode = 'forecast-only'
+            _class_mode = 'null'
 
         app = class_name.lower().split('appconfig')[0].split(_class_mode)[0]
 
