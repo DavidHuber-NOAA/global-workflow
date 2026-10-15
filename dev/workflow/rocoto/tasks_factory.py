@@ -23,16 +23,24 @@ Examples
 """
 
 from wxflow import Factory
-from rocoto.gfs_tasks import GFSTasks
-from rocoto.gefs_tasks import GEFSTasks
-from rocoto.sfs_tasks import SFSTasks
-from rocoto.gcafs_tasks import GCAFSTasks
+import pkgutil
+from importlib import import_module
 
 # Initialize the tasks factory
 tasks_factory = Factory('Tasks')
 
-# Register task classes for each forecast system
-tasks_factory.register('gfs', GFSTasks)
-tasks_factory.register('gefs', GEFSTasks)
-tasks_factory.register('sfs', SFSTasks)
-tasks_factory.register('gcafs', GCAFSTasks)
+for loader, module_name, is_pkg in pkgutil.iter_modules(['rocoto']):
+    # Only include modules with 'tasks' in their name
+    if 'tasks' not in module_name.lower() or module_name.lower() == 'tasks':
+        continue
+    # Get the list of importable classes with Tasks in their name
+    module = import_module(f"rocoto.{module_name}")
+    class_names = [name for name in dir(module) if "Tasks" in name and name != "Tasks"]
+    for class_name in class_names:
+        task_class = getattr(module, class_name)
+        # Register task configuration
+        # Tasks classes are expected to be named as <AppName>Tasks, e.g.,
+        # GCAFSForecastOnlyTasks
+        # Name the registered name as <app_name>, e.g., gcafs
+        app_name = class_name.split('Tasks')[0].lower()
+        tasks_factory.register(app_name, task_class)

@@ -8,7 +8,7 @@ for GFS forecast-only runs. It handles cycle definitions and specific task confi
 needed for the GFS workflow.
 """
 
-from ecflow.ecflow_suite import EcFlowSuite
+from ecflowgw.ecflow_suite import EcFlowSuite
 from applications.applications import AppConfig
 from wxflow import to_timedelta, timedelta_to_HMS
 from typing import Dict

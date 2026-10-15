@@ -22,12 +22,10 @@ app_config_factory = Factory('AppConfig')
 
 # Go through all of the modules in the applications package and import them dynamically
 for loader, module_name, is_pkg in pkgutil.iter_modules(['applications']):
-    print(f"Importing module: {module_name}")
     # Get the list of importable classes with AppConfig in their name
     module = import_module(f"applications.{module_name}")
-    class_names = [name for name in dir(module) if "AppConfig" in name and name != "AppConfig"]
+    class_names = [name for name in dir(module) if "AppConfig" in name]
     for class_name in class_names:
-        print(f"Registering application configuration: {class_name}")
         app_class = getattr(module, class_name)
         # Register application configuration
         # AppConfig classes are expected to be named as <AppName>AppConfig, e.g.,
@@ -36,18 +34,15 @@ for loader, module_name, is_pkg in pkgutil.iter_modules(['applications']):
         app_name = class_name.split('AppConfig')[0].lower()
         if 'cycled' in class_name.lower():
             mode = 'cycled'
-            app = class_name.lower().split('appconfig')[0].strip('cycled')
+            _class_mode = 'cycled'
         elif 'forecastonly' in class_name.lower():
             mode = 'forecast-only'
-            print(f"{class_name.lower()}")
-            print(f"{class_name.lower().split('appconfig')}")
-            print(f"{class_name.lower().split('appconfig')[0]}")
-            print(f"{class_name.lower().split('appconfig')[0].strip('forecastonly')}")
-            app = class_name.lower().split('appconfig')[0].strip('forecastonly')
+            _class_mode = 'forecastonly'
         else:
             # This is most likely a parent class or method. Skip.
             continue
 
+        app = class_name.lower().split('appconfig')[0].split(_class_mode)[0]
+
         # Actually perform the registration
         app_config_factory.register(f"{app}_{mode}", app_class)
-        print(f"Registered {app_class} as {app}_{mode} in the factory.")
