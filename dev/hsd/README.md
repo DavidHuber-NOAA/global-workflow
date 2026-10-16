@@ -61,6 +61,32 @@ a yanked dependency). `josh-filter --single --update refs/josh/t2 "$(dev/hsd/mak
 gives 758 / 673 / 577 files at Tiers 1 / 1.5 / 2 (`--single` is needed in shallow clones).
 Submodules are gitlinks: JOSH only excludes them when the path has no trailing slash, which `make_filter.sh` handles.
 
+## Pushing changes to a lower tier (round trip)
+
+Work done in a filtered repository can be brought back with `sync_tiers.sh`, which uses `josh-filter --reverse`.
+Run it from a checkout of the *lower tier* repository (for example the full repository for Tier 0):
+
+```bash
+cd gw-work                                   # the lower-tier repository, develop checked out
+dev/hsd/sync_tiers.sh gcafs 2 0 ../gcafs-tier2 develop            # tier 2 -> tier 0
+dev/hsd/sync_tiers.sh -o hsd/from-t2 gcafs 2 1.5 ../gcafs-tier2   # tier 2 -> tier 1.5, named branch
+dev/hsd/sync_tiers.sh -n gcafs 2 0 ../gcafs-tier2                 # check only
+```
+
+Arguments are `SYSTEM FROM_TIER TO_TIER SOURCE [SOURCE_BRANCH]`. The tool fetches the branch, projects the local
+`develop` (`-b` selects another) to the FROM tier, re-applies the commits the source has on top of it, and creates
+a new branch (`-o`, default `hsd/<system>-tier<N>-<timestamp>`). The existing branch is never changed: review the
+new branch, merge it or open a pull request. To go up one tier at a time, run it again from the next repository.
+
+* The tier repository must have been created from the target with the same filter (`josh-filter` history), so that
+  the histories share commits. Otherwise the tool stops with a "shares no history" error.
+* If the target moved on since the tier repository was created, the new branch starts at the commit the tier
+  repository was based on and you merge it into the target.
+* A round-trip check projects the result again and requires it to equal the tier repository. It fails when a change
+  falls outside the tier view, for example a file added under a path that the tier excludes; move such files first.
+* Changes to `.gitmodules` and other files that only exist in the lower tier are not touched, because the filter
+  removes whole paths only.
+
 ## Build systems
 
 `sorc/build_all.sh` and `dev/workflow/setup_buildxml.py` discover systems from `sorc/build_systems/<system>.yaml`

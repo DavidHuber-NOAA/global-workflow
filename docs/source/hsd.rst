@@ -71,3 +71,6 @@ modules by naming convention (``<system>*.py``), so a new system needs its own m
 ``docs/source/systems/<system>/`` tree and a ``dev/hsd/<system>.tier*.list`` set, and no edits to shared Python code.
 Build systems are discovered the same way: add ``sorc/build_systems/<system>.yaml``.
 ``dev/hsd/check_lists.py`` verifies that the lists are consistent with the repository.
+
+Changes made in a filtered tier are brought back to a lower tier (for example Tier 2 to Tier 0) with
+``dev/hsd/sync_tiers.sh``, which reverse-applies the commits with ``josh-filter --reverse`` onto a new branch for review.
