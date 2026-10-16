@@ -54,6 +54,13 @@ Module file names must end in `tasks` / contain `xml` / end in `ecflow` to be sc
 parsers of removed systems remain but fail when used because their config directories are gone.
 `dev/workflow/workflow_suite.py` is a shared base class of the Rocoto and ecFlow generators and is kept at every tier.
 
+## Verified with josh-filter
+
+The filters were run with `josh-filter` (`cargo install josh-cli --locked`; the plain `josh-cli` install fails on
+a yanked dependency). `josh-filter --single --update refs/josh/t2 "$(dev/hsd/make_filter.sh gcafs 2)" HEAD`
+gives 758 / 673 / 577 files at Tiers 1 / 1.5 / 2 (`--single` is needed in shallow clones).
+Submodules are gitlinks: JOSH only excludes them when the path has no trailing slash, which `make_filter.sh` handles.
+
 ## Checking the lists
 
 ```bash
