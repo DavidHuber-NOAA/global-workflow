@@ -1,0 +1,12 @@
+# GSI build system: components and the build entries specific to it
+components:
+  - "gsi_enkf"
+  - "gsi_utils"
+  - "gsi_monitor"
+build:
+  gsi_enkf:
+    command: "./build_gsi_enkf.sh"
+    cores: 8
+    walltime: "00:20:00"
+    memory: "40G"
+    requires: [gsi_enkf.fd]

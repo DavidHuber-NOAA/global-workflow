@@ -61,6 +61,18 @@ a yanked dependency). `josh-filter --single --update refs/josh/t2 "$(dev/hsd/mak
 gives 758 / 673 / 577 files at Tiers 1 / 1.5 / 2 (`--single` is needed in shallow clones).
 Submodules are gitlinks: JOSH only excludes them when the path has no trailing slash, which `make_filter.sh` handles.
 
+## Build systems
+
+`sorc/build_all.sh` and `dev/workflow/setup_buildxml.py` discover systems from `sorc/build_systems/<system>.yaml`
+(file name = system name). Each file has a `components` list and the `build` entries only that system uses; entries
+shared by several systems (`gsi_utils`, `nexus`, ...) live in `sorc/build_opts.yaml` together with `host_override`,
+`default_system` and the always-built `common` list. A tier removes a system by listing its file; the usage text,
+the accepted system names and the `all` target follow automatically. A build entry may carry `requires:`, a list
+of paths under `sorc/` (for example a submodule); an entry whose build script or required paths are missing is
+skipped with a notice for `all` and is an error when its system is requested explicitly.
+
+To add a system, add `sorc/build_systems/<system>.yaml`.
+
 ## Checking the lists
 
 ```bash
@@ -92,7 +104,7 @@ Files that looked removable but are required by kept code were retained: `dev/wo
 ## Known limitations
 
 * JOSH filters whole files and directories; it does not edit file contents. References to removed
-  submodules in `.gitmodules`, system lists in `sorc/build_all.sh`/`sorc/build_opts.yaml`, and
+  submodules in `.gitmodules` and
   mentions of other systems in shared documentation remain until the content is refactored.
 * The lists were derived from the GCAFS applications (`dev/workflow/applications/gcafs_*.py`), the
   job cards, and the job-to-script chain. Optional features that GCAFS does not enable by default

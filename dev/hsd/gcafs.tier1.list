@@ -3,6 +3,10 @@
 
 # Submodules and build scripts not used by GCAFS
 sorc/build_gsi_enkf.sh
+sorc/build_systems/gefs.yaml
+sorc/build_systems/gfs.yaml
+sorc/build_systems/gsi.yaml
+sorc/build_systems/sfs.yaml
 sorc/build_gsi_monitor.sh
 sorc/build_ww3prepost.sh
 sorc/gsi_enkf.fd
