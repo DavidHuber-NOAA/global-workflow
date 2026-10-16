@@ -5,6 +5,7 @@ For every tier of a system the script checks that
 
 * each list entry matches at least one tracked file (no stale entries),
 * no entry is repeated within or across the cumulative tier lists, and
+* every build entry of a kept sorc/build_systems/<system>.yaml has its build script, and
 * no file that is kept at that tier imports a Python module that is excluded
   (module-level imports only; imports inside functions are treated as lazy).
 
@@ -15,6 +16,8 @@ import fnmatch
 import os
 import subprocess
 import sys
+
+import yaml
 
 HSD_DIR = os.path.dirname(os.path.abspath(__file__))
 TOP = os.path.abspath(os.path.join(HSD_DIR, '..', '..'))
@@ -72,6 +75,22 @@ def module_imports(path):
     return found
 
 
+def check_build_system(path, kept):
+    """Return the number of components of a kept build system whose build script was removed.
+
+    Components defined in build_opts.yaml are optional by design (they are skipped when
+    their script is missing), so only the entries a system defines itself are checked.
+    """
+    spec = yaml.safe_load(open(os.path.join(TOP, path)))
+    errors = 0
+    for entry, build in spec.get('build', {}).items():
+        script = 'sorc/' + build['command'].split()[0].lstrip('./')
+        if script not in kept:
+            print(f'ERROR: {path} entry {entry} needs {script}, which is excluded')
+            errors += 1
+    return errors
+
+
 def main():
     system = sys.argv[1] if len(sys.argv) > 1 else 'gcafs'
     files = tracked_files()
@@ -100,6 +119,9 @@ def main():
                 if target and target in excluded:
                     print(f'ERROR tier {tier}: {f} imports excluded {target}')
                     errors += 1
+        for f in kept:
+            if f.startswith('sorc/build_systems/'):
+                errors += check_build_system(f, fileset - excluded)
         print(f'tier {tier}: {len(excluded)} files excluded, {len(kept)} kept')
     return 1 if errors else 0
 

@@ -69,4 +69,5 @@ Adding a system
 Systems register themselves: the application, Rocoto XML, task and ecFlow factories in ``dev/workflow`` discover
 modules by naming convention (``<system>*.py``), so a new system needs its own modules, a
 ``docs/source/systems/<system>/`` tree and a ``dev/hsd/<system>.tier*.list`` set, and no edits to shared Python code.
+Build systems are discovered the same way: add ``sorc/build_systems/<system>.yaml``.
 ``dev/hsd/check_lists.py`` verifies that the lists are consistent with the repository.
