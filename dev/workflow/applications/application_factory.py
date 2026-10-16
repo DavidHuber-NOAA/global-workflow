@@ -21,10 +21,12 @@ import inspect
 
 # Initialize the application configuration factory
 app_config_factory = Factory('AppConfig')
+print("registering application configurations...")
 
 # Go through all of the modules in the applications package and import them dynamically
 for loader, module_name, is_pkg in pkgutil.iter_modules(['applications']):
     # Get the list of importable classes with AppConfig in their name
+    print(f"Importing module: {module_name}")
     module = import_module(f"applications.{module_name}")
     class_names = [name for name in dir(module)
                    if inspect.isclass(getattr(module, name)) and
