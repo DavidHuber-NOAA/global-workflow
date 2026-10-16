@@ -1,3 +1,7 @@
+# Shared build options. Systems are discovered from build_systems/<system>.yaml; each file lists
+# the components of that system and defines the build entries only that system uses.
+# Components used by more than one system (or by all of them) are defined here.
+default_system: gfs  # used when no system is given (falls back to the first system found)
 host_override:  # over-ride options for host
   # Gaea must use the login nodes for builds
   GAEAC6:
@@ -10,106 +14,49 @@ host_override:  # over-ride options for host
         memory: "60G"
         walltime: "03:00:00"
 systems:
-  common:
+  common:  # always built, whatever systems are requested
     - "ufs_utils"
     - "gfs_utils"
     - "upp"
-  gfs:
-    - "gfs_model"
-    - "gfs_ww3prepost"
-  gsi:
-    - "gsi_enkf"
-    - "gsi_utils"
-    - "gsi_monitor"
-  gdas:
-    - "gdas"
-    - "gsi_utils"
-    - "gsi_monitor"
-  gefs:
-    - "nexus"
-    - "gefs_model"
-    - "nexus"
-    - "gefs_ww3_prepost"
-  sfs:
-    - "sfs_model"
-    - "gefs_ww3_prepost"
-  gcafs:
-    - "gcafs_model"
-    - "nexus"
-    - "gsi_utils"
 build:
-  gfs_model:
-    command: "./build_ufs.sh -e gfs_model.x"
-    cores: 12
-    walltime: "00:40:00"
-    memory: "40G"
+  upp:
+    command: "./build_upp.sh"
+    cores: 8
+    walltime: "00:15:00"
+    requires: [ufs_model.fd]
 
-  gfs_ww3prepost:
-    command: "./build_ww3prepost.sh"
+  ufs_utils:
+    command: "./build_ufs_utils.sh"
+    cores: 8
+    walltime: "00:15:00"
+    requires: [ufs_utils.fd]
+
+  gfs_utils:
+    command: "./build_gfs_utils.sh"
+    cores: 6
+    walltime: "00:15:00"
+    requires: [gfs_utils.fd]
+
+  gsi_utils:
+    command: "./build_gsi_utils.sh"
+    cores: 6
+    walltime: "00:15:00"
+    requires: [gsi_utils.fd]
+
+  gsi_monitor:
+    command: "./build_gsi_monitor.sh"
     cores: 4
     walltime: "00:15:00"
+    requires: [gsi_monitor.fd]
 
-  gefs_model:
-    command: "./build_ufs.sh -w -e gefs_model.x"
-    cores: 12
-    walltime: "00:40:00"
-    memory: "40G"
+  nexus:
+    command: "./build_nexus.sh"
+    cores: 8
+    walltime: "00:20:00"
+    requires: [nexus.fd]
 
   gefs_ww3_prepost:
     command: "./build_ww3prepost.sh -w"
     cores: 4
     walltime: "00:15:00"
 
-  sfs_model:
-    command: "./build_ufs.sh -y -e sfs_model.x"
-    cores: 12
-    walltime: "00:50:00"
-    memory: "40G"
-
-  gcafs_model:
-    command: "./build_ufs.sh -a ATMAERO -e gcafs_model.x"
-    cores: 12
-    walltime: "00:40:00"
-    memory: "40G"
-
-  upp:
-    command: "./build_upp.sh"
-    cores: 8
-    walltime: "00:15:00"
-
-  gsi_enkf:
-    command: "./build_gsi_enkf.sh"
-    cores: 8
-    walltime: "00:20:00"
-    memory: "40G"
-
-  gsi_monitor:
-    command: "./build_gsi_monitor.sh"
-    cores: 4
-    walltime: "00:15:00"
-
-  gsi_utils:
-    command: "./build_gsi_utils.sh"
-    cores: 6
-    walltime: "00:15:00"
-
-  ufs_utils:
-    command: "./build_ufs_utils.sh"
-    cores: 8
-    walltime: "00:15:00"
-
-  gfs_utils:
-    command: "./build_gfs_utils.sh"
-    cores: 6
-    walltime: "00:15:00"
-
-  gdas:
-    command: "./build_gdas.sh"
-    cores: 40
-    walltime: "01:45:00"
-    memory: "40G"
-
-  nexus:
-    command: "./build_nexus.sh"
-    cores: 8
-    walltime: "00:20:00"

@@ -36,4 +36,16 @@ GW Documentation, Version 1.0
 .. toctree::
    :maxdepth: 3
 
+   hsd
+
+.. toctree::
+   :maxdepth: 3
+   :glob:
+
+   systems/index
+   tier0/index
+
+.. toctree::
+   :maxdepth: 3
+
    contributor_guide/index
