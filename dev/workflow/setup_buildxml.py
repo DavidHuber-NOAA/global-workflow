@@ -90,7 +90,8 @@ def merge_systems(build_specs: Dict, systems: Dict) -> Dict:
     Returns
     -------
     Dict
-        ``build_specs`` with ``systems`` and ``build`` including every discovered system.
+        ``build_specs`` with ``systems`` and ``build`` including every discovered system, and
+        ``system_entries`` naming the build entries that came from a system file.
 
     Raises
     ------
@@ -99,12 +100,14 @@ def merge_systems(build_specs: Dict, systems: Dict) -> Dict:
     """
 
     build_specs.setdefault('systems', AttrDict())
+    build_specs.system_entries = []
     for name, system in systems.items():
         build_specs.systems[name] = list(system.get('components', []))
         for entry, spec in system.get('build', {}).items():
             if entry in build_specs.build:
                 raise ValueError(f"Build entry '{entry}' of system '{name}' is already defined elsewhere")
             build_specs.build[entry] = spec
+            build_specs.system_entries.append(entry)
 
     return build_specs
 
@@ -125,7 +128,7 @@ def missing_requirements(task_spec: Dict) -> List[str]:
 
     script = task_spec.command.split()[0]
     needed = [script] + list(task_spec.get('requires', []))
-    return [path for path in needed if not os.path.exists(os.path.join(SORC_DIR, path))]
+    return [os.path.normpath(path) for path in needed if not os.path.exists(os.path.join(SORC_DIR, path))]
 
 
 def select_builds(build_specs: Dict, requested: List[str]) -> List[str]:
@@ -148,7 +151,8 @@ def select_builds(build_specs: Dict, requested: List[str]) -> List[str]:
     KeyError
         If a requested system is not available.
     FileNotFoundError
-        If an explicitly requested system needs a script or source that is not present.
+        If an explicitly requested system needs a script or source that is not present. Entries
+        shared between systems (defined in the shared YAML file) are optional and skipped instead.
     """
 
     available = [name for name in build_specs.systems if name != 'common']
@@ -175,7 +179,7 @@ def select_builds(build_specs: Dict, requested: List[str]) -> List[str]:
             continue
         missing = missing_requirements(spec)
         if missing:
-            if explicit:
+            if explicit and entry in build_specs.system_entries:
                 raise FileNotFoundError(f"Cannot build '{entry}': missing {', '.join('sorc/' + m for m in missing)}")
             print(f"NOTICE: skipping '{entry}', missing {', '.join('sorc/' + m for m in missing)}", file=sys.stderr)
             continue
