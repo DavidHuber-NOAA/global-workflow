@@ -1,0 +1,10 @@
+# GCAFS Tier 1.5: additionally remove production-only code
+# One repository-relative path per line; "#" starts a comment. Paths are excluded from the filtered history.
+
+# Production-only: ecFlow suites and NCO/EE2 packaging
+dev/ecf
+dev/ush/fetch_gdas_for_gcafs.sh
+dev/ush/global_net_converter.py
+dev/ush/make_ee2_links.sh
+dev/ush/setup_gcafs_for_nco.py
+docs/source/systems/gcafs/production
