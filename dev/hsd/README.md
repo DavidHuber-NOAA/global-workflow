@@ -33,17 +33,35 @@ are written without a trailing slash; `make_filter.sh` adds it. Trailing-`*` glo
 `dev/jobs/JGLOBAL_MARINE_*`) are used where a pattern matches only files that belong in the same
 list. When editing, keep globs narrow: a glob must never match a file that a lower tier still needs.
 
-## Pending lists
+## Dynamic system registration
 
-`<system>.<tier>.pending.list` holds removals that are correct in principle but would currently break
-the filtered tree because shared Python code imports every system unconditionally:
+Python code no longer imports every system explicitly, so a system's modules can be removed by listing them:
 
-* `dev/workflow/applications/application_factory.py`, `dev/workflow/rocoto/{tasks_factory,rocoto_xml_factory}.py`
-  and `dev/workflow/ecflow/ecflow_suite_factory.py` import the classes of all systems.
-* `ush/python/pygfs/__init__.py` imports all task modules.
+* `dev/workflow/applications/application_factory.py`, `dev/workflow/rocoto/{rocoto_xml_factory,tasks_factory}.py`
+  and `dev/workflow/ecflowgw/ecflow_suite_factory.py` discover the modules in their package and register the
+  classes defined there (`<System>[Cycled|ForecastOnly]AppConfig`, `...RocotoXML`, `...Tasks`, `...EcFlowSuite`).
+  Only classes defined in the scanned module are registered, so imported base classes are never registered.
+* `ush/python/pygfs/__init__.py` imports task classes lazily on first access.
+* `dev/workflow/setup_workflow.py` imports the ecFlow factory only when `ecflow` is requested, so
+  `dev/workflow/ecflowgw` can be removed at Tier 1.5.
+* `sorc/link_workflow.sh` only links `jcb` when `sorc/gdas.cd` exists, so Tier 2 trees link cleanly.
 
-Make those imports lazy (or registered per system), then pass `-p` to `make_filter.sh` to apply the pending
-lists too.
+To add a system: add its `applications/<sys>*.py`, `rocoto/<sys>_tasks.py`, `rocoto/<sys>*_xml.py` (and optionally
+`ecflowgw/<sys>*_ecflow.py`) following the naming convention above; no other Python file needs editing.
+Module file names must end in `tasks` / contain `xml` / end in `ecflow` to be scanned.
+
+`dev/workflow/setup_expt.py` still builds its sub-parsers for all systems explicitly; in a filtered tree the
+parsers of removed systems remain but fail when used because their config directories are gone.
+`dev/workflow/workflow_suite.py` is a shared base class of the Rocoto and ecFlow generators and is kept at every tier.
+
+## Checking the lists
+
+```bash
+dev/hsd/check_lists.py gcafs
+```
+
+reports list entries that match no tracked file, entries repeated across tiers, and kept Python files that
+import an excluded module at module level. Run it whenever files are added, renamed or removed.
 
 ## Files that are created by `sorc/link_workflow.sh`
 
@@ -56,8 +74,7 @@ them as (git-ignored) symlinks into submodules, so they are available as long as
 * `parm/post/*`, `parm/ufs/*` templates and CCPP suites come from `sorc/upp.fd` and `sorc/ufs_model.fd`.
 * `parm/chem/nexus` comes from `sorc/nexus.fd`.
 
-At Tier 2 `sorc/gdas.cd` is removed, but `link_workflow.sh` links `jcb` from it unconditionally; guard that
-link with a directory check before using a Tier 2 tree.
+At Tier 2 `sorc/gdas.cd` is removed; `link_workflow.sh` skips the links that need it.
 
 Files that looked removable but are required by kept code were retained: `dev/workflow/aux`,
 `ush/cpfsd.sh` and `ush/getdump.sh` (Tier 2 only), `ush/parse-storm-type.pl` (Tier 2 only),

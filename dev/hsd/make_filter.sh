@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # Build a JOSH filter specification for a tier of the hierarchical system design (HSD).
 #
-# Usage: make_filter.sh [-p] SYSTEM TIER
+# Usage: make_filter.sh SYSTEM TIER
 #   SYSTEM  forecasting system (currently only "gcafs")
 #   TIER    0, 1, 1.5 or 2
-#   -p      also apply the "pending" lists (needs the factory/import refactors described in README.md)
 #
 # Example: josh-filter "$(./make_filter.sh gcafs 2)" HEAD
 
@@ -15,14 +14,6 @@ usage() {
   exit 1
 }
 
-pending="NO"
-while getopts ":ph" opt; do
-  case "${opt}" in
-    p) pending="YES" ;;
-    *) usage ;;
-  esac
-done
-shift $((OPTIND - 1))
 [[ $# -eq 2 ]] || usage
 
 system="$1"
@@ -40,16 +31,13 @@ esac
 
 entries=()
 for t in "${tiers[@]}"; do
-  lists=("${hsd_dir}/${system}.${t}.list")
-  [[ "${pending}" == "YES" ]] && lists+=("${hsd_dir}/${system}.${t}.pending.list")
-  for list in "${lists[@]}"; do
-    [[ -f "${list}" ]] || { echo "Missing list ${list}" >&2; exit 1; }
-    while IFS= read -r line; do
-      [[ -z "${line}" || "${line}" == \#* ]] && continue
-      if [[ -d "${top_dir}/${line}" ]]; then line="${line}/"; fi
-      entries+=("::${line}")
-    done < "${list}"
-  done
+  list="${hsd_dir}/${system}.${t}.list"
+  [[ -f "${list}" ]] || { echo "Missing list ${list}" >&2; exit 1; }
+  while IFS= read -r line; do
+    [[ -z "${line}" || "${line}" == \#* ]] && continue
+    if [[ -d "${top_dir}/${line}" ]]; then line="${line}/"; fi
+    entries+=("::${line}")
+  done < "${list}"
 done
 
 if [[ ${#entries[@]} -eq 0 ]]; then

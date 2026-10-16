@@ -62,3 +62,11 @@ reference a higher-tier page from a lower-tier page except through a glob toctre
 Each system's ``index.rst`` is a Tier 1 overview; it should stay brief and link to tier pages by glob.
 
 The JOSH filters are described in ``dev/hsd/README.md``.
+
+Adding a system
+===============
+
+Systems register themselves: the application, Rocoto XML, task and ecFlow factories in ``dev/workflow`` discover
+modules by naming convention (``<system>*.py``), so a new system needs its own modules, a
+``docs/source/systems/<system>/`` tree and a ``dev/hsd/<system>.tier*.list`` set, and no edits to shared Python code.
+``dev/hsd/check_lists.py`` verifies that the lists are consistent with the repository.

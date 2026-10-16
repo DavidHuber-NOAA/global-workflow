@@ -44,6 +44,7 @@ dev/jobs/JGLOBAL_OCN_POST
 dev/jobs/JGLOBAL_PREP_OCEAN_OBS
 dev/jobs/JGLOBAL_SNOW_ANAL
 dev/jobs/JGLOBAL_SNOW_ENS_ANAL
+dev/jobs/JGLOBAL_SOIL_ANALYSIS_*
 dev/jobs/JGLOBAL_WAVE_*
 
 # Execution scripts (dev/scripts) not used by GCAFS
@@ -74,6 +75,7 @@ dev/scripts/exglobal_ocn_post.sh
 dev/scripts/exglobal_prep_sfc.sh
 dev/scripts/exglobal_snow_anal.py
 dev/scripts/exglobal_snow_ens_anal.py
+dev/scripts/exglobal_soil_*
 dev/scripts/exglobal_wave_*
 
 # Rocoto job cards not used by GCAFS
@@ -113,6 +115,7 @@ dev/job_cards/rocoto/prepatmanlbias.sh
 dev/job_cards/rocoto/prepoceanobs.sh
 dev/job_cards/rocoto/sfcanl_regrid.sh
 dev/job_cards/rocoto/snowanl.sh
+dev/job_cards/rocoto/soilanl*
 dev/job_cards/rocoto/tracker.sh
 dev/job_cards/rocoto/verfozn.sh
 dev/job_cards/rocoto/verfrad.sh
@@ -226,3 +229,24 @@ docs/source/systems/gefs
 docs/source/systems/gfs
 docs/source/systems/sfs
 docs/source/tier0
+
+# Workflow generators of other systems (the application, task, XML and ecFlow factories register what exists)
+dev/workflow/applications/gefs.py
+dev/workflow/applications/gfs_cycled.py
+dev/workflow/applications/gfs_forecast_only.py
+dev/workflow/applications/sfs.py
+dev/workflow/ecflowgw/gfs_forecast_only_ecflow.py
+dev/workflow/rocoto/gefs_tasks.py
+dev/workflow/rocoto/gefs_xml.py
+dev/workflow/rocoto/gfs_*
+dev/workflow/rocoto/sfs_tasks.py
+dev/workflow/rocoto/sfs_xml.py
+
+# Python task modules not used by GCAFS (pygfs/__init__.py imports task classes lazily)
+ush/python/pygfs/task/atmens_analysis.py
+ush/python/pygfs/task/ensemble_recenter.py
+ush/python/pygfs/task/marine_*
+ush/python/pygfs/task/oceanice_products.py
+ush/python/pygfs/task/snowens_analysis.py
+ush/python/pygfs/utils/marine_da_utils.py
+ush/python/pygfs/task/soil_*

@@ -97,6 +97,8 @@ Short descriptions of every job available in the workflow are listed below, alon
 +---------------------+----------------------------------------------------------------------------------------------------+-------+-------+-------+-------+
 | | snowanl           | Run snow analysis (JEDI-based)                                                                     | | X   |       |       |       |
 | | esnowanl          |                                                                                                    | | X   |       |       |       |
+| | soilanlvar        | Run JEDI variational soil analysis                                                                 | | X   |       |       |       |
+| | soilanlens        | Run JEDI ensemble (LETKF) soil analysis                                                            | | X   |       |       |       |
 +---------------------+----------------------------------------------------------------------------------------------------+-------+-------+-------+-------+
 | prepoceanobs        | Prepare ocean observations for data assimilation (JEDI-based)                                      |   X   |       |       |       |
 +---------------------+----------------------------------------------------------------------------------------------------+-------+-------+-------+-------+

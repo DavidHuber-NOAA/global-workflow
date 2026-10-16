@@ -26,6 +26,7 @@ for loader, module_name, is_pkg in pkgutil.iter_modules([_rocoto_dir]):
     class_names = [name for name in dir(module)
                    if inspect.isclass(getattr(module, name)) and
                    issubclass(getattr(module, name), RocotoXML) and
+                   getattr(module, name).__module__ == module.__name__ and
                    name != "RocotoXML"]
     for class_name in class_names:
         app_class = getattr(module, class_name)

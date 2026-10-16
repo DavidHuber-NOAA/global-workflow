@@ -9,7 +9,6 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from applications.application_factory import app_config_factory
 from rocoto.rocoto_xml_factory import rocoto_xml_factory
-from ecflowgw.ecflow_suite_factory import ecflow_suite_factory
 from wxflow import AttrDict, Configuration, Logger, logit
 
 
@@ -137,14 +136,18 @@ def main(*argv):
     elif workflow_engine == "ecflow":
         workflow_config.verbosity = user_inputs.verbosity
 
-    # Call the appropriate workflow engine factory
-    ENGINE_MAP = {
-        "rocoto": rocoto_xml_factory,
-        "ecflow": ecflow_suite_factory,
-    }
+    # Select the workflow engine factory (ecFlow is absent from production-free HSD tiers)
+    if workflow_engine == "ecflow":
+        try:
+            from ecflowgw.ecflow_suite_factory import ecflow_suite_factory
+        except ImportError as err:
+            raise RuntimeError("ecFlow workflows are not available in this repository tier") from err
+        engine_factory = ecflow_suite_factory
+    else:
+        engine_factory = rocoto_xml_factory
 
     # Create the XML (Rocoto) or Suite (ecFlow) object
-    workflow = ENGINE_MAP[workflow_engine].create(f'{net}_{mode}', app_config, workflow_config)
+    workflow = engine_factory.create(f'{net}_{mode}', app_config, workflow_config)
     workflow.write()
 
 
