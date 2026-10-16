@@ -8,3 +8,10 @@ dev/ush/global_net_converter.py
 dev/ush/make_ee2_links.sh
 dev/ush/setup_gcafs_for_nco.py
 docs/source/systems/gcafs/production
+
+# Production-only ecFlow workflow generator (setup_workflow.py imports it lazily)
+dev/workflow/README_ecflow.md
+dev/workflow/ecflow_build.yml
+dev/workflow/ecflowgw
+dev/workflow/prod.yml
+dev/workflow/setup_ecf.py
