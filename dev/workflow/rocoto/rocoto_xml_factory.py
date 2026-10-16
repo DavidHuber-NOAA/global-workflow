@@ -9,12 +9,15 @@ import pkgutil
 from rocoto.rocoto_xml import RocotoXML
 from importlib import import_module
 import inspect
+import os
 
 # Create a factory for Rocoto XML generator objects
 rocoto_xml_factory = Factory('RocotoXML')
 
+_rocoto_dir = os.path.join(os.path.dirname(__file__))
+
 # Go through all of the modules in the rocoto package and import them dynamically
-for loader, module_name, is_pkg in pkgutil.iter_modules(['rocoto']):
+for loader, module_name, is_pkg in pkgutil.iter_modules([_rocoto_dir]):
     # Only include modules with 'xml' in their name
     if 'xml' not in module_name.lower():
         continue

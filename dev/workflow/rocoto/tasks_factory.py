@@ -27,11 +27,14 @@ import pkgutil
 from rocoto.tasks import Tasks
 from importlib import import_module
 import inspect
+import os
 
 # Initialize the tasks factory
 tasks_factory = Factory('Tasks')
 
-for loader, module_name, is_pkg in pkgutil.iter_modules(['rocoto']):
+_rocoto_dir = os.path.join(os.path.dirname(__file__))
+
+for loader, module_name, is_pkg in pkgutil.iter_modules([_rocoto_dir]):
     # Get the list of importable classes with Tasks in their name
     if not module_name.endswith('tasks'):
         continue
