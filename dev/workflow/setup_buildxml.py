@@ -4,10 +4,12 @@
 Entry point for setting up a builds of global-workflow programs
 """
 
+import glob
 import math
 import os
+import sys
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from typing import Dict
+from typing import Dict, List
 
 from wxflow import parse_yaml, AttrDict, to_timedelta, timedelta_to_HMS
 
@@ -17,6 +19,9 @@ import rocoto.rocoto as rocoto
 
 _here = os.path.dirname(__file__)
 HOMEglobal = os.path.abspath(os.path.join(os.path.abspath(_here), '../..'))
+SORC_DIR = os.path.join(HOMEglobal, 'sorc')
+DEFAULT_YAML = os.path.join(SORC_DIR, 'build_opts.yaml')
+SYSTEMS_DIR = os.path.join(SORC_DIR, 'build_systems')
 
 
 def input_args(*argv):
@@ -31,15 +36,152 @@ def input_args(*argv):
     parser = ArgumentParser(description=description,
                             formatter_class=ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--account', help='HPC account to use', required=True)
+    parser.add_argument('--account', help='HPC account to use (required unless --list-systems is given)', required=False)
     parser.add_argument('--yaml', help='Input YAML file',
-                        type=str, required=False, default='build_opts.yaml')
-    parser.add_argument('--systems', help='System(s) to build (options: gfs, gefs, sfs, gcafs, gsi, gdas, or all)', required=False, default='gfs')
+                        type=str, required=False, default=DEFAULT_YAML)
+    parser.add_argument('--systems', help='Space-separated system(s) to build, or "all". Available systems are '
+                        'discovered from build_systems/*.yaml. Defaults to default_system in the YAML file.',
+                        required=False, default='')
+    parser.add_argument('--list-systems', help='Print the available systems and exit', action='store_true')
     parser.add_argument('--debug', help='Build in debug mode', required=False, action='store_true')
 
     inputs = parser.parse_args(list(*argv) if len(argv) else None)
+    if not inputs.list_systems and not inputs.account:
+        parser.error('--account is required')
 
     return inputs
+
+
+def discover_systems(yaml_file: str) -> Dict:
+    """Find the systems that are available in this repository.
+
+    Each ``build_systems/<system>.yaml`` file next to ``yaml_file`` defines one system: the file
+    name is the system name, ``components`` lists what is built for it and ``build`` holds the
+    build entries that only that system uses. Removing the file removes the system.
+
+    Parameters
+    ----------
+    yaml_file : str
+        Path to the shared build options YAML file.
+
+    Returns
+    -------
+    Dict
+        Mapping of system name to its parsed YAML contents, sorted by name.
+    """
+
+    systems_dir = os.path.join(os.path.dirname(os.path.abspath(yaml_file)), 'build_systems')
+    systems = {}
+    for path in sorted(glob.glob(os.path.join(systems_dir, '*.yaml'))):
+        systems[os.path.splitext(os.path.basename(path))[0]] = AttrDict(parse_yaml(path))
+    return systems
+
+
+def merge_systems(build_specs: Dict, systems: Dict) -> Dict:
+    """Merge the discovered systems into the shared build specifications.
+
+    Parameters
+    ----------
+    build_specs : Dict
+        Parsed shared build options (``build_opts.yaml``).
+    systems : Dict
+        Systems returned by ``discover_systems``.
+
+    Returns
+    -------
+    Dict
+        ``build_specs`` with ``systems`` and ``build`` including every discovered system.
+
+    Raises
+    ------
+    ValueError
+        If a build entry is defined in more than one place.
+    """
+
+    build_specs.setdefault('systems', AttrDict())
+    for name, system in systems.items():
+        build_specs.systems[name] = list(system.get('components', []))
+        for entry, spec in system.get('build', {}).items():
+            if entry in build_specs.build:
+                raise ValueError(f"Build entry '{entry}' of system '{name}' is already defined elsewhere")
+            build_specs.build[entry] = spec
+
+    return build_specs
+
+
+def missing_requirements(task_spec: Dict) -> List[str]:
+    """List what a build entry needs that is not present in this repository.
+
+    Parameters
+    ----------
+    task_spec : Dict
+        Build entry with a ``command`` and an optional ``requires`` list of paths relative to ``sorc/``.
+
+    Returns
+    -------
+    List[str]
+        Paths (relative to ``sorc/``) of the build script and required sources that do not exist.
+    """
+
+    script = task_spec.command.split()[0]
+    needed = [script] + list(task_spec.get('requires', []))
+    return [path for path in needed if not os.path.exists(os.path.join(SORC_DIR, path))]
+
+
+def select_builds(build_specs: Dict, requested: List[str]) -> List[str]:
+    """Choose the build entries for the requested systems.
+
+    Parameters
+    ----------
+    build_specs : Dict
+        Build specifications that include the discovered systems.
+    requested : List[str]
+        Requested system names, or ``['all']``. An empty list selects ``default_system``.
+
+    Returns
+    -------
+    List[str]
+        Names of the build entries to run, in the order they are defined.
+
+    Raises
+    ------
+    KeyError
+        If a requested system is not available.
+    FileNotFoundError
+        If an explicitly requested system needs a script or source that is not present.
+    """
+
+    available = [name for name in build_specs.systems if name != 'common']
+    explicit = 'all' not in requested
+
+    if not requested:
+        default = build_specs.get('default_system', None)
+        requested = [default if default in available else available[0]]
+
+    if explicit:
+        unknown = [name for name in requested if name not in available]
+        if unknown:
+            raise KeyError(f"{', '.join(unknown)} is not a valid global-workflow system! "
+                           f"Available systems: {', '.join(available)}")
+        names = set(build_specs.systems.get('common', []))
+        for name in requested:
+            names.update(build_specs.systems[name])
+    else:
+        names = set(build_specs.build)
+
+    selected = []
+    for entry, spec in build_specs.build.items():
+        if entry not in names:
+            continue
+        missing = missing_requirements(spec)
+        if missing:
+            if explicit:
+                raise FileNotFoundError(f"Cannot build '{entry}': missing {', '.join('sorc/' + m for m in missing)}")
+            print(f"NOTICE: skipping '{entry}', missing {', '.join('sorc/' + m for m in missing)}", file=sys.stderr)
+            continue
+        selected.append(entry)
+
+    return selected
 
 
 def get_task_spec(task_name: str, task_spec: Dict, host_spec: Dict) -> Dict:
@@ -204,14 +346,21 @@ def main(*argv):
 
     user_inputs = input_args(*argv)
 
+    if user_inputs.list_systems:
+        print(' '.join(discover_systems(user_inputs.yaml)))
+        return
+
     # Gather host specs and place the user supplied options such as
     # account and debug into the host_specs dict
     host_specs = get_host_specs(Host())
     host_specs.account = user_inputs.account
     host_specs.debug = user_inputs.debug
 
-    # Retrieve build specificatiosn from user provided yaml
+    # Retrieve build specifications from the shared yaml and the discovered systems
     user_yaml_dict = AttrDict(parse_yaml(user_inputs.yaml))
+    systems = discover_systems(user_inputs.yaml)
+
+    user_yaml_dict = merge_systems(user_yaml_dict, systems)
     build_specs = get_build_specs(user_yaml_dict, host_specs)
 
     # Apply node exclusions to the native scheduler flags
@@ -224,25 +373,12 @@ def main(*argv):
             pbs_exclude = " ".join([f"-l host!={n.strip()}" for n in nodes])
             host_specs.native += f" {pbs_exclude}"
 
-    systems = user_inputs.systems.split() if "all" not in user_inputs.systems else ["all"]
-
-    # Determine systems to build
-    builds = set()
-    if systems[0] == "all":
-        builds = build_specs.build
-    else:
-        builds.update(build_specs.systems["common"])
-        try:
-            for system in systems:
-                builds.update(build_specs.systems[system])
-        except KeyError as e:
-            raise KeyError(f"{system} is not a valid global-workflow system!") from e
+    builds = select_builds(build_specs, user_inputs.systems.split())
 
     # Build the task specs from the build specs and host specs
     task_specs = AttrDict()
-    for task_name, task_spec in build_specs.build.items():
-        if task_name in builds:
-            task_specs[task_name] = get_task_spec(task_name, task_spec, host_specs)
+    for task_name in builds:
+        task_specs[task_name] = get_task_spec(task_name, build_specs.build[task_name], host_specs)
 
     # Start building the XML
     strings = ['<?xml version="1.0"?>',

@@ -1,0 +1,12 @@
+# GCAFS build system: components and the build entries specific to it
+components:
+  - "gcafs_model"
+  - "nexus"
+  - "gsi_utils"
+build:
+  gcafs_model:
+    command: "./build_ufs.sh -a ATMAERO -e gcafs_model.x"
+    cores: 12
+    walltime: "00:40:00"
+    memory: "40G"
+    requires: [ufs_model.fd]

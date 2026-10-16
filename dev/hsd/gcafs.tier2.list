@@ -54,6 +54,8 @@ dev/ci/cases/yamls/gcafs_cycled_*
 docs/source/systems/gcafs/cycled
 parm/fetch
 parm/relo
+sorc/build_gdas.sh
+sorc/build_systems/gdas.yaml
 sorc/gdas.cd
 sorc/verif-global.fd
 ush/calcanl_gcafs.py

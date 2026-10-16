@@ -1,10 +1,27 @@
 #!/usr/bin/env bash
 
+# Systems are discovered from build_systems/<system>.yaml, so a tree that has had systems
+# removed only advertises (and builds) the systems that are still present.
+function _list_systems() {
+    local script_dir_
+    script_dir_="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
+    local systems_=()
+    local file_
+    for file_ in "${script_dir_}"/build_systems/*.yaml; do
+        [[ -e "${file_}" ]] || continue
+        systems_+=("$(basename "${file_}" .yaml)")
+    done
+    echo "${systems_[*]}"
+}
+
 function _usage() {
+    local available_
+    # shellcheck disable=SC2311
+    available_="$(_list_systems)"
     cat << EOF
 Builds all of the global-workflow components on compute nodes.
 
-Usage: ${BASH_SOURCE[0]} [-h][-v] -A HPC_ACCOUNT -c [gfs gefs sfs gcafs gsi gdas all]
+Usage: ${BASH_SOURCE[0]} [-h][-v] -A HPC_ACCOUNT -c [${available_} all]
   -h:
     Print this help message and exit
   -v:
@@ -16,8 +33,8 @@ Usage: ${BASH_SOURCE[0]} [-h][-v] -A HPC_ACCOUNT -c [gfs gefs sfs gcafs gsi gdas
 
   Input arguments are the system(s) to build.
   Valid options are
-    "gfs", "gefs", "sfs", "gcafs", "gsi", "gdas", or "all".
-    (default is "gfs")
+    ${available_} or "all".
+    (default is "default_system" in build_opts.yaml)
 EOF
     exit 1
 }
@@ -56,12 +73,8 @@ while getopts ":hA:vcd" option; do
 done
 shift $((OPTIND - 1))
 
-# Set build system to gfs if not specified
-if [[ $# -eq 0 ]]; then
-    systems="gfs"
-else
-    systems=$*
-fi
+# An empty list lets setup_buildxml.py choose default_system from build_opts.yaml
+systems="$*"
 
 if [[ "${compute_build}" == "YES" && "${HPC_ACCOUNT}" == "UNDEFINED" ]]; then
     echo "FATAL ERROR: -A <HPC_ACCOUNT> is required when building on compute nodes, ABORT!"
@@ -86,7 +99,7 @@ WARNING: Interactive build on Derecho is limited to four cores to comply
          with login node policies. Consider killing (CTRL+C) and retrying
          using compute build:
 
-         ./build_all.sh -A <HPC_ACCOUNT> -c [gfs] [gefs] [sfs] [gcafs] [gsi] [gdas] [all]
+         ./build_all.sh -A <HPC_ACCOUNT> -c [system ...] [all]
 
 EOF
     max_cores=4
