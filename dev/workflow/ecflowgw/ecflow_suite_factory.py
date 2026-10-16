@@ -9,12 +9,15 @@ import pkgutil
 from importlib import import_module
 from ecflowgw.ecflow_suite import EcFlowSuite
 import inspect
+import os
 
 # Create a factory for ecFlow suite objects
 ecflow_suite_factory = Factory('ecFlowSuite')
 
+_ecflowgw_dir = os.path.join(os.path.dirname(__file__))
+
 # Go through all of the modules in the ecflow package and import them dynamically
-for loader, module_name, is_pkg in pkgutil.iter_modules(['ecflowgw']):
+for loader, module_name, is_pkg in pkgutil.iter_modules([_ecflowgw_dir]):
     # Get the list of importable classes with EcFlowSuite in their name
     if not module_name.endswith('ecflow'):
         continue
