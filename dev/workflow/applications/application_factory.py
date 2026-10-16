@@ -19,6 +19,7 @@ from applications.applications import AppConfig
 from importlib import import_module
 import inspect
 import sys
+import os
 
 # Initialize the application configuration factory
 app_config_factory = Factory('AppConfig')
@@ -26,8 +27,11 @@ print("registering application configurations...")
 # Write it to stderr as well
 print("registering application configurations...", file=sys.stderr)
 
+# Get this file's path to dynamically import all application modules
+_applications_dir = os.path.join(os.path.dirname(__file__))
+
 # Go through all of the modules in the applications package and import them dynamically
-for loader, module_name, is_pkg in pkgutil.iter_modules(['applications']):
+for loader, module_name, is_pkg in pkgutil.iter_modules([_applications_dir]):
     # Get the list of importable classes with AppConfig in their name
     print(f"Importing module: {module_name}")
     print(f"Importing module: {module_name}", file=sys.stderr)
