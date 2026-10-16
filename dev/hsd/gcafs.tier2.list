@@ -1,0 +1,65 @@
+# GCAFS Tier 2: additionally remove data assimilation (forecast-only)
+# One repository-relative path per line; "#" starts a comment. Paths are excluded from the filtered history.
+
+# Data assimilation jobs
+dev/jobs/JGDAS_AERO_ANALYSIS_GENERATE_BMATRIX
+dev/jobs/JGFS_ATMOS_VERIFICATION
+dev/jobs/JGLOBAL_AERO_ANALYSIS_*
+dev/jobs/JGLOBAL_ANALYSIS_STATS
+dev/jobs/JGLOBAL_ATMOS_ANAL_CALC
+dev/jobs/JGLOBAL_ATMOS_ANAL_SFC_GCYCLE
+dev/jobs/JGLOBAL_ATMOS_TROPCY_QC
+dev/jobs/JGLOBAL_FETCH
+dev/jobs/JGLOBAL_OFFLINE_ATMOS_ANALYSIS
+
+# Data assimilation execution scripts
+dev/scripts/exgdas_aero_analysis_generate_bmatrix.py
+dev/scripts/exglobal_aero_analysis_*
+dev/scripts/exglobal_analysis_stats.py
+dev/scripts/exglobal_atmos_anal_calc.sh
+dev/scripts/exglobal_atmos_anal_sfc_gcycle.sh
+dev/scripts/exglobal_atmos_tropcy_qc.sh
+dev/scripts/exglobal_fetch.py
+dev/scripts/exglobal_offline_atmos_analysis.py
+
+# Data assimilation job cards
+dev/job_cards/rocoto/aeroanl*
+dev/job_cards/rocoto/analcalc.sh
+dev/job_cards/rocoto/anlstat.sh
+dev/job_cards/rocoto/fetch.sh
+dev/job_cards/rocoto/metp.sh
+dev/job_cards/rocoto/offlineanl.sh
+dev/job_cards/rocoto/prep.sh
+dev/job_cards/rocoto/sfcanl_gcycle.sh
+
+# Data assimilation configuration
+dev/parm/config/gcafs/config.aeroanl*
+dev/parm/config/gcafs/config.an*
+dev/parm/config/gcafs/config.atmanl*
+dev/parm/config/gcafs/config.atmensanl*
+dev/parm/config/gcafs/config.epos
+dev/parm/config/gcafs/config.fetch.j2
+dev/parm/config/gcafs/config.metp
+dev/parm/config/gcafs/config.offlineanl
+dev/parm/config/gcafs/config.prep.j2
+dev/parm/config/gcafs/config.sfcanl_gcycle
+
+# Cycled CI cases
+dev/ci/cases/gcafsv1
+dev/ci/cases/pr/C96_gcafs_cycled.yaml
+dev/ci/cases/pr/C96_gcafs_cycled_noDA.yaml
+dev/ci/cases/yamls/gcafs_cycled_*
+
+# Data assimilation utilities and submodules
+docs/source/systems/gcafs/cycled
+parm/fetch
+parm/relo
+sorc/gdas.cd
+sorc/verif-global.fd
+ush/calcanl_gcafs.py
+ush/cpfsd.sh
+ush/getdump.sh
+ush/parse-storm-type.pl
+ush/getges.sh
+ush/syndat_getjtbul.sh
+ush/syndat_qctropcy.sh
