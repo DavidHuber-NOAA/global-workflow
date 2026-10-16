@@ -35,7 +35,10 @@ for t in "${tiers[@]}"; do
   [[ -f "${list}" ]] || { echo "Missing list ${list}" >&2; exit 1; }
   while IFS= read -r line; do
     [[ -z "${line}" || "${line}" == \#* ]] && continue
-    if [[ -d "${top_dir}/${line}" ]]; then line="${line}/"; fi
+    # Directories need a trailing slash; submodules (gitlinks) must not have one
+    if [[ -d "${top_dir}/${line}" ]] && ! git -C "${top_dir}" ls-files -s -- "${line}" | grep -q '^160000'; then
+      line="${line}/"
+    fi
     entries+=("::${line}")
   done < "${list}"
 done
