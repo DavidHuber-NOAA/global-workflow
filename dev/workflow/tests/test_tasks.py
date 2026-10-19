@@ -82,3 +82,38 @@ class TestTasks:
         assert Tasks.multiply_HMS('00:05:00', 1.5) == '00:07:30'
         assert Tasks.multiply_HMS('00:40:00', 2.5) == '01:40:00'
         assert Tasks.multiply_HMS('00:10:00', 1) == '00:10:00'
+
+    @staticmethod
+    def _resource_for(scheduler, **overrides):
+        """Build a bare Tasks object and return get_resource('atmos_products') for it."""
+        from types import SimpleNamespace
+
+        task = object.__new__(Tasks)
+        task.app_config = SimpleNamespace(scheduler=scheduler)
+        task._base = {'DEBUG_POSTSCRIPT': False}
+        for attr in ['queue_service', 'partition_service', 'clusters_service', 'constraint_service',
+                     'queue_exclusive', 'partition_exclusive', 'clusters_exclusive', 'constraint_exclusive',
+                     'queue_dtn', 'partition_dtn', 'clusters_dtn', 'constraint_dtn',
+                     'partition_batch', 'clusters_batch', 'constraint_batch', 'reservation_batch']:
+            setattr(task, attr, None)
+        task.queue_batch = 'dev'
+        config = {'ACCOUNT': 'acct', 'walltime': '00:15:00', 'ntasks': 24, 'tasks_per_node': 24,
+                  'threads_per_task': 1, 'PARTITION_BATCH': None}
+        config.update(overrides)
+        task._configs = {'atmos_products': config}
+        return task.get_resource('atmos_products')
+
+    def test_prepost_resources(self):
+        # Product jobs on the WCOSS2 prepost nodes: shared, explicit memory, prepost flag
+        resource = self._resource_for('pbspro', memory='6GB', prepost=True, is_exclusive=False)
+        assert resource['memory'] == '6GB:prepost=true'
+        assert resource['native'] == '-l place=vscatter:shared'
+
+        # PBS jobs without the prepost flag are unchanged
+        resource = self._resource_for('pbspro', memory='6GB')
+        assert resource['memory'] == '6GB'
+
+        # Slurm XMLs are unchanged by the prepost flag
+        resource = self._resource_for('slurm', memory='6GB', prepost=True)
+        assert resource['memory'] == '6GB'
+        assert 'prepost' not in resource['native']

@@ -99,6 +99,8 @@ skipped with a notice for `all` and is an error when its system is requested exp
 
 To add a system, add `sorc/build_systems/<system>.yaml`.
 
+See [DEMO.md](DEMO.md) for an end-to-end walk-through (Tier 1 repository, a feature, round-trip PR).
+
 ## Checking the lists
 
 ```bash

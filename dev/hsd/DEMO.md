@@ -1,0 +1,174 @@
+# HSD demonstration: a GCAFS Tier 1 repository and a round-trip pull request
+
+This walks through the whole HSD life cycle with one small feature,
+[NOAA-EMC/global-workflow#4393](https://github.com/NOAA-EMC/global-workflow/issues/4393)
+("Run product jobs on the WCOSS2 prepost nodes"). Every command was run end to end on a copy of this repository
+(single-commit history); the outputs shown are from that run.
+
+| Step | What | Where |
+|------|------|-------|
+| 0 | Prerequisites | once |
+| 1 | Create the Tier 1 GCAFS filter | full (Tier 0) clone |
+| 2 | Create the Tier 1 GCAFS repository | new directory |
+| 3 | Make the change (issue 4393) | Tier 1 repository |
+| 4 | Round-trip the change into a Tier 0 pull request | full (Tier 0) clone |
+
+```
+ Tier 0 (full)  --- josh-filter (step 1-2) --->  Tier 1 GCAFS repo
+      ^                                               |
+      |                                          feature branch (step 3)
+      +--- dev/hsd/sync_tiers.sh (step 4) <-----------+
+      |
+   hsd/... branch -> pull request
+```
+
+## Step 0: prerequisites
+
+```bash
+# josh-filter (Rust). Use --locked; without it the build fails on a yanked dependency.
+cargo install josh-cli --locked
+export PATH="${HOME}/.cargo/bin:${PATH}"
+josh-filter --version
+
+# A FULL (not shallow) clone of the Tier 0 repository. JOSH cannot filter shallow clones.
+git clone --recurse-submodules=no https://github.com/NOAA-EMC/global-workflow.git global-workflow
+cd global-workflow
+git checkout develop
+```
+
+## Step 1: create the Tier 1 GCAFS filter
+
+```bash
+# Sanity check the exclude lists against the tracked files (Tier 0 only)
+python3 dev/hsd/check_lists.py
+#   tier 1: 1493 files excluded, 761 kept
+#   tier 1.5: 1578 files excluded, 676 kept
+#   tier 2: 1676 files excluded, 578 kept
+
+# Print the JOSH filter (an ":exclude[...]" string built from dev/hsd/gcafs.tier1.list)
+FILTER="$(dev/hsd/make_filter.sh gcafs 1)"
+echo "${FILTER}" | cut -c1-100
+
+# Project develop through the filter into a local branch
+josh-filter --update refs/heads/gcafs-tier1 "${FILTER}" HEAD
+git ls-tree -r --name-only gcafs-tier1 | wc -l     # 761
+```
+
+Other tiers: `make_filter.sh gcafs 1.5` (no production code) and `make_filter.sh gcafs 2` (forecast-only).
+
+## Step 2: create the Tier 1 repository
+
+```bash
+cd ..
+git init -b develop gcafs-tier1
+cd gcafs-tier1
+git fetch ../global-workflow gcafs-tier1
+git checkout -B develop FETCH_HEAD
+git remote add origin git@github.com:<ORG>/global-workflow-gcafs.git   # optional
+git push -u origin develop                                              # optional
+
+# Tier 1 only builds what it contains
+sorc/build_all.sh -h | head          # lists only: gcafs
+```
+
+Notes for the audience:
+
+* `.gitmodules` is a file and cannot be edited by a filter, so it still lists every submodule. Git ignores entries
+  with no matching gitlink. Do **not** prune it on a branch you plan to round-trip (the removal would be sent
+  back to Tier 0).
+* Build systems and workflow generators are discovered dynamically (`sorc/build_systems/*.yaml`, the factory
+  registration in `dev/workflow`), so no other file needs editing in the filtered repository.
+
+## Step 3: make the change (issue 4393)
+
+The issue asks that product jobs on WCOSS2 request `prepost=true` in the PBS select string
+(`-l select=1:mpiprocs=24:ompthreads=1:ncpus=24:mem=6GB:prepost=true`), for PBS on WCOSS2 only, with Slurm
+unchanged. `dev/workflow/rocoto/tasks.py` already appends `:prepost=true` to the memory request when a task has
+`prepost` set, so the change for GCAFS is in the resource configuration: `atmos_products` sets
+`prepost=True`, a non-exclusive allocation and an explicit memory request on WCOSS2.
+
+```bash
+git checkout -b feature/wcoss2-prepost-products
+```
+
+Edit `dev/parm/config/gcafs/config.resources`. In the `atmos_products` case add:
+
+```bash
+    export is_exclusive=True
+    if [[ "${machine}" == "WCOSS2" ]]; then
+      # Run on the shared prepost nodes, which require an explicit memory request
+      # (e.g., -l select=1:mpiprocs=24:ompthreads=1:ncpus=24:mem=6GB:prepost=true)
+      export is_exclusive=False
+      memory="6GB"
+      prepost=True
+    fi
+```
+
+and add the two variables to the export loop at the end of the file:
+
+```bash
+for resource_var in threads_per_task ntasks tasks_per_node NTASKS memory walltime is_exclusive prepost; do
+```
+
+Add a unit test to `dev/workflow/tests/test_tasks.py` (`test_prepost_resources`: PBS with `prepost` gives
+`memory == '6GB:prepost=true'` and a shared allocation, PBS without it and Slurm are unchanged).
+The complete diff is in this branch's history: `git log -p -- dev/parm/config/gcafs/config.resources`.
+
+Test and commit:
+
+```bash
+(cd dev/workflow && python3 -m pytest tests/test_tasks.py -q)    # 3 passed
+
+# Check the resources by hand (WCOSS2 vs another machine)
+for m in WCOSS2 HERA; do
+  (export machine=${m} EXPDIR=$(pwd)/dev/parm/config/gcafs CASE=C96 RUN=gcafs max_tasks_per_node=128
+   bash -c 'source dev/parm/config/gcafs/config.resources atmos_products >/dev/null
+            echo "'"${m}"': memory=${memory:-} exclusive=${is_exclusive} prepost=${prepost:-}"')
+done
+#   WCOSS2: memory=6GB exclusive=False prepost=True
+#   HERA:   memory=    exclusive=True  prepost=
+
+git add -A
+git commit -m "Run GCAFS atmos_products on the WCOSS2 prepost nodes (#4393)"
+```
+
+The change only touches files kept at Tier 1, which is required for the round trip.
+
+## Step 4: round trip into a Tier 0 pull request
+
+Run `sync_tiers.sh` from the **Tier 0** clone (the repository that receives the change):
+
+```bash
+cd ../global-workflow
+git checkout develop
+git pull                                    # keep the target current
+
+dev/hsd/sync_tiers.sh -n gcafs 1 0 ../gcafs-tier1 feature/wcoss2-prepost-products   # check only
+dev/hsd/sync_tiers.sh    gcafs 1 0 ../gcafs-tier1 feature/wcoss2-prepost-products
+#   Changes that would be applied to develop (tier 0):
+#    dev/parm/config/gcafs/config.resources |  9 ++++++++-
+#    dev/workflow/tests/test_tasks.py       | 35 ++++++++++++++++++++++++++++++++++
+#   Created branch 'hsd/gcafs-tier1-<timestamp>' ...
+
+git log --oneline -3 hsd/gcafs-tier1-*      # the same commit, now on the full history
+git push origin hsd/gcafs-tier1-<timestamp>
+gh pr create --base develop --head hsd/gcafs-tier1-<timestamp> \
+  --title "Run GCAFS atmos_products on the WCOSS2 prepost nodes (#4393)" \
+  --body "Created in the GCAFS Tier 1 repository and brought back with dev/hsd/sync_tiers.sh. Closes #4393 for GCAFS."
+```
+
+A "reference refs/hsd/base/... wasn't updated" warning from JOSH is harmless.
+
+If the change touches a file that Tier 1 does not contain, the tree check fails with an explanation and no branch
+is created. If `develop` moved on since the Tier 1 repository was created, the branch is started from the commit
+the Tier 1 repository was created from, and the pull request merges it.
+
+## Slide summary
+
+1. `make_filter.sh gcafs 1` prints a JOSH exclude filter (about 1500 of 2250 files removed).
+2. `josh-filter` rewrites history through it; a new repository is a `git fetch` of that branch.
+3. Developers work in the small repository with normal git/PR tools.
+4. `sync_tiers.sh` reverse-applies the commits onto the full history, producing a normal branch and PR.
+
+Limits to mention: shallow clones are not supported; `.gitmodules` is not filtered; round trip fails (by design)
+for changes outside the tier; the tier job classification (`dev/hsd/*.list`) needs review by system owners.
