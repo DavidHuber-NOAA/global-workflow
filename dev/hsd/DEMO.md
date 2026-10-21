@@ -74,8 +74,9 @@ git init -b develop gcafs-tier1
 cd gcafs-tier1
 git fetch ../global-workflow gcafs-tier1
 git checkout -B develop FETCH_HEAD
-git remote add origin git@github.com:<ORG>/global-workflow-gcafs.git   # optional
-git push -u origin develop                                              # optional
+### Go to GitHub and create a new repository named `global-workflow-gcafs` (no README, no license, no gitignore).
+git remote add origin git@github.com:<ORG>/global-workflow-gcafs.git
+git push -u origin develop
 
 # Tier 1 only builds what it contains
 sorc/build_all.sh -h | head          # lists only: gcafs
