@@ -61,7 +61,7 @@ echo "${FILTER}"
 
 # Project develop through the filter into a local branch
 josh-filter --update refs/heads/gcafs-tier1 "${FILTER}" HEAD
-git ls-tree -r --name-only gcafs-tier1 | wc -l     # 761
+git ls-tree -r --name-only gcafs-tier1 | wc -l     # 762
 ```
 
 Other tiers: `make_filter.sh gcafs 1.5` (no production code) and `make_filter.sh gcafs 2` (forecast-only).
