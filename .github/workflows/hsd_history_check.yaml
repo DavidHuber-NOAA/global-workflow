@@ -1,0 +1,63 @@
+name: hsd_history_check
+
+# Tier (HSD) repositories get their history rewritten when the filter lists change. A pull request whose
+# branch no longer shares history with the base branch cannot be merged; tell the author how to fix it.
+# In the full (Tier 0) repository the histories always match, so the check passes.
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check_history:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the pull request branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check that the branch shares history with the base branch
+        id: check
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --quiet origin "${BASE_REF}"
+          if git merge-base HEAD "origin/${BASE_REF}" > /dev/null 2>&1; then
+            echo "unrelated=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "unrelated=true" >> "${GITHUB_OUTPUT}"
+            echo "::error::This branch shares no history with ${BASE_REF}. The filter for this repository changed; see dev/hsd/README.md"
+          fi
+
+      - name: Comment with the fix
+        if: steps.check.outputs.unrelated == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '**This branch no longer shares history with `develop`.**',
+              'The HSD filter for this repository changed, so its history was rewritten. Update the branch with:',
+              '```bash',
+              'git checkout <your-branch>',
+              'dev/hsd/update_branch.sh -n   # dry run',
+              'dev/hsd/update_branch.sh',
+              'git push --force-with-lease origin <your-branch>',
+              '```',
+              'See `dev/hsd/README.md` ("Updating a feature branch after the filter changed").'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+      - name: Fail when the history is unrelated
+        if: steps.check.outputs.unrelated == 'true'
+        run: exit 1

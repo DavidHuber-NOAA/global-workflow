@@ -134,6 +134,24 @@ Options, from least to most effort (they can be combined):
 5. **Reduce the number of rewrites.** Batch list changes, and prefer additive changes made right after a release.
    Adding or removing files from a filter changes every affected commit, so rewrites cannot be avoided entirely.
 
+Option 3 is implemented in `.github/workflows/hsd_history_check.yaml`: it fails a pull request to `develop` whose branch
+shares no history with it and comments with the fix (fork pull requests only get the failing check, as they cannot
+receive comments).
+
+### Forks of a tier repository
+
+A fork is a separate copy whose `develop` still holds the old history. After a filter change GitHub's "Sync fork" fails
+(or offers to discard commits), because the fork's `develop` and the upstream `develop` have diverged; a fast-forward
+is impossible, and `git merge`/`git pull` report unrelated histories. Branches and pull requests in the fork behave as
+for any feature branch above. Mitigations:
+
+1. Keep the fork's `develop` a pure mirror (no commits of its own) and reset it: `git fetch upstream &&
+   git checkout develop && git reset --hard upstream/develop && git push --force origin develop` (GitHub's "Discard
+   commits" in Sync fork does the same). Feature branches are then moved with `update_branch.sh -r upstream`.
+2. Work in feature branches only, never on the fork's `develop`.
+3. Announce each filter change (option 1) so forks reset promptly; batch changes (option 5).
+4. A bridge commit (option 4) lets forks fast-forward, at the cost described there.
+
 Recommended: option 3 (a CI hint) plus this script, with option 4 considered if the filters change often.
 
 ## Build systems
