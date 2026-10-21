@@ -14,12 +14,18 @@ This walks through the whole HSD life cycle with one small feature,
 | 4 | Round-trip the change into a Tier 0 pull request | full (Tier 0) clone | Once per PR | EPIC/Developer |
 
 ```
- Tier 0 (full)  --- josh-filter (step 1-2) --->  Tier 1 GCAFS repo
-      ^                                               |
-      |                                          feature branch (step 3)
-      +--- dev/hsd/sync_tiers.sh (step 4) <-----------+
-      |
-   hsd/... branch -> pull request
+ +-----------------+       josh-filter (step 1-2)       +-------------------+
+ |  Tier 0 (full)  | ---------------------------------> | Tier 1 GCAFS repo |
+ +-----------------+                                    +-------------------+
+      ^                                                           |
+      | pull request                                              | branch out
+      |                                                           v
+ +-----------------+                                    +-------------------+
+ | hsd/... branch  |                                    |  feature branch   |
+ +-----------------+                                    |     (step 3)      |
+      ^                                                 +-------------------+
+      |             dev/hsd/sync_tiers.sh (step 4)                |
+      +-----------------------------------------------------------+
 ```
 
 ## Step 0: prerequisite installations
