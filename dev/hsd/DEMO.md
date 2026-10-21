@@ -31,6 +31,7 @@ This walks through the whole HSD life cycle with one small feature,
 ## Step 0: prerequisite installations
 
 ```bash
+# Assumes Python 3.8+ and git 2.30+ are already installed.
 # Install Rust (https://www.rust-lang.org/tools/install) and add it to your PATH.
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 export PATH="${HOME}/.cargo/bin:${PATH}"
@@ -50,9 +51,9 @@ git checkout develop
 ```bash
 # Sanity check the exclude lists against the tracked files (Tier 0 only)
 python3 dev/hsd/check_lists.py
-#   tier 1: 1493 files excluded, 761 kept
-#   tier 1.5: 1578 files excluded, 676 kept
-#   tier 2: 1676 files excluded, 578 kept
+#   tier 1: 1493 files excluded, 762 kept; 2 submodules excluded, 8 kept
+#   tier 1.5: 1578 files excluded, 677 kept; 2 submodules excluded, 8 kept
+#   tier 2: 1676 files excluded, 579 kept; 4 submodules excluded, 6 kept
 
 # Print the JOSH filter (an ":exclude[...]" string built from dev/hsd/gcafs.tier1.list)
 FILTER="$(dev/hsd/make_filter.sh gcafs 1)"

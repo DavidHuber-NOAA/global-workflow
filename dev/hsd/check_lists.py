@@ -91,12 +91,20 @@ def check_build_system(path, kept):
     return errors
 
 
+def count_submodules(submodules, kept):
+    # Return the number of submodules that are in the filtered list.
+    return len(submodules & set(kept))
+
+
 def main():
     system = sys.argv[1] if len(sys.argv) > 1 else 'gcafs'
     files = tracked_files()
     fileset = set(files)
     errors = 0
     seen = {}
+    submodules = subprocess.check_output(['git', 'submodule', 'status'], cwd=TOP, text=True)
+    submodules = [line.split()[1] for line in submodules.splitlines() if line]
+    total_submodules = len(set(submodules))
     for tier, names in TIERS:
         entries = [(n, e) for n in names for e in read_list(system, n)]
         excluded = set()
@@ -122,7 +130,9 @@ def main():
         for f in kept:
             if f.startswith('sorc/build_systems/'):
                 errors += check_build_system(f, fileset - excluded)
-        print(f'tier {tier}: {len(excluded)} files excluded, {len(kept)} kept')
+        included_submodules = count_submodules(set(submodules), kept)
+        excluded_submodules = total_submodules - included_submodules
+        print(f'tier {tier}: {len(excluded)} files excluded, {len(kept)} kept; {excluded_submodules} submodules excluded, {included_submodules} kept')
     return 1 if errors else 0
 
 
