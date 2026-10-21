@@ -5,13 +5,13 @@ This walks through the whole HSD life cycle with one small feature,
 ("Run product jobs on the WCOSS2 prepost nodes"). Every command was run end to end on a copy of this repository
 (single-commit history); the outputs shown are from that run.
 
-| Step | What | Where | Cadence |
-|------|------|-------| ------- |
-| 0 | Prerequisites | Once per platform | One-time |
-| 1 | Create the Tier 1 GCAFS filter | full (Tier 0) clone | One-time |
-| 2 | Create the Tier 1 GCAFS repository | new directory | One-time |
-| 3 | Make the change (issue 4393) | Tier 1 repository | As needed |
-| 4 | Round-trip the change into a Tier 0 pull request | full (Tier 0) clone | Once per PR |
+| Step | What | Where | Cadence | Who |
+|------|------|-------| ------- | -----|
+| 0 | Prerequisite installations | On your machine | One-time | EPIC |
+| 1 | Create the Tier 1 GCAFS filter | full (Tier 0) clone | One-time | EPIC |
+| 2 | Create the Tier 1 GCAFS repository | new directory | One-time | EPIC |
+| 3 | Make the change (issue 4393) | Tier 1 repository | As needed | Developer |
+| 4 | Round-trip the change into a Tier 0 pull request | full (Tier 0) clone | Once per PR | EPIC/Developer |
 
 ```
  Tier 0 (full)  --- josh-filter (step 1-2) --->  Tier 1 GCAFS repo
@@ -22,12 +22,15 @@ This walks through the whole HSD life cycle with one small feature,
    hsd/... branch -> pull request
 ```
 
-## Step 0: prerequisites
+## Step 0: prerequisite installations
 
 ```bash
+# Install Rust (https://www.rust-lang.org/tools/install) and add it to your PATH.
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+export PATH="${HOME}/.cargo/bin:${PATH}"
+# Add the cargo bin directory to your PATH in .bashrc or .zshrc for future sessions.
 # josh-filter (Rust). Use --locked; without it the build fails on a yanked dependency.
 cargo install josh-cli --locked
-export PATH="${HOME}/.cargo/bin:${PATH}"
 josh-filter --version
 
 # A FULL (not shallow) clone of the Tier 0 repository. JOSH cannot filter shallow clones.
