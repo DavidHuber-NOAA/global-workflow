@@ -8,8 +8,8 @@ This walks through the whole HSD life cycle with one small feature,
 | Step | What | Where | Cadence | Who |
 |------|------|-------| ------- | -----|
 | 0 | Prerequisite installations | On your machine | One-time | EPIC |
-| 1 | Create the Tier 1 GCAFS filter | full (Tier 0) clone | One-time | EPIC |
-| 2 | Create the Tier 1 GCAFS repository | new directory | One-time | EPIC |
+| 1 | Create the Tier 1 GCAFS filter | full (Tier 0) clone | One-time | EPIC/Core Developer |
+| 2 | Create the Tier 1 GCAFS repository | new directory | One-time | EPIC/OMD |
 | 3 | Make the change (issue 4393) | Tier 1 repository | As needed | Developer |
 | 4 | Round-trip the change into a Tier 0 pull request | full (Tier 0) clone | Once per PR | EPIC/Developer |
 
@@ -56,7 +56,7 @@ python3 dev/hsd/check_lists.py
 
 # Print the JOSH filter (an ":exclude[...]" string built from dev/hsd/gcafs.tier1.list)
 FILTER="$(dev/hsd/make_filter.sh gcafs 1)"
-echo "${FILTER}" | cut -c1-100
+echo "${FILTER}"
 
 # Project develop through the filter into a local branch
 josh-filter --update refs/heads/gcafs-tier1 "${FILTER}" HEAD
