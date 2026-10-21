@@ -5,13 +5,13 @@ This walks through the whole HSD life cycle with one small feature,
 ("Run product jobs on the WCOSS2 prepost nodes"). Every command was run end to end on a copy of this repository
 (single-commit history); the outputs shown are from that run.
 
-| Step | What | Where |
-|------|------|-------|
-| 0 | Prerequisites | once |
-| 1 | Create the Tier 1 GCAFS filter | full (Tier 0) clone |
-| 2 | Create the Tier 1 GCAFS repository | new directory |
-| 3 | Make the change (issue 4393) | Tier 1 repository |
-| 4 | Round-trip the change into a Tier 0 pull request | full (Tier 0) clone |
+| Step | What | Where | Cadence |
+|------|------|-------| ------- |
+| 0 | Prerequisites | Once per platform | One-time |
+| 1 | Create the Tier 1 GCAFS filter | full (Tier 0) clone | One-time |
+| 2 | Create the Tier 1 GCAFS repository | new directory | One-time |
+| 3 | Make the change (issue 4393) | Tier 1 repository | As needed |
+| 4 | Round-trip the change into a Tier 0 pull request | full (Tier 0) clone | Once per PR |
 
 ```
  Tier 0 (full)  --- josh-filter (step 1-2) --->  Tier 1 GCAFS repo
