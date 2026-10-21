@@ -87,6 +87,55 @@ new branch, merge it or open a pull request. To go up one tier at a time, run it
 * Changes to `.gitmodules` and other files that only exist in the lower tier are not touched, because the filter
   removes whole paths only.
 
+## Updating a feature branch after the filter changed
+
+When the lists in `dev/hsd/` change (for example a new script must be kept in GCAFS Tier 1), `josh-filter` rewrites the
+history of the tier repository. The new `develop` then shares no commits with the old one, so a feature branch
+cannot `git merge develop` (`fatal: refusing to merge unrelated histories`). `update_branch.sh` fixes this.
+Run it in the tier repository, on the feature branch:
+
+```bash
+git checkout my-feature
+dev/hsd/update_branch.sh -n          # dry run: shows the old base, new develop and the commits to replay
+dev/hsd/update_branch.sh             # update the current branch
+git push --force-with-lease origin my-feature
+```
+
+Options: `-r REMOTE` (default `origin`), `-d DEVELOP` (default `develop`), `-o OLD_BASE` and a branch name argument.
+The script fetches `develop`, finds the commit of the *old* develop the branch was started from (the newest fork
+point with the old develop positions kept in the reflog; `-o` overrides it), saves the branch as
+`<branch>-before-filter-update` and runs `git rebase --onto <new develop> <old base> <branch>`, so only the
+branch's own commits are replayed. Resolve conflicts as for any rebase (`git add`, `git rebase --continue`, or
+`git rebase --abort`). If the branch still shares history with `develop`, the filter did not change for it and the
+script says to use a normal `git merge`. If the old base cannot be found (for example the old `develop` was already
+garbage collected), look it up with `git log --first-parent <branch>` and pass it with `-o`.
+
+Run it before `git merge`/`git pull` if the previous `develop` is still known; it also works afterwards because
+the old positions of `origin/develop` stay in the reflog (about 90 days).
+
+### Making this seamless for developers
+
+Options, from least to most effort (they can be combined):
+
+1. **Announce and version the filter.** Keep a `dev/hsd/FILTER_VERSION` file (or tag, e.g. `filter-N`) that is bumped
+   by every list change, and mention it in the pull request that changes the lists. Cheap, but relies on reading.
+2. **Make the failure self-explanatory.** Install a hook or git alias so the unrelated-histories error points to the
+   script: `git config alias.hsd-update '!dev/hsd/update_branch.sh'`, or a `post-fetch`-style wrapper
+   (`dev/hsd/update_branch.sh -n` is safe to run at any time and only reports).
+3. **Check in CI.** In the tier repository, a pull-request workflow runs `git merge-base origin/develop HEAD`; when it
+   fails, it comments with the two commands above. This catches the problem exactly when the developer is about to
+   merge, and needs no setup on the developer side.
+4. **Publish a bridge commit (no developer action).** When the filter changes, the maintainer creates the new tier
+   `develop` as a merge commit whose parents are the *old* tier `develop` tip and the *new* filtered tip, with the
+   new filtered tree. Feature branches that contain the old tip then `git merge develop` normally. Costs: the
+   tier history is no longer pure `josh-filter` output, so `sync_tiers.sh` round trips need the bridge handled
+   (merge-base detection and the reverse filter must start after the bridge), and the maintainer step has to be
+   scripted and exercised.
+5. **Reduce the number of rewrites.** Batch list changes, and prefer additive changes made right after a release.
+   Adding or removing files from a filter changes every affected commit, so rewrites cannot be avoided entirely.
+
+Recommended: option 3 (a CI hint) plus this script, with option 4 considered if the filters change often.
+
 ## Build systems
 
 `sorc/build_all.sh` and `dev/workflow/setup_buildxml.py` discover systems from `sorc/build_systems/<system>.yaml`

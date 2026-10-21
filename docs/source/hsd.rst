@@ -74,3 +74,7 @@ Build systems are discovered the same way: add ``sorc/build_systems/<system>.yam
 
 Changes made in a filtered tier are brought back to a lower tier (for example Tier 2 to Tier 0) with
 ``dev/hsd/sync_tiers.sh``, which reverse-applies the commits with ``josh-filter --reverse`` onto a new branch for review.
+
+When the filter lists change, the history of a tier repository is rewritten and open feature branches can no longer
+merge ``develop``. Run ``dev/hsd/update_branch.sh`` on the feature branch to replay its commits onto the new
+``develop`` (see ``dev/hsd/README.md``).
