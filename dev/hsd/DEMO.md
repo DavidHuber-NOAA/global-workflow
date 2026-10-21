@@ -82,7 +82,7 @@ git push -u origin develop
 sorc/build_all.sh -h | head          # lists only: gcafs
 ```
 
-Notes for the audience:
+Notes:
 
 * `.gitmodules` is a file and cannot be edited by a filter, so it still lists every submodule. Git ignores entries
   with no matching gitlink. Do **not** prune it on a branch you plan to round-trip (the removal would be sent
