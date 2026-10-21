@@ -174,7 +174,7 @@ If the change touches a file that Tier 1 does not contain, the tree check fails 
 is created. If `develop` moved on since the Tier 1 repository was created, the branch is started from the commit
 the Tier 1 repository was created from, and the pull request merges it.
 
-## Slide summary
+## Slide summary (Steps 1-4; the appendix keeps the tier repository current)
 
 1. `make_filter.sh gcafs 1` prints a JOSH exclude filter (about 1500 of 2250 files removed).
 2. `josh-filter` rewrites history through it; a new repository is a `git fetch` of that branch.
@@ -183,3 +183,60 @@ the Tier 1 repository was created from, and the pull request merges it.
 
 Limits to mention: shallow clones are not supported; `.gitmodules` is not filtered; round trip fails (by design)
 for changes outside the tier; the tier job classification (`dev/hsd/*.list`) needs review by system owners.
+
+## Appendix: update `global-workflow-gcafs` after `global-workflow` develop changes
+
+Run this whenever Tier 0 `develop` has moved (for example after the pull request from Step 4 was merged, or any
+other change in the full repository). The published Tier 1 `develop` is updated with a fast-forward push, so
+developers and forks of `global-workflow-gcafs` can simply `git merge develop` / "Sync fork".
+It uses `dev/hsd/publish_tier.sh`, which adds a bridge commit only when the filter lists changed.
+
+```bash
+# 1. Update the Tier 0 clone (the full repository)
+cd global-workflow
+git checkout develop
+git pull
+
+# 2. Check that the filter lists still match the repository (new or removed files)
+python3 dev/hsd/check_lists.py
+
+# 3. Bring any pending Tier 1 changes back to Tier 0 first (otherwise they are overwritten by the update)
+#    Skip if there are none; see Step 4. Check only:
+dev/hsd/sync_tiers.sh -n gcafs 1 0 git@github.com:<ORG>/global-workflow-gcafs.git develop
+
+# 4. Preview the update against the published Tier 1 develop (nothing is created)
+dev/hsd/publish_tier.sh -n -p git@github.com:<ORG>/global-workflow-gcafs.git gcafs 1
+#   Filtering develop to tier 1 ...
+#   Fetching develop from git@github.com:<ORG>/global-workflow-gcafs.git ...
+#   The filter did not change history: fast-forward, no bridge needed.       (list unchanged)
+#   -- or --
+#   The filtered history no longer contains the published develop (the filter changed): creating a bridge.
+
+# 5. Create the branch to publish
+dev/hsd/publish_tier.sh -p git@github.com:<ORG>/global-workflow-gcafs.git gcafs 1
+#   Created branch 'hsd/publish/gcafs-tier1-<timestamp>' ...
+
+# 6. Publish it (always a fast-forward; never use --force)
+git push git@github.com:<ORG>/global-workflow-gcafs.git hsd/publish/gcafs-tier1-<timestamp>:develop
+```
+
+What happens in step 5:
+
+| Situation | Result |
+|-----------|--------|
+| Only Tier 0 commits were added, lists unchanged | The published `develop` is an ancestor of the filtered history: the new commits are fast-forwarded |
+| Lists changed (for example a new script must go to Tier 1), or an earlier PR was squash-merged in Tier 0 | A bridge commit (first parent: published `develop`, second parent: new filtered `develop`, tree: the filtered tree) is created |
+| Nothing changed | "Nothing to do" |
+
+For developers of `global-workflow-gcafs` afterwards:
+
+```bash
+git checkout develop && git pull                 # fast-forward, with or without a bridge
+git checkout my-feature && git merge develop     # works as usual
+```
+
+Only a branch that was never merged with a published `develop` and is based on a repository rewritten *without* a
+bridge needs `dev/hsd/update_branch.sh`.
+
+If the filter lists changed, change them in a Tier 0 pull request first and run steps 1-6 once it is merged;
+mention the change in the pull request so Tier 1 developers know to pull.
