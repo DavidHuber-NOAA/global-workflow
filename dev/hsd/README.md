@@ -150,9 +150,39 @@ for any feature branch above. Mitigations:
    commits" in Sync fork does the same). Feature branches are then moved with `update_branch.sh -r upstream`.
 2. Work in feature branches only, never on the fork's `develop`.
 3. Announce each filter change (option 1) so forks reset promptly; batch changes (option 5).
-4. A bridge commit (option 4) lets forks fast-forward, at the cost described there.
+4. Publish with a bridge commit (`publish_tier.sh`, see below): forks can then update normally.
 
 Recommended: option 3 (a CI hint) plus this script, with option 4 considered if the filters change often.
+
+## Publishing a tier with a bridge commit
+
+`publish_tier.sh` (run in the Tier 0 repository) prepares the branch that becomes `develop` of a tier repository:
+
+```bash
+dev/hsd/sync_tiers.sh ...                         # first bring pending tier changes back to Tier 0
+dev/hsd/publish_tier.sh -n -p <tier repo> gcafs 1  # report only
+dev/hsd/publish_tier.sh    -p <tier repo> gcafs 1  # creates hsd/publish/gcafs-tier1-<timestamp>
+git push <tier repo> hsd/publish/gcafs-tier1-<timestamp>:develop     # always a fast-forward
+```
+
+Without `-p` (first publish) the branch is the filtered history. With `-p` it is compared with the published
+`develop`:
+
+* the published `develop` is an ancestor of the filtered history (filter unchanged): the filtered history is used;
+* otherwise (the filter changed, or an earlier bridge exists) a **bridge commit** is created: a merge whose first
+  parent is the published `develop`, whose second parent is the new filtered `develop`, and whose tree is that of
+  the filtered `develop`. It carries the trailer `HSD-Bridge:`.
+
+Because the bridge descends from the published `develop`, existing feature branches and forks can `git merge develop`
+or use "Sync fork" with no extra steps, and the history check workflow passes. The bridge tree is that of the filtered
+Tier 0 branch, so run `sync_tiers.sh` first; the diff stat that is printed shows what changes.
+After a bridge every later publish is again a (small) merge, as the filtered history never contains the bridge.
+
+`sync_tiers.sh` understands bridges: when the tier branch contains merges, only the branch's own commits (those not
+reachable from the first parent of a bridge) are replayed in order onto the filtered base before the reverse
+filter is applied. If a commit cannot be replayed (for example conflicts resolved inside a merge), update the branch
+with `update_branch.sh` or a rebase onto the published `develop` first. `update_branch.sh` is only needed for
+branches in repositories that were rewritten without a bridge.
 
 ## Build systems
 

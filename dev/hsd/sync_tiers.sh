@@ -111,9 +111,41 @@ if [[ "${merge_base}" != "${base_tip}" ]]; then
   echo "NOTE: ${target_branch} has changes since ${source_repo} was created; the new branch is based on the older commit and needs a merge."
 fi
 
+# The tier repository may contain bridge commits (publish_tier.sh) that join the history before a filter change
+# with the current one. The old history does not exist in the target, so replay only the commits of the branch
+# itself, linearly, on top of the filtered commit the branch is based on.
+reverse_ref="${incoming_ref}"
+work_branch=""
+linear_work=""
+cleanup() {
+  [[ -z "${linear_work}" ]] || git branch -q -D "${linear_work}" > /dev/null 2>&1 || true
+  [[ -z "${work_branch}" ]] || git branch -q -D "${work_branch}" > /dev/null 2>&1 || true
+}
+trap cleanup EXIT
+if [[ -n "$(git rev-list --merges "${base_ref}..${incoming_ref}")" ]]; then
+  echo "The history of ${source_branch} contains merges (bridge commits or merged develop): replaying its own commits linearly ..."
+  exclude=()
+  while read -r bridge; do
+    exclude+=("^${bridge}^1")
+  done < <(git rev-list --merges --grep='^HSD-Bridge:' "${incoming_ref}")
+  linear_ref="refs/hsd/linear/${system}-tier${from_tier}"
+  git update-ref "${linear_ref}" "${merge_base}"
+  linear_work="hsd-linear-work-$$"
+  git branch -q "${linear_work}" "${merge_base}"
+  orig_branch="$(git symbolic-ref --quiet --short HEAD || git rev-parse HEAD)"
+  git checkout -q "${linear_work}"
+  while read -r commit; do
+    git cherry-pick --allow-empty --keep-redundant-commits "${commit}" > /dev/null 2>&1 \
+      || { git cherry-pick --abort > /dev/null 2>&1 || true; git checkout -q "${orig_branch}"; \
+           die "Could not replay commit ${commit}. Update ${source_branch} onto the published develop first (update_branch.sh) and resolve conflicts there."; }
+  done < <(git rev-list --reverse --no-merges "${incoming_ref}" "^${merge_base}" "^${base_ref}" "${exclude[@]}")
+  git update-ref "${linear_ref}" "${linear_work}"
+  git checkout -q "${orig_branch}"
+  reverse_ref="${linear_ref}"
+fi
+
 echo "Reverse-applying the tier ${from_tier} commits ..."
 work_branch="hsd-sync-work-$$"
-trap 'git branch -q -D "${work_branch}" > /dev/null 2>&1 || true' EXIT
 # Start from the commit of the target that the tier repository was created from, so that changes
 # made on the target since then do not stop the reverse apply (they are merged by the user afterwards).
 start_commit="${target_branch}"
@@ -129,7 +161,7 @@ if [[ "${merge_base}" != "${base_tip}" ]]; then
   [[ -n "${start_commit}" ]] || die "Could not find the commit of ${target_branch} that ${source_repo} was created from"
 fi
 git branch -q "${work_branch}" "${start_commit}"
-josh-filter --reverse --update "${incoming_ref}" "${filter}" "refs/heads/${work_branch}" > /dev/null \
+josh-filter --reverse --update "${reverse_ref}" "${filter}" "refs/heads/${work_branch}" > /dev/null \
   || die "josh-filter could not reverse-apply the changes"
 
 # Round trip: projecting the result must give back exactly what the tier repository has
