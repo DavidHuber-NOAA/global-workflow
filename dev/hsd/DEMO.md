@@ -69,14 +69,13 @@ Other tiers: `make_filter.sh gcafs 1.5` (no production code) and `make_filter.sh
 ## Step 2: create the Tier 1 repository
 
 ```bash
-cd ..
-git init -b develop gcafs-tier1
-cd gcafs-tier1
-git fetch ../global-workflow gcafs-tier1
-git checkout -B develop FETCH_HEAD
 ### Go to GitHub and create a new repository named `global-workflow-gcafs` (no README, no license, no gitignore).
-git remote add origin git@github.com:<ORG>/global-workflow-gcafs.git
-git push -u origin develop
+git remote add gw-gcafs git@github.com:<ORG>/global-workflow-gcafs.git
+# Push the filtered branch to the new repository as `develop`
+git push origin gcafs-tier1:develop
+cd ..
+git clone git@github.com:<ORG>/global-workflow-gcafs.git gcafs-tier1
+cd gcafs-tier1
 
 # Tier 1 only builds what it contains
 sorc/build_all.sh -h | head          # lists only: gcafs
