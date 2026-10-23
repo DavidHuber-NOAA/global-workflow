@@ -7,7 +7,8 @@ For every tier of a system the script checks that
 * no entry is repeated within or across the cumulative tier lists, and
 * every build entry of a kept sorc/build_systems/<system>.yaml has its build script, and
 * no file that is kept at that tier imports a Python module that is excluded
-  (module-level imports only; imports inside functions are treated as lazy).
+  (module-level imports only; imports inside functions are treated as lazy), and
+* make_filter.sh can map every kept symbolic link whose target is excluded (no dangling links).
 
 Usage: check_lists.py [SYSTEM]    (default: gcafs)
 """
@@ -130,6 +131,12 @@ def main():
         for f in kept:
             if f.startswith('sorc/build_systems/'):
                 errors += check_build_system(f, fileset - excluded)
+        tier_arg = {'tier1': '1', 'tier1p5': '1.5', 'tier2': '2'}.get(names[-1])
+        made = subprocess.run([os.path.join(TOP, 'dev', 'hsd', 'make_filter.sh'), system, tier_arg],
+                              cwd=TOP, text=True, capture_output=True)
+        if made.returncode != 0 or made.stderr.strip():
+            print(f'ERROR tier {tier}: make_filter.sh: {made.stderr.strip()}')
+            errors += 1
         included_submodules = count_submodules(set(submodules), kept)
         excluded_submodules = total_submodules - included_submodules
         print(f'tier {tier}: {len(excluded)} files excluded, {len(kept)} kept; {excluded_submodules} submodules excluded, {included_submodules} kept')
