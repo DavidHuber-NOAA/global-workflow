@@ -217,6 +217,11 @@ dev/hsd/publish_tier.sh -p git@github.com:<ORG>/global-workflow-gcafs.git gcafs 
 
 # 6. Publish it (always a fast-forward; never use --force)
 git push git@github.com:<ORG>/global-workflow-gcafs.git hsd/publish/gcafs-tier1-<timestamp>:develop
+
+# 7. Update local clones as normal (fast-forward, with or without a bridge)
+cd ../global-workflow-gcafs
+git checkout develop
+git pull
 ```
 
 What happens in step 5:
