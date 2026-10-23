@@ -80,3 +80,6 @@ existing branches and forks can still merge ``develop``.
 When the filter lists change, the history of a tier repository is rewritten and open feature branches can no longer
 merge ``develop``. Run ``dev/hsd/update_branch.sh`` on the feature branch to replay its commits onto the new
 ``develop`` (see ``dev/hsd/README.md``).
+
+Symbolic links whose targets a tier excludes (the GCAFS configuration files that link to ``dev/parm/config/gfs``) are
+replaced by the target files in the filtered repository; see ``dev/hsd/README.md`` (mapped filter).

@@ -184,6 +184,27 @@ filter is applied. If a commit cannot be replayed (for example conflicts resolve
 with `update_branch.sh` or a rebase onto the published `develop` first. `update_branch.sh` is only needed for
 branches in repositories that were rewritten without a bridge.
 
+## Symbolic links to excluded files (mapped filter)
+
+`dev/parm/config/gcafs/config.*` contains many symbolic links to `dev/parm/config/gfs/config.*`, but the GFS
+configuration directory is excluded from the GCAFS tiers, so the links would dangle. `make_filter.sh` therefore
+produces a *mapped* filter: every kept link whose target is excluded is dropped and the target file is placed at the
+link's path, for example
+
+```
+:[:exclude[<lists>,::dev/parm/config/gcafs/config.com,...],:/dev/parm/config/gfs:[::config.com,...]:prefix=dev/parm/config/gcafs]
+```
+
+The links are found automatically from the repository (nothing needs to be listed), per tier, so a link that a
+tier excludes is simply excluded and a new link is mapped the next time the filter is built. In the tier repository
+the files are regular files; there are no dangling links. Only links to regular files with the same name as the link
+are mapped (anything else prints a warning or an error), and `check_lists.py` fails if `make_filter.sh` does.
+
+Round trip: the reverse filter applies a change to a mapped file to the **target** (for example
+`dev/parm/config/gfs/config.com`) and keeps the link in Tier 0. A change to such a file therefore also changes the
+GFS (and other systems') configuration; review it as a shared file. If the change should only apply to GCAFS,
+replace the link with a real file in Tier 0 first.
+
 ## Build systems
 
 `sorc/build_all.sh` and `dev/workflow/setup_buildxml.py` discover systems from `sorc/build_systems/<system>.yaml`
