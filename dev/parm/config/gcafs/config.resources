@@ -1003,13 +1003,6 @@ case ${step} in
     threads_per_task=1
     tasks_per_node="${ntasks}"
     export is_exclusive=True
-    if [[ "${machine}" == "WCOSS2" ]]; then
-      # Run on the shared prepost nodes, which require an explicit memory request
-      # (e.g., -l select=1:mpiprocs=24:ompthreads=1:ncpus=24:mem=6GB:prepost=true)
-      export is_exclusive=False
-      memory="6GB"
-      prepost=True
-    fi
     ;;
 
   "verfozn")
@@ -1372,7 +1365,7 @@ if [[ -f "${EXPDIR}/config.resources.${machine}" ]]; then
 fi
 
 # Check for RUN-specific variables and export them
-for resource_var in threads_per_task ntasks tasks_per_node NTASKS memory walltime is_exclusive prepost; do
+for resource_var in threads_per_task ntasks tasks_per_node NTASKS memory walltime; do
    run_resource_var="${resource_var}_${RUN}"
    if [[ -n "${!run_resource_var+0}" ]]; then
       declare -x "${resource_var}"="${!run_resource_var}"
