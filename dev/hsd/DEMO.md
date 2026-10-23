@@ -105,19 +105,9 @@ Edit `dev/parm/config/gcafs/config.resources`. In the `atmos_products` case add:
 
 ```bash
     export is_exclusive=True
-    if [[ "${machine}" == "WCOSS2" ]]; then
-      # Run on the shared prepost nodes, which require an explicit memory request
-      # (e.g., -l select=1:mpiprocs=24:ompthreads=1:ncpus=24:mem=6GB:prepost=true)
-      export is_exclusive=False
-      memory="6GB"
-      prepost=True
-    fi
-```
-
-and add the two variables to the export loop at the end of the file:
-
-```bash
-for resource_var in threads_per_task ntasks tasks_per_node NTASKS memory walltime is_exclusive prepost; do
+    # Run on the shared prepost nodes, which require an explicit memory request
+    memory="6GB"
+    prepost=True
 ```
 
 Add a unit test to `dev/workflow/tests/test_tasks.py` (`test_prepost_resources`: PBS with `prepost` gives
