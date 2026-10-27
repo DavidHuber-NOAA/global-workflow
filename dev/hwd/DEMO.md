@@ -143,18 +143,14 @@ cd ../global-workflow
 git checkout develop
 git pull                                    # keep the target current
 
-dev/hwd/sync_tiers.sh -n gcafs 1 0 ../gcafs-tier1 feature/wcoss2-prepost-products   # check only
 dev/hwd/sync_tiers.sh    gcafs 1 0 ../gcafs-tier1 feature/wcoss2-prepost-products
-#   Changes that would be applied to develop (tier 0):
 #    dev/parm/config/gcafs/config.resources |  9 ++++++++-
 #    dev/workflow/tests/test_tasks.py       | 35 ++++++++++++++++++++++++++++++++++
 #   Created branch 'hwd/gcafs-tier1-<timestamp>' ...
 
 git log --oneline -3 hwd/gcafs-tier1-*      # the same commit, now on the full history
 git push origin hwd/gcafs-tier1-<timestamp>
-gh pr create --base develop --head hwd/gcafs-tier1-<timestamp> \
-  --title "Run GCAFS atmos_products on the WCOSS2 prepost nodes (#4393)" \
-  --body "Created in the GCAFS Tier 1 repository and brought back with dev/hwd/sync_tiers.sh. Closes #4393 for GCAFS."
+# Go to GitHub and create a pull request.
 ```
 
 A "reference refs/hwd/base/... wasn't updated" warning from JOSH is harmless.
