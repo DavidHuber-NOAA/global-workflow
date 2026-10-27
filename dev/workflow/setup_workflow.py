@@ -136,7 +136,7 @@ def main(*argv):
     elif workflow_engine == "ecflow":
         workflow_config.verbosity = user_inputs.verbosity
 
-    # Select the workflow engine factory (ecFlow is absent from production-free HSD tiers)
+    # Select the workflow engine factory (ecFlow is absent from production-free HWD tiers)
     if workflow_engine == "ecflow":
         try:
             from ecflowgw.ecflow_suite_factory import ecflow_suite_factory

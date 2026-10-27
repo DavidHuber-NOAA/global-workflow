@@ -1,13 +1,13 @@
-.. _hsd_tiers:
+.. _hwd_tiers:
 
 ######################################
-Hierarchical System Design (HSD) Tiers
+Hierarchical Workflow Development (HWD) Tiers
 ######################################
 
 The global workflow supports several forecasting systems: GFS, GEFS, SFS and GCAFS. The
-Hierarchical System Design (HSD) lets a subset of the repository be extracted for a given system
+Hierarchical Workflow Development (HWD) lets a subset of the repository be extracted for a given system
 and capability level using `JOSH <https://josh-project.github.io/josh/>`_ (Just One Single History)
-filters. The filter lists live in ``dev/hsd/``.
+filters. The filter lists live in ``dev/hwd/``.
 
 =====
 Tiers
@@ -61,25 +61,25 @@ When adding documentation, place it in the lowest tier directory that needs it. 
 reference a higher-tier page from a lower-tier page except through a glob toctree.
 Each system's ``index.rst`` is a Tier 1 overview; it should stay brief and link to tier pages by glob.
 
-The JOSH filters are described in ``dev/hsd/README.md``.
+The JOSH filters are described in ``dev/hwd/README.md``.
 
 Adding a system
 ===============
 
 Systems register themselves: the application, Rocoto XML, task and ecFlow factories in ``dev/workflow`` discover
 modules by naming convention (``<system>*.py``), so a new system needs its own modules, a
-``docs/source/systems/<system>/`` tree and a ``dev/hsd/<system>.tier*.list`` set, and no edits to shared Python code.
+``docs/source/systems/<system>/`` tree and a ``dev/hwd/<system>.tier*.list`` set, and no edits to shared Python code.
 Build systems are discovered the same way: add ``sorc/build_systems/<system>.yaml``.
-``dev/hsd/check_lists.py`` verifies that the lists are consistent with the repository.
+``dev/hwd/check_lists.py`` verifies that the lists are consistent with the repository.
 
 Changes made in a filtered tier are brought back to a lower tier (for example Tier 2 to Tier 0) with
-``dev/hsd/sync_tiers.sh``, which reverse-applies the commits with ``josh-filter --reverse`` onto a new branch for review.
-Tier repositories are published with ``dev/hsd/publish_tier.sh``, which adds a bridge commit when the filter changed so that
+``dev/hwd/sync_tiers.sh``, which reverse-applies the commits with ``josh-filter --reverse`` onto a new branch for review.
+Tier repositories are published with ``dev/hwd/publish_tier.sh``, which adds a bridge commit when the filter changed so that
 existing branches and forks can still merge ``develop``.
 
 When the filter lists change, the history of a tier repository is rewritten and open feature branches can no longer
-merge ``develop``. Run ``dev/hsd/update_branch.sh`` on the feature branch to replay its commits onto the new
-``develop`` (see ``dev/hsd/README.md``).
+merge ``develop``. Run ``dev/hwd/update_branch.sh`` on the feature branch to replay its commits onto the new
+``develop`` (see ``dev/hwd/README.md``).
 
 Symbolic links whose targets a tier excludes (the GCAFS configuration files that link to ``dev/parm/config/gfs``) are
-replaced by the target files in the filtered repository; see ``dev/hsd/README.md`` (mapped filter).
+replaced by the target files in the filtered repository; see ``dev/hwd/README.md`` (mapped filter).

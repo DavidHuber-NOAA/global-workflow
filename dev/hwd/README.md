@@ -1,9 +1,9 @@
-# Hierarchical System Design (HSD) filters
+# Hierarchical Workflow Development (HWD) filters
 
 This directory holds [JOSH](https://josh-project.github.io/josh/) (Just One Single History) filter
 lists used to produce reduced views of the global workflow for a single forecasting system at a given
 tier. The tier definitions and the documentation layout that supports them are described in
-`docs/source/hsd.rst`.
+`docs/source/hwd.rst`.
 
 | Tier | View | Lists applied (cumulative) |
 |------|------|----------------------------|
@@ -19,7 +19,7 @@ Only the GCAFS lists exist so far (prototype).
 `make_filter.sh` joins the lists for a tier into one JOSH `:exclude[...]` filter:
 
 ```bash
-cd dev/hsd
+cd dev/hwd
 ./make_filter.sh gcafs 1      # Tier 1
 ./make_filter.sh gcafs 1.5    # Tier 1.5
 ./make_filter.sh gcafs 2      # Tier 2
@@ -57,7 +57,7 @@ parsers of removed systems remain but fail when used because their config direct
 ## Verified with josh-filter
 
 The filters were run with `josh-filter` (`cargo install josh-cli --locked`; the plain `josh-cli` install fails on
-a yanked dependency). `josh-filter --single --update refs/josh/t2 "$(dev/hsd/make_filter.sh gcafs 2)" HEAD`
+a yanked dependency). `josh-filter --single --update refs/josh/t2 "$(dev/hwd/make_filter.sh gcafs 2)" HEAD`
 gives 758 / 673 / 577 files at Tiers 1 / 1.5 / 2 (`--single` is needed in shallow clones).
 Submodules are gitlinks: JOSH only excludes them when the path has no trailing slash, which `make_filter.sh` handles.
 
@@ -68,14 +68,14 @@ Run it from a checkout of the *lower tier* repository (for example the full repo
 
 ```bash
 cd gw-work                                   # the lower-tier repository, develop checked out
-dev/hsd/sync_tiers.sh gcafs 2 0 ../gcafs-tier2 develop            # tier 2 -> tier 0
-dev/hsd/sync_tiers.sh -o hsd/from-t2 gcafs 2 1.5 ../gcafs-tier2   # tier 2 -> tier 1.5, named branch
-dev/hsd/sync_tiers.sh -n gcafs 2 0 ../gcafs-tier2                 # check only
+dev/hwd/sync_tiers.sh gcafs 2 0 ../gcafs-tier2 develop            # tier 2 -> tier 0
+dev/hwd/sync_tiers.sh -o hwd/from-t2 gcafs 2 1.5 ../gcafs-tier2   # tier 2 -> tier 1.5, named branch
+dev/hwd/sync_tiers.sh -n gcafs 2 0 ../gcafs-tier2                 # check only
 ```
 
 Arguments are `SYSTEM FROM_TIER TO_TIER SOURCE [SOURCE_BRANCH]`. The tool fetches the branch, projects the local
 `develop` (`-b` selects another) to the FROM tier, re-applies the commits the source has on top of it, and creates
-a new branch (`-o`, default `hsd/<system>-tier<N>-<timestamp>`). The existing branch is never changed: review the
+a new branch (`-o`, default `hwd/<system>-tier<N>-<timestamp>`). The existing branch is never changed: review the
 new branch, merge it or open a pull request. To go up one tier at a time, run it again from the next repository.
 
 * The tier repository must have been created from the target with the same filter (`josh-filter` history), so that
@@ -89,15 +89,15 @@ new branch, merge it or open a pull request. To go up one tier at a time, run it
 
 ## Updating a feature branch after the filter changed
 
-When the lists in `dev/hsd/` change (for example a new script must be kept in GCAFS Tier 1), `josh-filter` rewrites the
+When the lists in `dev/hwd/` change (for example a new script must be kept in GCAFS Tier 1), `josh-filter` rewrites the
 history of the tier repository. The new `develop` then shares no commits with the old one, so a feature branch
 cannot `git merge develop` (`fatal: refusing to merge unrelated histories`). `update_branch.sh` fixes this.
 Run it in the tier repository, on the feature branch:
 
 ```bash
 git checkout my-feature
-dev/hsd/update_branch.sh -n          # dry run: shows the old base, new develop and the commits to replay
-dev/hsd/update_branch.sh             # update the current branch
+dev/hwd/update_branch.sh -n          # dry run: shows the old base, new develop and the commits to replay
+dev/hwd/update_branch.sh             # update the current branch
 git push --force-with-lease origin my-feature
 ```
 
@@ -117,11 +117,11 @@ the old positions of `origin/develop` stay in the reflog (about 90 days).
 
 Options, from least to most effort (they can be combined):
 
-1. **Announce and version the filter.** Keep a `dev/hsd/FILTER_VERSION` file (or tag, e.g. `filter-N`) that is bumped
+1. **Announce and version the filter.** Keep a `dev/hwd/FILTER_VERSION` file (or tag, e.g. `filter-N`) that is bumped
    by every list change, and mention it in the pull request that changes the lists. Cheap, but relies on reading.
 2. **Make the failure self-explanatory.** Install a hook or git alias so the unrelated-histories error points to the
-   script: `git config alias.hsd-update '!dev/hsd/update_branch.sh'`, or a `post-fetch`-style wrapper
-   (`dev/hsd/update_branch.sh -n` is safe to run at any time and only reports).
+   script: `git config alias.hwd-update '!dev/hwd/update_branch.sh'`, or a `post-fetch`-style wrapper
+   (`dev/hwd/update_branch.sh -n` is safe to run at any time and only reports).
 3. **Check in CI.** In the tier repository, a pull-request workflow runs `git merge-base origin/develop HEAD`; when it
    fails, it comments with the two commands above. This catches the problem exactly when the developer is about to
    merge, and needs no setup on the developer side.
@@ -134,7 +134,7 @@ Options, from least to most effort (they can be combined):
 5. **Reduce the number of rewrites.** Batch list changes, and prefer additive changes made right after a release.
    Adding or removing files from a filter changes every affected commit, so rewrites cannot be avoided entirely.
 
-Option 3 is implemented in `.github/workflows/hsd_history_check.yaml`: it fails a pull request to `develop` whose branch
+Option 3 is implemented in `.github/workflows/hwd_history_check.yaml`: it fails a pull request to `develop` whose branch
 shares no history with it and comments with the fix (fork pull requests only get the failing check, as they cannot
 receive comments).
 
@@ -159,10 +159,10 @@ Recommended: option 3 (a CI hint) plus this script, with option 4 considered if 
 `publish_tier.sh` (run in the Tier 0 repository) prepares the branch that becomes `develop` of a tier repository:
 
 ```bash
-dev/hsd/sync_tiers.sh ...                         # first bring pending tier changes back to Tier 0
-dev/hsd/publish_tier.sh -n -p <tier repo> gcafs 1  # report only
-dev/hsd/publish_tier.sh    -p <tier repo> gcafs 1  # creates hsd/publish/gcafs-tier1-<timestamp>
-git push <tier repo> hsd/publish/gcafs-tier1-<timestamp>:develop     # always a fast-forward
+dev/hwd/sync_tiers.sh ...                         # first bring pending tier changes back to Tier 0
+dev/hwd/publish_tier.sh -n -p <tier repo> gcafs 1  # report only
+dev/hwd/publish_tier.sh    -p <tier repo> gcafs 1  # creates hwd/publish/gcafs-tier1-<timestamp>
+git push <tier repo> hwd/publish/gcafs-tier1-<timestamp>:develop     # always a fast-forward
 ```
 
 Without `-p` (first publish) the branch is the filtered history. With `-p` it is compared with the published
@@ -171,7 +171,7 @@ Without `-p` (first publish) the branch is the filtered history. With `-p` it is
 * the published `develop` is an ancestor of the filtered history (filter unchanged): the filtered history is used;
 * otherwise (the filter changed, or an earlier bridge exists) a **bridge commit** is created: a merge whose first
   parent is the published `develop`, whose second parent is the new filtered `develop`, and whose tree is that of
-  the filtered `develop`. It carries the trailer `HSD-Bridge:`.
+  the filtered `develop`. It carries the trailer `HWD-Bridge:`.
 
 Because the bridge descends from the published `develop`, existing feature branches and forks can `git merge develop`
 or use "Sync fork" with no extra steps, and the history check workflow passes. The bridge tree is that of the filtered
@@ -222,7 +222,7 @@ See [DEMO.md](DEMO.md) for an end-to-end walk-through (Tier 1 repository, a feat
 ## Checking the lists
 
 ```bash
-dev/hsd/check_lists.py gcafs
+dev/hwd/check_lists.py gcafs
 ```
 
 reports list entries that match no tracked file, entries repeated across tiers, and kept Python files that

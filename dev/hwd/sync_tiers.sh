@@ -11,7 +11,7 @@
 #   SOURCE         path or URL of the FROM_TIER repository
 #   SOURCE_BRANCH  branch of SOURCE holding the changes (default: develop)
 #   -b             branch of this repository the changes are based on (default: develop)
-#   -o             name of the branch to create with the changes (default: hsd/SYSTEM-tierFROM-TIMESTAMP)
+#   -o             name of the branch to create with the changes (default: hwd/SYSTEM-tierFROM-TIMESTAMP)
 #   -n             only check; do not create the branch
 #
 # The FROM_TIER view of -b is compared with SOURCE_BRANCH, and the commits SOURCE_BRANCH has on top of
@@ -53,8 +53,8 @@ to_tier="$3"
 source_repo="$4"
 source_branch="${5:-develop}"
 
-hsd_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-top_dir="$(git -C "${hsd_dir}" rev-parse --show-toplevel)"
+hwd_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+top_dir="$(git -C "${hwd_dir}" rev-parse --show-toplevel)"
 cd "${top_dir}"
 
 command -v josh-filter > /dev/null || die "josh-filter not found (cargo install josh-cli --locked)"
@@ -80,17 +80,17 @@ git rev-parse --verify --quiet "refs/heads/${target_branch}" > /dev/null || die 
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || die "Working tree has uncommitted changes"
 
 if [[ -z "${new_branch}" ]]; then
-  new_branch="hsd/${system}-tier${from_tier}-$(date +%Y%m%d%H%M%S)"
+  new_branch="hwd/${system}-tier${from_tier}-$(date +%Y%m%d%H%M%S)"
 fi
 if [[ "${check_only}" == "NO" ]]; then
   git rev-parse --verify --quiet "refs/heads/${new_branch}" > /dev/null && die "Branch '${new_branch}' already exists"
 fi
 
 # The FROM_TIER filter is valid on every lower tier: paths a lower tier already lacks are simply absent
-filter="$("${hsd_dir}/make_filter.sh" "${system}" "${from_tier}")"
-incoming_ref="refs/hsd/incoming/${system}-tier${from_tier}"
-base_ref="refs/hsd/base/${system}-tier${from_tier}"
-check_ref="refs/hsd/check/${system}-tier${from_tier}"
+filter="$("${hwd_dir}/make_filter.sh" "${system}" "${from_tier}")"
+incoming_ref="refs/hwd/incoming/${system}-tier${from_tier}"
+base_ref="refs/hwd/base/${system}-tier${from_tier}"
+check_ref="refs/hwd/check/${system}-tier${from_tier}"
 
 echo "Fetching ${source_branch} from ${source_repo} ..."
 git fetch --quiet --force "${source_repo}" "${source_branch}:${incoming_ref}"
@@ -127,10 +127,10 @@ if [[ -n "$(git rev-list --merges "${base_ref}..${incoming_ref}")" ]]; then
   exclude=()
   while read -r bridge; do
     exclude+=("^${bridge}^1")
-  done < <(git rev-list --merges --grep='^HSD-Bridge:' "${incoming_ref}")
-  linear_ref="refs/hsd/linear/${system}-tier${from_tier}"
+  done < <(git rev-list --merges --grep='^H\(WD\|SD\)-Bridge:' "${incoming_ref}")
+  linear_ref="refs/hwd/linear/${system}-tier${from_tier}"
   git update-ref "${linear_ref}" "${merge_base}"
-  linear_work="hsd-linear-work-$$"
+  linear_work="hwd-linear-work-$$"
   git branch -q "${linear_work}" "${merge_base}"
   orig_branch="$(git symbolic-ref --quiet --short HEAD || git rev-parse HEAD)"
   git checkout -q "${linear_work}"
@@ -145,7 +145,7 @@ if [[ -n "$(git rev-list --merges "${base_ref}..${incoming_ref}")" ]]; then
 fi
 
 echo "Reverse-applying the tier ${from_tier} commits ..."
-work_branch="hsd-sync-work-$$"
+work_branch="hwd-sync-work-$$"
 # Start from the commit of the target that the tier repository was created from, so that changes
 # made on the target since then do not stop the reverse apply (they are merged by the user afterwards).
 start_commit="${target_branch}"

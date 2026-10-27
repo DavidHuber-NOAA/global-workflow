@@ -10,7 +10,7 @@
 #   -b               Tier 0 branch to filter (default: develop)
 #   -p               path or URL of the published tier repository (omit for the very first publish)
 #   -q               branch of PUBLISHED that holds the tier develop (default: develop)
-#   -o               name of the local branch to create (default: hsd/publish/SYSTEM-tierTIER-TIMESTAMP)
+#   -o               name of the local branch to create (default: hwd/publish/SYSTEM-tierTIER-TIMESTAMP)
 #   -n               only report what would be done
 #
 # The filtered history is rewritten whenever the filter lists change, so the new filtered develop no longer
@@ -23,7 +23,7 @@
 #
 # and `git merge develop` works in every existing branch and fork. If the published develop is already an
 # ancestor of the filtered develop (the filter did not change) no bridge is needed and the result is the
-# filtered develop itself. Bridge commits carry the trailer "HSD-Bridge:"; sync_tiers.sh recognizes them.
+# filtered develop itself. Bridge commits carry the trailer "HWD-Bridge:"; sync_tiers.sh recognizes them (and the older "HSD-Bridge:" trailer).
 #
 # Before publishing, bring all changes made in the tier repository back to Tier 0 with sync_tiers.sh: the
 # bridge takes the tree of the filtered Tier 0 branch, so anything only present in the tier repository
@@ -64,16 +64,16 @@ system="$1"
 tier="$2"
 [[ "${tier}" != "0" ]] || die "Tier 0 is not filtered; there is nothing to publish"
 
-hsd_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-top_dir="$(git -C "${hsd_dir}" rev-parse --show-toplevel)"
+hwd_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+top_dir="$(git -C "${hwd_dir}" rev-parse --show-toplevel)"
 cd "${top_dir}"
 command -v josh-filter > /dev/null || die "josh-filter not found (cargo install josh-cli --locked)"
 git rev-parse --verify --quiet "refs/heads/${branch}" > /dev/null || die "Branch '${branch}' does not exist here"
 
-filter="$("${hsd_dir}/make_filter.sh" "${system}" "${tier}")"
-filtered_ref="refs/hsd/publish/${system}-tier${tier}"
-published_ref="refs/hsd/published/${system}-tier${tier}"
-[[ -n "${out_branch}" ]] || out_branch="hsd/publish/${system}-tier${tier}-$(date +%Y%m%d%H%M%S)"
+filter="$("${hwd_dir}/make_filter.sh" "${system}" "${tier}")"
+filtered_ref="refs/hwd/publish/${system}-tier${tier}"
+published_ref="refs/hwd/published/${system}-tier${tier}"
+[[ -n "${out_branch}" ]] || out_branch="hwd/publish/${system}-tier${tier}-$(date +%Y%m%d%H%M%S)"
 if [[ "${check_only}" == "NO" ]]; then
   git rev-parse --verify --quiet "refs/heads/${out_branch}" > /dev/null && die "Branch '${out_branch}' already exists"
 fi
@@ -110,12 +110,12 @@ else
       exit 0
     fi
     result="$(git commit-tree "${filtered_tip}^{tree}" -p "${published_tip}" -p "${filtered_tip}" -F - << MSG
-HSD bridge: ${system} tier ${tier} filter update
+HWD bridge: ${system} tier ${tier} filter update
 
 Joins the published history with the history filtered by the current lists
 so that existing branches and forks can merge this branch.
 
-HSD-Bridge: ${system} tier ${tier}
+HWD-Bridge: ${system} tier ${tier}
 MSG
     )"
   fi

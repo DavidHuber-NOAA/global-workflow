@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sanity-check the HSD exclude lists against the tracked files of the repository.
+"""Sanity-check the HWD exclude lists against the tracked files of the repository.
 
 For every tier of a system the script checks that
 
@@ -20,15 +20,15 @@ import sys
 
 import yaml
 
-HSD_DIR = os.path.dirname(os.path.abspath(__file__))
-TOP = os.path.abspath(os.path.join(HSD_DIR, '..', '..'))
+HWD_DIR = os.path.dirname(os.path.abspath(__file__))
+TOP = os.path.abspath(os.path.join(HWD_DIR, '..', '..'))
 TIERS = [('1', ['tier1']), ('1.5', ['tier1', 'tier1p5']), ('2', ['tier1', 'tier1p5', 'tier2'])]
 # Directories that Python code adds to sys.path (module root -> repository directory)
 PY_ROOTS = ['dev/workflow', 'ush/python', 'sorc/wxflow/src']
 
 
 def read_list(system, name):
-    path = os.path.join(HSD_DIR, f'{system}.{name}.list')
+    path = os.path.join(HWD_DIR, f'{system}.{name}.list')
     with open(path) as fh:
         return [ln.strip() for ln in fh if ln.strip() and not ln.startswith('#')]
 
@@ -132,7 +132,7 @@ def main():
             if f.startswith('sorc/build_systems/'):
                 errors += check_build_system(f, fileset - excluded)
         tier_arg = {'tier1': '1', 'tier1p5': '1.5', 'tier2': '2'}.get(names[-1])
-        made = subprocess.run([os.path.join(TOP, 'dev', 'hsd', 'make_filter.sh'), system, tier_arg],
+        made = subprocess.run([os.path.join(TOP, 'dev', 'hwd', 'make_filter.sh'), system, tier_arg],
                               cwd=TOP, text=True, capture_output=True)
         if made.returncode != 0 or made.stderr.strip():
             print(f'ERROR tier {tier}: make_filter.sh: {made.stderr.strip()}')

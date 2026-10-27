@@ -1,6 +1,6 @@
-name: hsd_history_check
+name: hwd_history_check
 
-# Tier (HSD) repositories get their history rewritten when the filter lists change. A pull request whose
+# Tier (HWD) repositories get their history rewritten when the filter lists change. A pull request whose
 # branch no longer shares history with the base branch cannot be merged; tell the author how to fix it.
 # In the full (Tier 0) repository the histories always match, so the check passes.
 
@@ -32,7 +32,7 @@ jobs:
             echo "unrelated=false" >> "${GITHUB_OUTPUT}"
           else
             echo "unrelated=true" >> "${GITHUB_OUTPUT}"
-            echo "::error::This branch shares no history with ${BASE_REF}. The filter for this repository changed; see dev/hsd/README.md"
+            echo "::error::This branch shares no history with ${BASE_REF}. The filter for this repository changed; see dev/hwd/README.md"
           fi
 
       - name: Comment with the fix
@@ -42,14 +42,14 @@ jobs:
           script: |
             const body = [
               '**This branch no longer shares history with `develop`.**',
-              'The HSD filter for this repository changed, so its history was rewritten. Update the branch with:',
+              'The HWD filter for this repository changed, so its history was rewritten. Update the branch with:',
               '```bash',
               'git checkout <your-branch>',
-              'dev/hsd/update_branch.sh -n   # dry run',
-              'dev/hsd/update_branch.sh',
+              'dev/hwd/update_branch.sh -n   # dry run',
+              'dev/hwd/update_branch.sh',
               'git push --force-with-lease origin <your-branch>',
               '```',
-              'See `dev/hsd/README.md` ("Updating a feature branch after the filter changed").'
+              'See `dev/hwd/README.md` ("Updating a feature branch after the filter changed").'
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,

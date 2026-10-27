@@ -38,7 +38,7 @@ pygfs_directory : str
 import os
 from importlib import import_module
 
-# Task classes are imported on first use so that a filtered (HSD tier) repository
+# Task classes are imported on first use so that a filtered (HWD tier) repository
 # does not need the modules of the tasks it does not support.
 _task_modules = {
     'Analysis': '.task.analysis',

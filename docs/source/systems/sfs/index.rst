@@ -27,7 +27,7 @@ Supported tiers
 =================
 
 Each tier below contains only the documentation that applies to that level of the
-hierarchical system design (HSD). See :ref:`hsd_tiers` for the tier definitions.
+hierarchical workflow development (HWD). See :ref:`hwd_tiers` for the tier definitions.
 
 .. toctree::
    :maxdepth: 2

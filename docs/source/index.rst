@@ -36,7 +36,7 @@ GW Documentation, Version 1.0
 .. toctree::
    :maxdepth: 3
 
-   hsd
+   hwd
 
 .. toctree::
    :maxdepth: 3

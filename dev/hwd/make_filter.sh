@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a JOSH filter specification for a tier of the hierarchical system design (HSD).
+# Build a JOSH filter specification for a tier of the hierarchical workflow development (HWD).
 #
 # Usage: make_filter.sh SYSTEM TIER
 #   SYSTEM  forecasting system (currently only "gcafs")
@@ -24,8 +24,8 @@ usage() {
 
 system="$1"
 tier="$2"
-hsd_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-top_dir="$(cd "${hsd_dir}/../.." && pwd)"
+hwd_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+top_dir="$(cd "${hwd_dir}/../.." && pwd)"
 
 case "${tier}" in
   0) tiers=() ;;
@@ -38,7 +38,7 @@ esac
 patterns=()
 entries=()
 for t in "${tiers[@]}"; do
-  list="${hsd_dir}/${system}.${t}.list"
+  list="${hwd_dir}/${system}.${t}.list"
   [[ -f "${list}" ]] || { echo "Missing list ${list}" >&2; exit 1; }
   while IFS= read -r line; do
     [[ -z "${line}" || "${line}" == \#* ]] && continue
