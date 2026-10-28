@@ -1,0 +1,17 @@
+# GFS build system: components and the build entries specific to it
+components:
+  - "gfs_model"
+  - "gfs_ww3prepost"
+build:
+  gfs_model:
+    command: "./build_ufs.sh -e gfs_model.x"
+    cores: 12
+    walltime: "00:40:00"
+    memory: "40G"
+    requires: [ufs_model.fd]
+
+  gfs_ww3prepost:
+    command: "./build_ww3prepost.sh"
+    cores: 4
+    walltime: "00:15:00"
+

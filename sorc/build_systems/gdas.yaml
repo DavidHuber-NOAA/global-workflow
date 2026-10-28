@@ -1,0 +1,12 @@
+# GDAS build system: components and the build entries specific to it
+components:
+  - "gdas"
+  - "gsi_utils"
+  - "gsi_monitor"
+build:
+  gdas:
+    command: "./build_gdas.sh"
+    cores: 40
+    walltime: "01:45:00"
+    memory: "40G"
+    requires: [gdas.cd]

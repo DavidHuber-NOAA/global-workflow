@@ -130,11 +130,13 @@ esac
 source "${HOMEglobal}/versions/fix.ver"
 
 # Link GDASapp python packages in ush/python
-packages=("jcb")
-for package in "${packages[@]}"; do
-    cd "${HOMEglobal}/ush/python" || exit 1
-    safe_link "${HOMEglobal}/sorc/gdas.cd/sorc/${package}/src/${package}" .
-done
+if [[ -d "${HOMEglobal}/sorc/gdas.cd" ]]; then
+    packages=("jcb")
+    for package in "${packages[@]}"; do
+        cd "${HOMEglobal}/ush/python" || exit 1
+        safe_link "${HOMEglobal}/sorc/gdas.cd/sorc/${package}/src/${package}" .
+    done
+fi
 
 # Link wxflow to ush/python
 cd "${HOMEglobal}/ush/python" || exit 1

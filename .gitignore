@@ -21,6 +21,7 @@ nohup.out
 #-------------------
 exec/
 build*/
+!sorc/build_systems/
 lib/
 install*/
 

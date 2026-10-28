@@ -1,0 +1,12 @@
+# GEFS build system: components and the build entries specific to it
+components:
+  - "nexus"
+  - "gefs_model"
+  - "gefs_ww3_prepost"
+build:
+  gefs_model:
+    command: "./build_ufs.sh -w -e gefs_model.x"
+    cores: 12
+    walltime: "00:40:00"
+    memory: "40G"
+    requires: [ufs_model.fd]

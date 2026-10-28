@@ -1,0 +1,11 @@
+# SFS build system: components and the build entries specific to it
+components:
+  - "sfs_model"
+  - "gefs_ww3_prepost"
+build:
+  sfs_model:
+    command: "./build_ufs.sh -y -e sfs_model.x"
+    cores: 12
+    walltime: "00:50:00"
+    memory: "40G"
+    requires: [ufs_model.fd]

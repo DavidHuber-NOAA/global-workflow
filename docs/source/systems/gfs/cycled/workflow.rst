@@ -1,30 +1,6 @@
-############################
-Global Forecast System (GFS)
-############################
-
-========
-Overview
-========
-
-The Global Forecast System (GFS) is the flagship NOAA NWP model and produces a coupled global analysis and forecast for use in medium-range forecasting. GFS supports many different coupling and data assimilation configurations.
-
-============
-Key Features
-============
-
-* 3D-EnVar atmospheric data assimilation using both legacy GSI and new JEDI-based system
-* 3D-EnVar coupled data assimilation via JEDI
-* Fully coupled forecast with atmosphere, ocean, ice, and waves
-* Wide range of supported resolutions
-* Gridded forecasts on a variety of output grids
-* Model forecast soundings
-* Point wave forecasts
-* MET-plus-based forecast verification (on select platforms)
-* Archival to NOAA tape storage (HPSS) where available
-
-============
-GFS Workflow
-============
+###################
+GFS cycled workflow
+###################
 
 GFS runs in multiple phases: an 'early' *gfs* phase, which in operations runs shortly after the initialization time, and a 'late' *gdas* phase, run later that includes late-arriving observations. The gfs phase produces an initial analysis using obs available at the time, which it then uses for initial conditions for the main GFS forecast. The gdas phase produces a new analysis incoroprating the late observations and runs the DA ensemble to produce background error covariances for the next cycle. Starting with GFS v17, the DA ensemble will also be run in the early (gfs) phase to provide improved initial conditions to GEFS.
 
@@ -74,57 +50,3 @@ In development, the workflow is managed by the rocoto workflow manager, with tas
 ``dev/workflow/rocoto/gfs_tasks.py`` file.
 
 For a list of descriptions for all jobs, see :ref:`job_descriptions`.
-
-.. _gfs_config_files:
-
-===================
-Configuration Files
-===================
-
-GFS configuration is primarily managed through the config files in the ``dev/parm/config/gfs`` directory. Core settings and those related to job flow are located in ``config.base``, with the most common settings additionally parameterized to be filled in at experiment creation time. Job resources (cores, memory, etc.) are defined in ``config.resources`` with machine-specific overrides in the corresponding version for the machine. Beyond those, each job (or class of jobs) has its own config file for that job's settings.
-
-===============
-Output Products
-===============
-
-* Early and late analysis at model resolution
-* EnKF ensemble to provide background errors and initial conditions for GEFS
-* Data assimilation verification diagnostics
-* grib2 gridded atmosphere forecast on various grids
-* forecast model soundings
-* NetCDF marine gridded forecast
-* wave gridded and point forecasts
-* MET-plus-based forecast verification
-
-============================================
-Experimental vs Operational Runs: A Snapshot
-============================================
-
-Experimental run is different from operational runs in the following ways:
-
-* **Workflow manager**:
-
-  - Operations use `ecFlow <https://www.ecmwf.int/en/learning/training/introduction-ecmwf-job-scheduler-ecflow>`__, whereas development use `rocoto <https://github.com/christopherwharrop/rocoto/wiki/documentation>`__.
-
-.. note::
-
-   Experiments can also be run with ecFlow if the platform has an ecFlow server.
-
-* **Dump step**:
-
-  - Not run in experiments but in real-time production. Dump data already exists in GDA on supported platforms.
-
-* **Additional steps** in experimental mode:
-
-  - **arch_vrfy**
-  - **arch_tars**
-  - **cleanup**
-
-^^^^^^^^^^^^^^^^^^^
-For New Users
-^^^^^^^^^^^^^^^^^^^
-.. note::
-
-  - Operational systems include many additional downstream jobs that are not run in development mode.
-  - The workflow manager (rocoto or ecFlow) determines job dependencies and ensures each job runs only when its prerequisites are complete.
-  - The exact job list for your experiment is defined in the workflow XML (rocoto) or suite definition (ecFlow)
