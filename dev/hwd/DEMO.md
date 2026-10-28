@@ -78,7 +78,7 @@ git clone git@github.com:<ORG>/global-workflow-gcafs.git gcafs-tier1
 cd gcafs-tier1
 
 # Tier 1 only builds what it contains
-sorc/build_all.sh -h | head          # lists only: gcafs
+sorc/build_all.sh -h          # lists only: gcafs
 ```
 
 Notes:
