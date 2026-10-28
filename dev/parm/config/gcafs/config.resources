@@ -1003,6 +1003,8 @@ case ${step} in
     threads_per_task=1
     tasks_per_node="${ntasks}"
     export is_exclusive=True
+    prepost=True
+    memory="6GB"
     ;;
 
   "verfozn")
