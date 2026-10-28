@@ -91,11 +91,7 @@ Notes:
 
 ## Step 3: make the change (issue 4393)
 
-The issue asks that product jobs on WCOSS2 request `prepost=true` in the PBS select string
-(`-l select=1:mpiprocs=24:ompthreads=1:ncpus=24:mem=6GB:prepost=true`), for PBS on WCOSS2 only, with Slurm
-unchanged. `dev/workflow/rocoto/tasks.py` already appends `:prepost=true` to the memory request when a task has
-`prepost` set, so the change for GCAFS is in the resource configuration: `atmos_products` sets
-`prepost=True`, a non-exclusive allocation and an explicit memory request on WCOSS2.
+The issue asks for product jobs to run on WCOSS2 prepost nodes. This is a simple update to config.resources.
 
 ```bash
 git checkout -b feature/wcoss2-prepost-products
@@ -104,31 +100,15 @@ git checkout -b feature/wcoss2-prepost-products
 Edit `dev/parm/config/gcafs/config.resources`. In the `atmos_products` case add:
 
 ```bash
-    export is_exclusive=True
     # Run on the shared prepost nodes, which require an explicit memory request
     memory="6GB"
     prepost=True
 ```
 
-Add a unit test to `dev/workflow/tests/test_tasks.py` (`test_prepost_resources`: PBS with `prepost` gives
-`memory == '6GB:prepost=true'` and a shared allocation, PBS without it and Slurm are unchanged).
-The complete diff is in this branch's history: `git log -p -- dev/parm/config/gcafs/config.resources`.
-
-Test and commit:
+Commit:
 
 ```bash
-(cd dev/workflow && python3 -m pytest tests/test_tasks.py -q)    # 3 passed
-
-# Check the resources by hand (WCOSS2 vs another machine)
-for m in WCOSS2 HERA; do
-  (export machine=${m} EXPDIR=$(pwd)/dev/parm/config/gcafs CASE=C96 RUN=gcafs max_tasks_per_node=128
-   bash -c 'source dev/parm/config/gcafs/config.resources atmos_products >/dev/null
-            echo "'"${m}"': memory=${memory:-} exclusive=${is_exclusive} prepost=${prepost:-}"')
-done
-#   WCOSS2: memory=6GB exclusive=False prepost=True
-#   HERA:   memory=    exclusive=True  prepost=
-
-git add -A
+git add dev/parm/config/gcafs/config.resources
 git commit -m "Run GCAFS atmos_products on the WCOSS2 prepost nodes (#4393)"
 ```
 
