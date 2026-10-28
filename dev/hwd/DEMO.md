@@ -41,7 +41,7 @@ cargo install josh-cli --locked
 josh-filter --version
 
 # A FULL (not shallow) clone of the Tier 0 repository. JOSH cannot filter shallow clones.
-git clone --recurse-submodules=no https://github.com/NOAA-EMC/global-workflow.git global-workflow
+git clone https://github.com/NOAA-EMC/global-workflow.git global-workflow
 cd global-workflow
 git checkout develop
 ```
