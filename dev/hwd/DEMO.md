@@ -78,7 +78,21 @@ git clone git@github.com:<ORG>/global-workflow-gcafs.git gcafs-tier1
 cd gcafs-tier1
 
 # Tier 1 only builds what it contains
-sorc/build_all.sh -h          # lists only: gcafs
+sorc/build_all.sh -h          # lists only: gcafs, gdas
+sorc/build_all.sh -c -A <account> all
+#...
+# Building on compute nodes using account: <account>
+# -----------------------------------
+# | System             | Status     |
+# -----------------------------------
+# | gcafs_model        | RUNNING    |
+# | nexus              | SUCCEEDED  |
+# | gfs_utils          | SUCCEEDED  |
+# | gdas               | RUNNING    |
+# | ufs_utils          | SUCCEEDED  |
+# | gsi_utils          | SUCCEEDED  |
+# | upp                | SUCCEEDED  |
+# -----------------------------------
 ```
 
 Notes:
