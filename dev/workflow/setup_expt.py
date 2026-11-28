@@ -152,6 +152,7 @@ def map_inputs_to_configs(inputs):
             "APP": inputs.app,
             "NMEM_ENS": getattr(inputs, 'nens', 0),
             "ICSDIR": inputs.icsdir,
+            "ATM_MODEL": getattr(inputs, 'atm_model', 'fv3'),
         })
     except Exception as ee:
         raise Exception("Error in constructing dictionary from user inputs, check inputs: ") from ee
@@ -302,6 +303,24 @@ def input_args(*argv):
         parser.add_argument('--app', help='UFS application', type=str,
                             choices=ufs_apps, required=False, default='ATM')
         parser.add_argument('--sdate_gfs', help='date to start GFS', type=lambda dd: to_datetime(dd), required=False, default=None)
+        return parser
+
+    def _gfs_forecast_only_args(parser):
+        """
+        Add GFS forecast-only mode-specific arguments to parser.
+
+        Parameters
+        ----------
+        parser : argparse.ArgumentParser
+            Parser to add arguments to
+
+        Returns
+        -------
+        argparse.ArgumentParser
+            Parser with added arguments
+        """
+        parser.add_argument('--atm_model', help='atmospheric model (dynamical core); mpas (UFS-MPAS) is experimental',
+                            type=str, choices=['fv3', 'mpas'], required=False, default='fv3')
         return parser
 
     def _any_ensemble_args(parser):
@@ -480,6 +499,10 @@ def input_args(*argv):
     for subp in [gfsforecasts, gefsforecasts, sfsforecasts, gcafsforecasts]:
         subp = _any_forecast_args(subp)
 
+    # GFS forecast-only arguments
+    for subp in [gfsforecasts]:
+        subp = _gfs_forecast_only_args(subp)
+
     # cycled mode additional arguments
     for subp in [gfscycled, gcafscycled]:
         subp = _gfs_cycled_args(subp)
@@ -504,6 +527,13 @@ def input_args(*argv):
 
     if inputs.edate < inputs.idate:
         raise ArgumentTypeError(f'edate ({inputs.edate}) cannot be before idate ({inputs.idate})')
+
+    # UFS-MPAS is currently limited to cold-started, atmosphere-only forecasts
+    if getattr(inputs, 'atm_model', 'fv3') == 'mpas':
+        if inputs.app != 'ATM':
+            raise ArgumentTypeError(f'--atm_model mpas only supports --app ATM, not {inputs.app}')
+        if inputs.start != 'cold':
+            raise ArgumentTypeError('--atm_model mpas only supports --start cold')
 
     # For forecast-only, GFS starts in the first cycle
     if not hasattr(inputs, 'sdate_gfs'):

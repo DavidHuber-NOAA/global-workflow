@@ -190,6 +190,7 @@ class AppConfig(ABC, metaclass=AppConfigInit):
             run_options[run]['do_archcom'] = run_base.get('DO_ARCHCOM', False)
 
             run_options[run]['do_atm'] = run_base.get('DO_ATM', True)
+            run_options[run]['atm_model'] = run_base.get('ATM_MODEL', 'fv3')
             run_options[run]['do_wave'] = run_base.get('DO_WAVE', False)
             run_options[run]['do_ocean'] = run_base.get('DO_OCN', False)
             run_options[run]['do_ice'] = run_base.get('DO_ICE', False)

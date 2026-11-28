@@ -1,0 +1,5 @@
+atmosphere_mpas_cold:
+    mkdir:
+        - "{{ COMOUT_ATMOS_INPUT }}"
+    link_req:
+        - ["{{ ICSDIR }}/{{ COMIN_ATMOS_INPUT | relpath(ROTDIR) }}/mpas_init.nc", "{{ COMOUT_ATMOS_INPUT }}"]

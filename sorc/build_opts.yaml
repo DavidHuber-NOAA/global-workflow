@@ -9,6 +9,9 @@ host_override:  # over-ride options for host
         cores: 8
         memory: "60G"
         walltime: "03:00:00"
+# Builds that are not included when building "all" systems
+exclude_from_all:
+  - "gfs_mpas_model"  # Experimental UFS-MPAS model; build with the gfs_mpas system
 systems:
   common:
     - "ufs_utils"
@@ -33,6 +36,8 @@ systems:
   sfs:
     - "sfs_model"
     - "gefs_ww3_prepost"
+  gfs_mpas:
+    - "gfs_mpas_model"
   gcafs:
     - "gcafs_model"
     - "nexus"
@@ -40,6 +45,12 @@ systems:
 build:
   gfs_model:
     command: "./build_ufs.sh -e gfs_model.x"
+    cores: 12
+    walltime: "00:40:00"
+    memory: "40G"
+
+  gfs_mpas_model:
+    command: "./build_ufs.sh -w -a ATMMPAS -c MPAS_GFSv17 -s ufs_mpas_model.fd -e gfs_mpas_model.x"
     cores: 12
     walltime: "00:40:00"
     memory: "40G"

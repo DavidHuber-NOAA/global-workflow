@@ -13,6 +13,7 @@ if (( $# <= 1 )); then
     echo "Must specify an input resolution argument to set variables!"
     echo "argument can be any one of the following:"
     echo "--fv3 C48|C96|C192|C384|C768|C1152|C3072"
+    echo "--mpas x1.40962 (experimental UFS-MPAS; cannot be combined with other options)"
     echo "--mom6 500|100|025"
     echo "--cice6 500|100|025"
     echo "--ww3 gwes_30m|glo_025|glo_100|glo_200|glo_500|mx025|uglo_100km"
@@ -35,6 +36,10 @@ while (( $# > 0 )); do
   case "${key}" in
     "--fv3")
       fv3_res="$2"
+      shift
+      ;;
+    "--mpas")
+      mpas_mesh="$2"
       shift
       ;;
     "--mom6")
@@ -62,6 +67,46 @@ while (( $# > 0 )); do
   esac
   shift
 done
+
+# UFS-MPAS (experimental) is atmosphere-only, so set its parameters and return early
+if [[ -n "${mpas_mesh:-}" ]]; then
+  if [[ -n "${fv3_res:-}" || "${skip_mom6}" == "false" || "${skip_cice6}" == "false" || \
+        "${skip_ww3}" == "false" || "${skip_gocart}" == "false" ]]; then
+    echo "FATAL ERROR: --mpas cannot be combined with any other component option"
+    exit 1
+  fi
+  case "${mpas_mesh}" in
+    "x1.40962")  # 120 km quasi-uniform global mesh
+      export DELTIM=720
+      export ntasks_mpas=12  # Must match an available ${MPAS_MESH}.graph.info.part.<ntasks> file
+      export cdmbgwd="0.14,1.8,1.0,1.0"
+      ;;
+    *)
+      echo "FATAL ERROR: Unsupported MPAS mesh ${mpas_mesh}"
+      exit 1
+      ;;
+  esac
+  export nthreads_mpas=1
+  # config.resources sizes the atmosphere component with the FV3 variable names
+  export ntasks_fv3=${ntasks_mpas}
+  export nthreads_fv3=${nthreads_mpas}
+  export nthreads_ufs=${nthreads_mpas}
+  export ntasks_quilt=0
+  export CCPP_SUITE="${CCPP_SUITE:-MPAS_GFSv17}"
+  export cpl=".false."
+  export cplflx=".false."
+  export cplice=".false."
+  export cplchm=".false."
+  export cplwav=".false."
+  export cplwav2atm=".false."
+  export ufs_configure_template=${ufs_configure_template:-"${PARMglobal}/ufs/ufs.configure.atm.IN"}
+  if [[ ! -r "${ufs_configure_template}" ]]; then
+    echo "FATAL ERROR: ${ufs_configure_template} either doesn't exist or is not readable."
+    exit 17
+  fi
+  echo "END: config.ufs"
+  return 0
+fi
 
 # Mediator is required if any of the non-ATM components are used
 if [[ "${skip_mom6}" == "false" ]] || [[ "${skip_cice6}" == "false" ]] || [[ "${skip_ww3}" == "false" ]]; then

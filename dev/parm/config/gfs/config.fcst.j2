@@ -9,7 +9,11 @@ export USE_ESMF_THREADING="YES"  # Toggle to use ESMF-managed threading or tradi
 export COPY_FINAL_RESTARTS="NO" # Toggle to copy restarts from the end of GFS/GEFS Run (GDAS is handled seperately)
 
 # Source model specific information that is resolution dependent
-string="--fv3 ${CASE}"
+if [[ "${ATM_MODEL:-fv3}" == "mpas" ]]; then
+    string="--mpas ${MPAS_MESH}"
+else
+    string="--fv3 ${CASE}"
+fi
 if [[ "${DO_OCN}" == "YES" ]]; then
     string="${string} --mom6 ${OCNRES}"
 fi
@@ -74,7 +78,11 @@ export esmf_logkind="ESMF_LOGKIND_MULTI_ON_ERROR" #Options: ESMF_LOGKIND_MULTI_O
 
 export FORECASTSH="${SCRglobal}/exglobal_fcst.sh"
 #export FORECASTSH="${SCRglobal}/exglobal_forecast.py"  # Temp. while this is worked on
-export FCSTEXEC="ufs_model_gfs.x"
+if [[ "${ATM_MODEL:-fv3}" == "mpas" ]]; then
+    export FCSTEXEC="ufs_model_gfs_mpas.x"
+else
+    export FCSTEXEC="ufs_model_gfs.x"
+fi
 
 #######################################################################
 # Model configuration
@@ -254,6 +262,10 @@ case ${imp_physics} in
         export nord=2
         export d4_bg=0.12
         export dddmp=0.1
+        ;;
+    88) # TEMPO (UFS-MPAS only; tracers are defined by the MPAS initial conditions)
+        export nwat=6
+        export effr_in=".true."
         ;;
     *) echo "Unknown microphysics option, ABORT!" ;;
 esac

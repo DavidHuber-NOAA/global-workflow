@@ -15,6 +15,23 @@ class GFSTasks(Tasks):
         if run != 'enkfgdas':
             raise TypeError(f'{task_name} must be part of the "enkfgdas" cycle and not {run}')
 
+    def _atmos_post_dependency(self):
+        """
+        Return the dependency on the atmospheric post-processing of this cycle.
+
+        UFS-MPAS output is not post-processed yet, so the forecast itself is used instead.
+
+        Returns
+        -------
+        str
+            Rocoto dependency on the atmos_prod metatask (FV3) or the fcst metatask (MPAS)
+        """
+        if self.options.get('atm_model', 'fv3') == 'mpas':
+            dep_dict = {'type': 'metatask', 'name': f'{self.run}_fcst'}
+        else:
+            dep_dict = {'type': 'metatask', 'name': f'{self.run}_atmos_prod'}
+        return rocoto.add_dependency(dep_dict)
+
     # Specific Tasks begin here
     def fetch(self):
 
@@ -2199,8 +2216,7 @@ class GFSTasks(Tasks):
             dep_dict = {'type': 'task', 'name': f'{self.run}_genesis_fsu'}
             deps.append(rocoto.add_dependency(dep_dict))
         # Post job dependencies
-        dep_dict = {'type': 'metatask', 'name': f'{self.run}_atmos_prod'}
-        deps.append(rocoto.add_dependency(dep_dict))
+        deps.append(self._atmos_post_dependency())
         if self.options['do_ocean']:
             if self.run in ['gfs']:
                 dep_dict = {'type': 'metatask', 'name': f'{self.run}_ocean_prod'}
@@ -2277,8 +2293,7 @@ class GFSTasks(Tasks):
             dep_dict = {'type': 'task', 'name': f'{self.run}_genesis_fsu'}
             deps.append(rocoto.add_dependency(dep_dict))
         # Post job dependencies
-        dep_dict = {'type': 'metatask', 'name': f'{self.run}_atmos_prod'}
-        deps.append(rocoto.add_dependency(dep_dict))
+        deps.append(self._atmos_post_dependency())
         if self.options['do_wave']:
             dep_dict = {'type': 'metatask', 'name': f'{self.run}_wavepostgridded'}
             deps.append(rocoto.add_dependency(dep_dict))
@@ -2649,8 +2664,7 @@ class GFSTasks(Tasks):
 
             # Post-processing job dependencies
             # Atmosphere post-processing happens on all cycles
-            dep_dict = {'type': 'metatask', 'name': f'{self.run}_atmos_prod'}
-            deps_all.append(rocoto.add_dependency(dep_dict))
+            deps_all.append(self._atmos_post_dependency())
 
             # Other components only happen on full cycles
             if self.options['do_wave']:

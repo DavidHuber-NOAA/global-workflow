@@ -1,0 +1,25 @@
+start_year:              @[start_year]
+start_month:             @[start_month]
+start_day:               @[start_day]
+start_hour:              @[start_hour]
+start_minute:            0
+start_second:            0
+fhrot:                   @[fhrot]
+
+dt_atmos:                @[DELTIM]
+restart_interval:        0
+restart_fh:              @[MPAS_RESTART_FH]
+
+nhours_fcst:             @[FHMAX]
+output_fh:               @[MPAS_OUTPUT_FH]
+
+quilting:                .false.
+quilting_restart:        .false.
+itasks:                  1
+output_history:          .true.
+history_file_on_native_grid: .true.
+num_files:               2
+fv3atm_output_dir:       ./
+filename_base:           'atm' 'sfc'
+output_grid:             'mpas'
+output_file:             'netcdf'

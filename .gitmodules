@@ -31,3 +31,8 @@
   path = sorc/nexus.fd
   url = https://github.com/NOAA-OAR-ARL/NEXUS.git
   branch = feature/gcafs
+[submodule "sorc/ufs_mpas_model.fd"]
+  path = sorc/ufs_mpas_model.fd
+  url = https://github.com/dustinswales/ufs-weather-model
+  branch = feature/phys2dyn
+  ignore = dirty

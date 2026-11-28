@@ -79,7 +79,8 @@ class GFSForecastOnlyAppConfig(AppConfig):
 
         configs += ['stage_ic', 'fcst', 'arch_vrfy', 'cleanup']
 
-        if options['do_atm']:
+        # Atmospheric post-processing is not yet available for UFS-MPAS
+        if options['do_atm'] and options['atm_model'] != 'mpas':
 
             if options['do_upp'] or options['do_goes']:
                 configs += ['upp']
@@ -182,7 +183,8 @@ class GFSForecastOnlyAppConfig(AppConfig):
 
         tasks += ['fcst']
 
-        if options['do_atm']:
+        # Atmospheric post-processing is not yet available for UFS-MPAS
+        if options['do_atm'] and options['atm_model'] != 'mpas':
 
             if options['do_upp']:
                 tasks += ['atmupp']

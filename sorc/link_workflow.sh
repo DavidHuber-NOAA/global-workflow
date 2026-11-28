@@ -164,6 +164,10 @@ for dir in aer \
     fix_ver="${dir}_ver"
     safe_link_or_copy "${FIX_DIR}/${dir}/${!fix_ver}" "${dir}"
 done
+# UFS-MPAS fix files (experimental; only linked if they have been staged)
+if [[ -d "${FIX_DIR}/mpas/${mpas_ver}" ]]; then
+    safe_link_or_copy "${FIX_DIR}/mpas/${mpas_ver}" "mpas"
+fi
 # global-nest uses different versions of orog and ugwd
 if [[ "${LINK_NEST:-OFF}" == "ON" ]]; then
     for dir in orog \
@@ -249,6 +253,11 @@ if [[ -d "${HOMEglobal}/sorc/ufs_model.fd/UFSATM/ccpp/suites" ]]; then
         [[ -f "${src}" ]] || continue
         safe_link_or_copy "${src}" .
     done
+fi
+
+# Link the MPAS CCPP suite XML file from the UFS-MPAS ufs-weather-model clone
+if [[ -f "${HOMEglobal}/sorc/ufs_mpas_model.fd/UFSATM/ccpp/suites/suite_MPAS_GFSv17.xml" ]]; then
+    safe_link_or_copy "${HOMEglobal}/sorc/ufs_mpas_model.fd/UFSATM/ccpp/suites/suite_MPAS_GFSv17.xml" .
 fi
 
 # Link the script from ufs-weather-model that parses the templates
@@ -414,6 +423,14 @@ for sys in "${model_systems[@]}"; do
         safe_link_or_copy "${HOMEglobal}/sorc/ufs_model.fd/tests/${model_exe}" "ufs_model_${sys}.x"
     fi
 done
+
+# Experimental UFS-MPAS executable
+if [[ -s "ufs_model_gfs_mpas.x" ]]; then
+    rm -f "ufs_model_gfs_mpas.x"
+fi
+if [[ -f "${HOMEglobal}/sorc/ufs_mpas_model.fd/tests/gfs_mpas_model.x" ]]; then
+    safe_link_or_copy "${HOMEglobal}/sorc/ufs_mpas_model.fd/tests/gfs_mpas_model.x" "ufs_model_gfs_mpas.x"
+fi
 
 # WW3 pre/post executables
 declare -a ww3_exes=("ww3_grid" "ww3_prnc" "ww3_outp" "ww3_gint" "ww3_grib")

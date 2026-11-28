@@ -27,7 +27,7 @@ UFS_configure() {
     fi
 
     # Atm-related
-    local atm_model="fv3"
+    local atm_model="${ATM_MODEL:-fv3}"
     local atm_petlist_bounds="0 $((ATMPETS - 1))"
     local atm_omp_num_threads="${ATMTHREADS}"
 

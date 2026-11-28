@@ -184,6 +184,9 @@ case "${RUN}" in
 esac
 shopt -u extglob
 
+# Atmospheric model (dynamical core): fv3 (default) or mpas (experimental UFS-MPAS, forecast-only)
+export ATM_MODEL="{{ ATM_MODEL | default('fv3') }}"
+
 # Defaults:
 export DO_ATM="YES"
 export DO_COUPLED="NO"
@@ -578,6 +581,32 @@ if [[ "${DO_JEDIATMVAR}" == "YES" ]]; then
     else
 	    export ATMINC_GRID="gaussian"
     fi
+fi
+
+# UFS-MPAS (experimental) settings
+if [[ "${ATM_MODEL}" == "mpas" ]]; then
+    if [[ "${MODE}" != "forecast-only" || "${APP}" != "ATM" ]]; then
+        echo "FATAL ERROR: ATM_MODEL=mpas is only supported for forecast-only experiments with APP=ATM"
+        exit 4
+    fi
+    export MPAS_MESH="{{ MPAS_MESH | default('x1.40962') }}" # MPAS mesh name; x1.40962 is the 120 km quasi-uniform mesh
+    export FIXmpas="${FIXglobal}/mpas"
+    export imp_physics=88  # TEMPO microphysics, as in the UFS-MPAS GFS regression test (control_gfs_mpas)
+    export DO_CA="NO"
+    # The write grid component and inline post are not available with MPAS
+    export QUILTING=".false."
+    export WRITE_DOPOST=".false."
+    # Downstream products require post-processed (UPP) MPAS output, which is not yet available
+    export DO_GOES="NO"
+    export DO_BUFRSND="NO"
+    export DO_GEMPAK="NO"
+    export DO_AWIPS="NO"
+    export DO_TRACKER="NO"
+    export DO_GENESIS="NO"
+    export DO_GENESIS_FSU="NO"
+    export DO_METP="NO"
+    export DO_FIT2OBS="NO"
+    export DO_ARCHCOM="NO"
 fi
 
 echo "END: config.base"

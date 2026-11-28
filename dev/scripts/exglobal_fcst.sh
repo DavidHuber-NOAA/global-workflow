@@ -88,7 +88,11 @@ cplice=${cplice:-.false.} # ICE model
 # include all subroutines. Executions later.
 source "${USHglobal}/forecast_common.sh" # include shared functions and run type determination
 if [[ ${DO_ATM:-NO} == "YES" ]]; then
-    source "${USHglobal}/forecast_fv3.sh" # include functions for FV3 (atmosphere)
+    if [[ "${ATM_MODEL:-fv3}" == "mpas" ]]; then
+        source "${USHglobal}/forecast_mpas.sh" # include functions for UFS-MPAS (atmosphere)
+    else
+        source "${USHglobal}/forecast_fv3.sh" # include functions for FV3 (atmosphere)
+    fi
 fi
 if [[ ${cplflx:-.false.} == ".true." ]]; then
     source "${USHglobal}/forecast_cmeps.sh" # include functions for CMEPS (coupler)
@@ -132,7 +136,11 @@ echo "MAIN: Loading common variables before determination of run type"
 common_predet
 
 echo "MAIN: Loading variables before determination of run type"
-FV3_predet
+if [[ "${ATM_MODEL:-fv3}" == "mpas" ]]; then
+    MPAS_predet
+else
+    FV3_predet
+fi
 if [[ "${cplflx}" == ".true." ]]; then
     CMEPS_predet
 fi
@@ -151,11 +159,19 @@ fi
 echo "MAIN: Variables before determination of run type loaded"
 
 echo "MAIN: Determining run type"
-UFS_det
+if [[ "${ATM_MODEL:-fv3}" == "mpas" ]]; then
+    MPAS_det
+else
+    UFS_det
+fi
 echo "MAIN: run type determined"
 
 echo "MAIN: Post-determination set up of run type"
-FV3_postdet
+if [[ "${ATM_MODEL:-fv3}" == "mpas" ]]; then
+    MPAS_postdet
+else
+    FV3_postdet
+fi
 if [[ "${cplflx}" == ".true." ]]; then
     CMEPS_postdet
 fi
@@ -174,7 +190,11 @@ fi
 echo "MAIN: Post-determination set up of run type finished"
 
 echo "MAIN: Writing namelists and model configuration"
-FV3_nml
+if [[ "${ATM_MODEL:-fv3}" == "mpas" ]]; then
+    MPAS_nml
+else
+    FV3_nml
+fi
 if [[ "${cplflx}" == ".true." ]]; then
     MOM6_nml
 fi
@@ -212,7 +232,11 @@ if [[ ${err} -ne 0 ]]; then
     err_exit "The forecast failed to run to completion!"
 fi
 
-FV3_out
+if [[ "${ATM_MODEL:-fv3}" == "mpas" ]]; then
+    MPAS_out
+else
+    FV3_out
+fi
 if [[ "${cplflx}" == ".true." ]]; then
     MOM6_out
 fi

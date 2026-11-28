@@ -34,7 +34,7 @@ def input_args(*argv):
     parser.add_argument('--account', help='HPC account to use', required=True)
     parser.add_argument('--yaml', help='Input YAML file',
                         type=str, required=False, default='build_opts.yaml')
-    parser.add_argument('--systems', help='System(s) to build (options: gfs, gefs, sfs, gcafs, gsi, gdas, or all)', required=False, default='gfs')
+    parser.add_argument('--systems', help='System(s) to build (options: gfs, gefs, sfs, gcafs, gsi, gdas, gfs_mpas, or all)', required=False, default='gfs')
     parser.add_argument('--debug', help='Build in debug mode', required=False, action='store_true')
 
     inputs = parser.parse_args(list(*argv) if len(argv) else None)
@@ -229,7 +229,9 @@ def main(*argv):
     # Determine systems to build
     builds = set()
     if systems[0] == "all":
-        builds = build_specs.build
+        # Experimental builds must be requested explicitly by system name
+        exclude_from_all = build_specs.get("exclude_from_all", [])
+        builds = [build for build in build_specs.build if build not in exclude_from_all]
     else:
         builds.update(build_specs.systems["common"])
         try:

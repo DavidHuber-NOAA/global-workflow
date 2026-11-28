@@ -19,6 +19,7 @@ Table of Contents
    gefs.rst
    sfs.rst
    gcafs.rst
+   ufs_mpas.rst
    job_descriptions.rst
    run_hpc.rst
    setup_run_pworks.rst

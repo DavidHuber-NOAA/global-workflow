@@ -36,6 +36,7 @@ fix/datm
 fix/gdas
 fix/gsi
 fix/lut
+fix/mpas
 fix/mom6
 fix/orog
 fix/orog_nest
@@ -111,6 +112,7 @@ parm/ufs/fd_ufs.yaml
 parm/ufs/suite_FV3_global_nest_v1.xml
 parm/ufs/suite_FV3_GFS_v17_p8_ugwpv1.xml
 parm/ufs/suite_FV3_GFS_v17_coupled_p8_ugwpv1.xml
+parm/ufs/suite_MPAS_GFSv17.xml
 parm/regrid_sfc
 parm/chem/nexus
 
